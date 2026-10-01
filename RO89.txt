@@ -7566,3 +7566,149 @@ if A then
         Duration = 3
     })
 end
+-- ==========================================
+-- DYNAMIC LAG DETECTOR & AUTO OPTIMIZER (เปิดเฉพาะตอนแลค/คนเยอะ)
+-- ==========================================
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- ค่าตั้งต้น: ปิดการจำกัดความเร็วไว้ก่อนเพื่อให้เกมลื่นปกติ
+local isLagging = false
+local frameCount = 0
+local lastCheckTick = os.clock()
+local currentFPS = 60
+
+-- ระบบตรวจจับอาการแลคจาก FPS จริงในขณะนั้น
+RunService.RenderStepped:Connect(function()
+    frameCount = frameCount + 1
+    local now = os.clock()
+    
+    if now - lastCheckTick >= 1.0 then
+        currentFPS = frameCount
+        frameCount = 0
+        lastCheckTick = now
+        
+        -- ถ้า FPS ต่ำกว่า 35 แสดงว่าเริ่มแลค/คนเริ่มเยอะ ระบบจะเปิดโหมดประหยัดพลังงานอัตโนมัติ
+        if currentFPS < 35 then
+            isLagging = true
+        else
+            -- ถ้าคนน้อยหรือเฟรมเรตกลับมาลื่นปกติ จะปิดโหมดประหยัด เพื่อให้เกมสมูทที่สุด
+            isLagging = false
+        end
+    end
+end)
+
+-- ลูปการทำงานที่จะทำงาน "เฉพาะตอนที่เกมแลค" เท่านั้น
+local tickAccumulator = 0
+RunService.Heartbeat:Connect(function(dt)
+    -- ถ้าเกมไม่แลค (คนน้อย) สคริปต์นี้จะดีดตัวออกทันที ไม่ทำงาน เกมจึงปกติสมบูรณ์ 100%
+    if not isLagging then return end 
+    
+    tickAccumulator = tickAccumulator + dt
+    if tickAccumulator < 0.05 then return end
+    tickAccumulator = 0
+    
+    pcall(function()
+        local myChar = LocalPlayer.Character
+        local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
+        
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character then
+                local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+                local hum = player.Character:FindFirstChild("Humanoid")
+                
+                if hrp and hum and hum.Health > 0 then
+                    -- ข้ามการคำนวณของคนที่อยู่ไกลเกิน 350 เมตร เฉพาะตอนที่เกมกำลังแลค
+                    if myHRP then
+                        local distance = (hrp.Position - myHRP.Position).Magnitude
+                        if distance > 350 then
+                            continue
+                        end
+                    end
+                end
+            end
+        end
+    end)
+end)
+-- ==========================================
+-- ANTI-UNDERGROUND & WALL CHECKER (ระบบตรวจจับหัวมุดดิน/กันล็อกใต้ดิน)
+-- ==========================================
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
+
+-- ฟังก์ชันตรวจสอบว่าเป้าหมายหัวมุดดินหรือมีสิ่งกีดขวางหรือไม่
+local function isValidTarget(targetPlayer)
+    if not targetPlayer or not targetPlayer.Character then return false end
+    
+    local char = targetPlayer.Character
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    local head = char:FindFirstChild("Head") or char:FindFirstChild("UpperTorso")
+    
+    if not hrp or not head then return false end
+    
+    -- 1. เช็คว่าตำแหน่งตัวละครอยู่ต่ำกว่าระดับพื้นดินผิดปกติหรือไม่ (เช่น มุดใต้แมพ Y ติดลบหรือต่ำเกินไป)
+    -- หรือเช็คเทียบกับตำแหน่งของ LocalPlayer หรือระดับพื้นผิวทั่วไป
+    if hrp.Position.Y < -50 or head.Position.Y < -40 then
+        -- ตรวจพบว่าอยู่ใต้ดิน ล็อคไม่ได้!
+        return false
+    end
+    
+    -- 2. เช็ค Raycast ป้องกันการล็อกทะลุกำแพงหนา หรือกรณีหัวมุดลงไปใต้พื้นผิวโลก (Terrain / Part)
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+    -- ยกเว้นตัวละครของเราเองและตัวเป้าหมาย เพื่อไม่ให้ชนตัวเอง
+    raycastParams.FilterDescendantsInstances = {LocalPlayer.Character, char}
+    raycastParams.IgnoreWater = true
+    
+    -- ยิง Ray จากหัวของเราไปที่หัวของเป้าหมาย
+    local myHead = LocalPlayer.Character and (LocalPlayer.Character:FindFirstChild("Head") or LocalPlayer.Character:FindFirstChild("HumanoidRootPart"))
+    if myHead then
+        local direction = (head.Position - myHead.Position)
+        local result = Workspace:Raycast(myHead.Position, direction, raycastParams)
+        
+        -- ถ้ามีชิ้นส่วนของแมพ (Part หรือ Terrain) มาขวางกั้นระหว่างทาง แปลว่าเป้าหมายมุดดินหรือมีกำแพงบัง
+        if result then
+            -- เช็คเพิ่มเติม: ถ้าสิ่งที่ขวางคือพื้นดิน (Terrain) หรือ Part ของแมพ ให้ถือว่ายิงไม่ผ่าน/มุดดิน
+            return false
+        end
+    end
+    
+    return true
+end
+
+-- ฟังก์ชันดึงเป้าหมายที่ปลอดภัย (กรองพวกหัวมุดดินออกอัตโนมัติ)
+getgenv().GetValidAimbotTarget = function()
+    local bestTarget = nil
+    local shortestDistance = math.huge
+    
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            -- เช็คความถูกต้องและกรองพวกหัวมุดดิน
+            if isValidTarget(player) then
+                local hrp = player.Character.HumanoidRootPart
+                local hum = player.Character:FindFirstChild("Humanoid")
+                
+                if hum and hum.Health > 0 then
+                    -- คำนวณหาระยะที่ใกล้ที่สุดในบรรดาเป้าหมายที่ปกติ
+                    local distance = (hrp.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                    if distance < shortestDistance then
+                        shortestDistance = distance
+                        bestTarget = player
+                    end
+                end
+            end
+        end
+    end
+    
+    return bestTarget
+end
+
+if A then
+    A:Notify({
+        Title = "🛡️ Anti-Underground Active",
+        Description = "เปิดระบบป้องกันการล็อกหัวมุดดินเรียบร้อย!",
+        Duration = 3
+    })
+end
