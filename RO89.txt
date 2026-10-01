@@ -7677,77 +7677,6 @@ Time = 4
 })
 end
 
--- ==============================================================================
---  RO89 HUB: ANTI-UNDERGROUND TARGET ADJUSTER & HEAD NORMALIZER
--- ==============================================================================
---  (RO89_6.txt) 
---   Silent Aim /
--- ==============================================================================
-/* STREAMING_CHUNK:Initializing underground check and position normalization... */
-local Workspace = game:GetService("Workspace")
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
---  ()
-local GroundLevelTolerance = 3.5
-local function GetNormalizedTargetPosition(targetHead, targetRootPart)
-if not targetHead or not targetRootPart then
-return Vector3.zero
-end
-local originalHeadPos = targetHead.Position
-local originalRootPos = targetRootPart.Position
---  ( Y Position  RootPart  Head)
---  Y >= 0  raycast 
-local raycastParams = RaycastParams.new()
-raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-if targetHead.Parent then
-raycastParams.FilterDescendantsInstances = {targetHead.Parent}
-end
---  Raycast  
-local groundCheckRay = Workspace:Raycast(originalHeadPos + Vector3.new(0, 5, 0), Vector3.new(0, -50, 0), raycastParams)
-local adjustedPosition = originalHeadPos
-if groundCheckRay then
-local groundY = groundCheckRay.Position.Y
---  
-if originalHeadPos.Y < (groundY + GroundLevelTolerance) then
---   Silent Aim 
-adjustedPosition = Vector3.new(originalHeadPos.X, groundY + 2.5, originalHeadPos.Z)
-end
-else
---  0  
-if originalHeadPos.Y < -5 then
-adjustedPosition = Vector3.new(originalHeadPos.X, originalRootPos.Y + 3.0, originalHeadPos.Z)
-end
-end
-return adjustedPosition
-end
-/* STREAMING_CHUNK:Integrating normalizer into Silent Aim prediction hooks... */
-pcall(function()
---  
-getgenv().GetCorrectedAimPosition = function(targetHead, targetRootPart)
-if not targetHead or not targetRootPart then return Vector3.zero end
--- 
-local correctedPos = GetNormalizedTargetPosition(targetHead, targetRootPart)
--- 
-local velocity = targetRootPart.AssemblyLinearVelocity or targetRootPart.Velocity or Vector3.zero
-local ping = 0.1
-pcall(function()
-ping = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue() / 1000
-end)
--- 
-return correctedPos + (velocity * (ping + 0.05))
-end
-end)
-/* STREAMING_CHUNK:Displaying success notification for underground fix... */
-print("[RO89 Hub] Anti-Underground Head Normalizer successfully loaded!")
-pcall(function()
-if B and typeof(B.Notify) == "function" then
-B:Notify({
-Title = " Anti-Underground Fix",
-Desc = " Silent Aim !",
-Time = 4
-})
-end
-end)
 -- ==========================================
 --   OPTIMIZATION ADD-ON (ANTI-LAG SCRIPT)
 --   ()
@@ -7767,6 +7696,70 @@ task.spawn(function()
                 if mem > 800 then --  
                     collectgarbage("collect")
                 end
+            end
+        end
+    end)
+end)
+
+-- 2. 
+task.spawn(function()
+    local RunService = game:GetService("RunService")
+    
+    --  Heartbeat 
+    local LastTick = 0
+    RunService.Heartbeat:Connect(function()
+        local CurrentTime = tick()
+        if CurrentTime - LastTick >= 0.05 then --  0.05  
+            LastTick = CurrentTime
+            
+            pcall(function()
+                -- 
+                local Character = game.Players.LocalPlayer.Character
+                if Character and Character:FindFirstChild("HumanoidRootPart") then
+                    -- 
+                end
+            end)
+        end
+    end)
+end)
+
+print("[RO89 Hub] Optimization Anti-Lag Patch Loaded Successfully (Graphics untouched)!")
+-- โค้ดเสริมแก้ปัญหาแฮกเกอร์หัวมุดดิน / ยิงทะลุพื้นผิว
+task.spawn(function()
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    
+    local function antiUndergroundFix()
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character then
+                local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
+                local head = player.Character:FindFirstChild("Head")
+                local humanoid = player.Character:FindFirstChild("Humanoid")
+                
+                -- ตรวจสอบว่าผู้เล่นลงไปใต้ดินลึกเกินไปหรือไม่ (ตำแหน่ง Y ผิดปกติ)
+                if humanoidRootPart and head and humanoid and humanoid.Health > 0 then
+                    if humanoidRootPart.Position.Y < -5 then -- ปรับระดับความลึกตามแผนที่เกม
+                        -- บังคับดึงตำแหน่งหัวหรือตัวละครให้โผล่ขึ้นมาตามระดับพื้นปกติ
+                        -- หรือเปิดระบบ Raycast Ignore พื้นผิวเพื่อให้ Aimbot ล็อคทะลุดิน
+                        pcall(function()
+                            -- ปลดล็อกการตรวจจับสิ่งกีดขวาง (Raycast Bypass) สำหรับ Aimbot
+                            if getgenv and getgenv().RO89Settings then
+                                getgenv().RO89Settings.WallCheck = false -- ปิดเช็คกำแพง/พื้นชั่วคราวเพื่อให้ยิงทะลุได้
+                                getgenv().RO89Settings.Prediction = true
+                            end
+                        end)
+                    end
+                end
+            end
+        end
+    end
+
+    -- รันระบบตรวจสอบและแก้ไขแบบเรียลไทม์
+    game:GetService("RunService").RenderStepped:Connect(function()
+        pcall(antiUndergroundFix)
+    end)
+end)
+  end
             end
         end
     end)
