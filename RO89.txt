@@ -73,9 +73,9 @@ if A then
 B=
 A:CreateWindow
 {
-Title="RO89 Hub |ฟรีดีมั้ย|🔫|",
+Title="RO89 Hub |แจกดีมั้ยย|🔫|",
 Icon="rbxassetid://100758136601163",
-Author="[🔫] Tik Tok |@RO89 HUB ",
+Author="[🔫] Tik Tok |@อะไรวะ ",
 Folder="Boss",
 Size=UDim2.fromOffset(650,400),
 Theme="Dark",
@@ -85,7 +85,7 @@ KeyCode=Enum.KeyCode.L
 }
 
 B:EditOpenButton({
-    Title = "RO89 Hub |”«|",
+    Title = "RO89 Hub |แจกดีมั้ย🔫",
     Icon ="rbxassetid://100758136601163",
     CornerRadius = UDim.new(0,16),
     StrokeThickness = 2,
@@ -4414,7 +4414,7 @@ A:Notify
 
 {
 
-Title="âœ… Auto Modify",
+Title="✅ Auto Modify",
 
 Duration=2
 
@@ -4732,7 +4732,7 @@ A:Notify
 
 {
 
-Title="âœ… ESP Items Enabled",
+Title="✅ ESP Items Enabled",
 
 Duration=3
 
@@ -4766,7 +4766,7 @@ A:Notify
 
 {
 
-Title="âŒ ESP Items Disabled",
+Title="❌ ESP Items Disabled",
 
 Duration=3
 
@@ -5136,7 +5136,7 @@ Title = "Jump Height",
         Default = 10
     },
     Callback = function(v)
-        JumpHeight = v -- ตัวแปรนี้จะถูกเรียกใช้ในส่วนที่2
+        JumpHeight = v -- ตัวแปรนี้จะถูกเรียกใช้ในส่วนที่ 2
     end
 }
 
@@ -5248,7 +5248,7 @@ A:Notify
 
 {
 
-Title="âœ… INF STAMINA",
+Title="✅ INF STAMINA",
 
 Duration=3
 
@@ -5334,7 +5334,7 @@ A:Notify
 
 {
 
-Title="âŒ Auto Sprint Disabled",
+Title="❌ Auto Sprint Disabled",
 
 Duration=3
 
@@ -5422,7 +5422,7 @@ A:Notify
 
 {
 
-Title="âŒ Anti Kill Disabled",
+Title="❌ Anti Kill Disabled",
 
 Duration=3
 
@@ -5908,38 +5908,6 @@ end
 
 D:Register("SnapHeight",be)
 
---  (Quick Toggle)  Snap Under Map 
---  bd (Toggle ) 
-
---  Section  UI 
--- ( Window   Wn  Window)
-
-local topBarSection = a1:Section{Title = "Quick Control ()"}
-
---  Toggle  Quick Action  Snap 
-topBarSection:Toggle{
-    Title = ": /",
-    Default = false,
-    Callback = function(state)
-        -- / Toggle  (bd) 
-        --  Toggle 
-        if bd then
-            bd:Set(state) --  WindUI  Set 
-        end
-        
-        --  100%  
-        if not state then
-            if u and Z then
-                --  (Z) 
-                u.CFrame = CFrame.new(u.Position.X, Z + 3, u.Position.Z)
-            end
-            V = false
-            X = nil
-            Z = nil
-        end
-    end
-}
-
 local bf=B:Tab{Title="ผู้เล่น",Icon="person-standing"}
 
 bf:Section{Title="ผู้เล่น"}
@@ -5976,7 +5944,7 @@ applyToAll()
 
 if A then
 
-A:Notify{Title=✅ Auto Finish Enabled",Description="✅ Auto Enabled",Duration=3}
+A:Notify{Title="✅ Auto Finish Enabled",Description="✅ Auto Enabled",Duration=3}
 
 end
 
@@ -6056,7 +6024,7 @@ end
 
 for bo,bp in ipairs(bn)do
 
-print("กําลังวาร์ปไปเซิร์ฟ:",bp)
+print("กำลังวาร์ปไปเซิร์ฟ:",bp)
 
 task.wait(0.5)
 
@@ -6262,7 +6230,7 @@ end
 
 if not bq or not br or not br.data then
 
-warn"ไม่สามารดึงข้อมูลเซิร์ฟเวอร์ได้เยยครับ"
+warn"ไม่สามารถดึงข้อมูลเซิร์ฟเวอร์ได้เลยพี่"
 
 return
 
@@ -6286,7 +6254,7 @@ end
 
 if#bs==0 then
 
-warn"ไม่มีเซิร์ฟเวอร์ที่ว่างเลยตอนนี้"
+warn"ไม่มีเซิร์ฟเวอร์ว่างเลยพี่ขณะนี้"
 
 return
 
@@ -6320,7 +6288,7 @@ game.StarterGui:SetCore(
 
 Title="Server Hop",
 
-Text="กําลังย้ายไปเซิร์ฟเวอร์คนเยอะ...",
+Text="กำลังย้ายไปเซิร์ฟเวอร์คนเยอะ...",
 
 Duration=3
 
@@ -7416,7 +7384,7 @@ D:Register("Skip animation",buu11)
 
 
 
-local VehicleTab = B:Tab({Title = "รถ",icon="car"})
+local VehicleTab = B:Tab({Title = "รถ", Icon = "car"})
 
 
 
