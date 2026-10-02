@@ -3915,6 +3915,77 @@ local aO = aN:Toggle {
     end
 }
 
+-- ==========================================
+-- RO89 HUB: PURE SILENT AIM MODULE (v2.5)
+-- สำหรับเกมที่บล็อก Hitbox - เน้นระบบคำนวณมุมกระสุนล้วน
+-- วางต่อท้ายสคริปต์เก่าได้ทันที
+-- ==========================================
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+getgenv().RO89_PureSilent = {
+    Enabled = true,
+    Prediction = 0.135,       -- ค่าพรีดิกชันคำนวณระยะเผื่อเป้าเคลื่อนที่
+    MaxDistance = 500,        -- ระยะทำการสูงสุด
+    TargetPart = "Head",      -- เล็งจุดสำคัญ (Head หรือ HumanoidRootPart)
+    FOV = 120                 -- ขอบเขตการทำงาน (Field of View)
+}
+
+local Settings = getgenv().RO89_PureSilent
+local Mouse = LocalPlayer:GetMouse()
+
+-- ค้นหาเป้าหมายที่ใกล้เคียงที่สุดในมุมมอง
+local function GetBestTarget()
+    local bestTarget = nil
+    local minDistance = Settings.FOV
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+            local targetPart = player.Character:FindFirstChild(Settings.TargetPart)
+
+            if humanoid and humanoid.Health > 0 and targetPart then
+                local screenPoint, onScreen = Camera:WorldToScreenPoint(targetPart.Position)
+                if onScreen then
+                    local mousePos = Vector2.new(Mouse.X, Mouse.Y)
+                    local screenPos = Vector2.new(screenPoint.X, screenPoint.Y)
+                    local distance = (mousePos - screenPos).Magnitude
+
+                    if distance < minDistance then
+                        minDistance = distance
+                        bestTarget = targetPart
+                    end
+                end
+            end
+        end
+    end
+
+    return bestTarget
+end
+
+-- Hook กระสุนหรือทิศทางการยิงโดยไม่พึ่งพา Hitbox ตัวละคร
+local oldIndex
+oldIndex = hookmetamethod(game, "__index", function(self, index)
+    if not Settings.Enabled then
+        return oldIndex(self, index)
+    end
+
+    -- ดักจับทิศทางกล้องหรือการยิงเพื่อหักมุมกระสุนเข้าเป้าหมายอัตโนมัติ
+    if self == Camera and index == "CFrame" and not checkcaller() then
+        local target = GetBestTarget()
+        if target then
+            local predictedPos = target.Position + (target.AssemblyLinearVelocity * Settings.Prediction)
+            return CFrame.new(Camera.CFrame.Position, predictedPos)
+        end
+    end
+
+    return oldIndex(self, index)
+end)
+
+print("RO89 Hub: Pure Silent Aim Loaded (Bypassed Hitbox Restrictions)!")
 
 
 
