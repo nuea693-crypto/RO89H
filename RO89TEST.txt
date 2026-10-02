@@ -1,6 +1,6 @@
-a=game:GetService("Players")
+local a=game:GetService"Players"
 
-b=game:GetService("RunService")
+b=game:GetService"RunService"
 
 c=game:GetService"ReplicatedStorage"
 
@@ -185,7 +185,7 @@ local K=Drawing.new"Line"
 
 K.Thickness=1
 
-K.=Color3.fromRGB(255,50,50)
+K.Color=Color3.fromRGB(255,50,50) -- แก้ไขจาก K.= เป็น K.Color=
 
 K.Transparency=1
 
@@ -5007,6 +5007,7 @@ end)
 local a4=
 a1:Toggle
 {
+
 Title="Infinite Stamina",
 
 Default=false,
@@ -7142,7 +7143,7 @@ local function isValidTarget(targetPlayer)
     end
     local raycastParams = RaycastParams.new()
     raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-    raycastParams.FilterDescendantsInstances = {LocalPlayer.Character, char}
+    raycastParams.FilterDescendantsInstances = {LocalPlayer.Challenge or LocalPlayer.Character, char}
     raycastParams.IgnoreWater = true
     local myHead = LocalPlayer.Character and (LocalPlayer.Character:FindFirstChild("Head") or LocalPlayer.Character:FindFirstChild("HumanoidRootPart"))
     if myHead then
@@ -7156,6 +7157,7 @@ local function isValidTarget(targetPlayer)
 end
 
 getgenv().GetValidAimbotTarget = function()
+    consoleName = nil
     local bestTarget = nil
     local shortestDistance = math.huge
     for _, player in ipairs(Players:GetPlayers()) do
