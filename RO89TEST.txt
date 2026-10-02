@@ -3988,13 +3988,25 @@ end)
 print("RO89 Hub: Pure Silent Aim Loaded (Bypassed Hitbox Restrictions)!")
 
 -- ==========================================
--- SMART SILENT AIM (Adaptive Target Part)
+-- RO89 SMART SILENT AIM HUB (UPDATED)
 -- ==========================================
-local SmartAimEnabled = true -- เปิด/ปิดการใช้งานผ่าน UI Toggle ได้ตามต้องการ
 
+-- สร้างตัวแปรเปิด/ปิดระบบ Smart Target Adaptive (เพิ่มต่อท้ายระบบ Aim เดิม)
+getgenv().SmartAimConfig = {
+    Enabled = true, -- ค่าเริ่มต้นเปิดใช้งาน (สามารถทำปุ่ม Toggle มาเปลี่ยนค่านี้ทีหลังได้)
+    CheckUnderground = true,
+    MinYHeight = -40
+}
+
+-- ฟังก์ชันเสริมเช็คเป้าหมายอัจฉริยะ (Smart Closest Target + Adaptive Part)
 local function getSmartClosestTarget()
+    -- ถ้าปิดระบบ Smart ให้ไปใช้ระบบหาเป้าหมายปกติของคุณแทน
+    if not getgenv().SmartAimConfig.Enabled then
+        return nil -- ให้ระบบเดิมทำงานต่อ
+    end
+
     local bestTarget = nil
-    local shortestDistance = H -- ใช้ค่า FOV รัศมีเดิมของคุณ
+    local shortestDistance = H -- ใช้ค่า FOV รัศมีเดิม
     local centerScreen = Vector2.new(y.ViewportSize.X / 2, y.ViewportSize.Y / 2)
     
     for _, player in ipairs(a:GetPlayers()) do
@@ -4005,14 +4017,17 @@ local function getSmartClosestTarget()
             local head = character:FindFirstChild("Head")
             
             if humanoid and humanoid.Health > 0 and hrp and head then
-                -- เช็คชื่อเพื่อนที่ละเว้น (Safe Friend)
-                if not isPlayerExcluded(player.Name) then
-                    
-                    -- เช็คว่าเป้าหมายหัวมุดดินหรือมีสิ่งกีดขวาง/มองไม่เห็นหัวหรือไม่
+                -- เช็คชื่อเพื่อนที่ละเว้น (Safe Friend) ถ้าฟังก์ชันนี้มีอยู่ในสคริปต์คุณ
+                local excluded = false
+                if type(isPlayerExcluded) == "function" then
+                    excluded = isPlayerExcluded(player.Name)
+                end
+
+                if not excluded then
                     local isHeadVisible = true
                     
-                    -- 1. เช็คพิกัดความสูงว่ามุดใต้ดินเกินไปไหม (Y ต่ำกว่าปกติ)
-                    if head.Position.Y < -40 or hrp.Position.Y < -40 then
+                    -- 1. เช็คพิกัดความสูงว่ามุดใต้ดินเกินไปไหม
+                    if head.Position.Y < getgenv().SmartAimConfig.MinYHeight or hrp.Position.Y < getgenv().SmartAimConfig.MinYHeight then
                         isHeadVisible = false
                     else
                         -- 2. เช็ค Raycast ว่าหัวโดนบังหรือมุดดินอยู่หรือเปล่า
@@ -4026,18 +4041,17 @@ local function getSmartClosestTarget()
                             local direction = (head.Position - myHead.Position)
                             local rayResult = workspace:Raycast(myHead.Position, direction, raycastParams)
                             if rayResult then
-                                -- ถ้ามีวัตถุด้านล่างหรือสิ่งกีดขวางมาบังหัว แปลว่าหัวหาย/มุดดิน
                                 isHeadVisible = false
                             end
                         end
                     end
                     
-                    -- เลือกระบบส่วนที่จะล็อคอัตโนมัติ (Smart Selection)
+                    -- ระบบสลับส่วนเป้าหมายอัตโนมัติ (Smart Selection)
                     local targetPart = nil
                     if isHeadVisible then
-                        targetPart = head -- ถ้าหัวโผล่มาปกติ ล็อคหัว 100% เป็นหลัก!
+                        targetPart = head -- หัวโผล่ปกติ ล็อคหัวเน้นๆ
                     else
-                        -- ถ้าหัวมุดดิน/มองไม่เห็น เปลี่ยนเป้าหมายเป็นอก หรือ ตัวแทนทันที
+                        -- หัวมุดดิน/มีกำบังบัง เปลี่ยนเป็นอกหรือตัวทันทีเพื่อให้กระสุนไม่วืด
                         targetPart = character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso") or hrp
                     end
                     
@@ -4065,6 +4079,23 @@ local function getSmartClosestTarget()
     
     return bestTarget
 end
+
+-- ==========================================
+-- วิธีสร้างปุ่มเปิด/ปิดในหมวด Aim (ตัวอย่างการผูก UI Toggle)
+-- ==========================================
+-- หากคุณใช้ UI Library ทั่วไป (เช่น Rayfield, Fluent, หรือ UI เดิมของคุณ) 
+-- สามารถนำโค้ดบรรทัดด้านล่างนี้ไปใส่ไว้ในปุ่ม Toggle ของคุณได้เลยครับ:
+--
+-- Tab:AddToggle("Smart Adaptive Aim", {
+--     Default = true,
+--     Callback = function(Value)
+--         getgenv().SmartAimConfig.Enabled = Value
+--         print("Smart Adaptive Aim Status: ", Value)
+--     end
+-- })
+
+print("RO89 Smart Silent Aim Loaded Successfully!")
+    
 
 
 D:Register("SilentAim",aO)
