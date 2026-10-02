@@ -7777,3 +7777,51 @@ if A then
         Duration = 3
     })
 end
+
+
+local FlyJumpToggle = a1:Toggle {
+    Title = "Fly Jump [Hold Jump to Fly]",
+    Default = false,
+    Callback = function(aO)
+        local flying = aO
+        local player = game.Players.LocalPlayer
+        local uis = game:GetService("UserInputService")
+        local runService = game:GetService("RunService")
+
+        if flying then
+            task.spawn(function()
+                local char = player.Character or player.CharacterAdded:Wait()
+                local hrp = char:WaitForChild("HumanoidRootPart")
+                local humanoid = char:WaitForChild("Humanoid")
+                
+                local bv = Instance.new("BodyVelocity")
+                bv.Name = "FlyVelocity"
+                bv.MaxForce = Vector3.new(40000, 40000, 40000)
+                bv.Velocity = Vector3.new(0, 0, 0)
+                bv.Parent = hrp
+
+                local connection
+                connection = runService.RenderStepped:Connect(function()
+                    if not flying or not player.Character or not hrp.Parent then
+                        bv:Destroy()
+                        if connection then connection:Disconnect() end
+                        return
+                    end
+
+                    if uis:IsKeyDown(Enum.KeyCode.Space) or humanoid.Jump then
+                        bv.Velocity = Vector3.new(0, 50, 0)
+                    else
+                        bv.Velocity = Vector3.new(0, 0, 0)
+                    end
+                end)
+            end)
+        else
+            local char = player.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                local bv = char.HumanoidRootPart:FindFirstChild("FlyVelocity")
+                if bv then bv:Destroy() end
+            end
+        end
+    end
+}
+D:Register("FlyJump", FlyJumpToggle)
