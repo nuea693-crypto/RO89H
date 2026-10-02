@@ -5160,55 +5160,74 @@ a1:Toggle
 
 {
 
-local aO = aN:Toggle {
-    Title = "Fly Jump [Hold Jump to Fly]",
+
+
+-- ==========================================
+-- เพิ่มระบบ Fly Jump ไว้ในแท็บตัวละครเดิม (a1)
+-- ==========================================
+
+local isFlyJumpEnabled = false
+local flyJumpPower = 10 -- ปรับความแรงในการพยุงตัวลอย
+
+-- สร้าง Toggle เปิด-ปิด Fly Jump ในแท็บตัวละคร
+a1:Toggle({
+    Title = "Fly Jump (กระโดดลอยตัวค้าง)",
     Default = false,
-    Callback = function(aO)
-        local flying = aO
-        local player = game.Players.LocalPlayer
-        local uis = game:GetService("UserInputService")
-        local runService = game:GetService("RunService")
-
-        if flying then
-            task.spawn(function()
-                local char = player.Character or player.CharacterAdded:Wait()
-                local hrp = char:WaitForChild("HumanoidRootPart")
-                local humanoid = char:WaitForChild("Humanoid")
-                
-                local bv = Instance.new("BodyVelocity")
-                bv.Name = "FlyVelocity"
-                bv.MaxForce = Vector3.new(40000, 40000, 40000)
-                bv.Velocity = Vector3.new(0, 0, 0)
-                bv.Parent = hrp
-
-                local connection
-                connection = runService.RenderStepped:Connect(function()
-                    if not flying or not player.Character or not hrp.Parent then
-                        bv:Destroy()
-                        if connection then connection:Disconnect() end
-                        return
-                    end
-
-                    -- เช็คว่ากดปุ่มกระโดดค้างไว้ไหม (KeyCode.Space หรือ Jump)
-                    if uis:IsKeyDown(Enum.KeyCode.Space) or humanoid.Jump then
-                        -- ความเร็วในการลอยตัวพุ่งขึ้นข้างบน (ปรับเพิ่ม/ลดได้ตามต้องการที่เลข 50)
-                        bv.Velocity = Vector3.new(0, 50, 0)
-                    else
-                        -- ถ้าปล่อยปุ่ม จะให้ลอยตัวนิ่งๆ อยู่กับที่ (ไม่ร่วงลงมาทันที)
-                        bv.Velocity = Vector3.new(0, 0, 0)
-                    end
-                end)
-            end)
-        else
-            -- ปิดการทำงาน ลบแรงลอยตัวออกเพื่อให้ตกลงมาตามแรงโน้มถ่วงปกติ
-            local char = player.Character
-            if char and char:FindFirstChild("HumanoidRootPart") then
-                local bv = char.HumanoidRootPart:FindFirstChild("FlyVelocity")
-                if bv then bv:Destroy() end
-            end
+    Callback = function(state)
+        isFlyJumpEnabled = state
+        if state and A then
+            A:Notify({
+                Title = "🚀 Fly Jump Enabled",
+                Description = "กด Spacebar ค้างไว้เพื่อลอยตัว",
+                Duration = 3
+            })
         end
     end
-}
+})
+
+-- สร้าง Slider ปรับระดับแรงพยุงตัว
+a1:Slider({
+    Title = "Fly Jump Power",
+    Step = 1,
+    Value = {
+        Min = 5,
+        Max = 30,
+        Default = 10
+    },
+    Callback = function(value)
+        flyJumpPower = value
+    end
+})
+
+-- ผูกปุ่มกด Spacebar และลูปคำนวณแรงลอยตัว
+local isHoldingSpace = false
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.Space and isFlyJumpEnabled then
+        isHoldingSpace = true
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.Space then
+        isHoldingSpace = false
+    end
+end)
+
+RunService.Heartbeat:Connect(function()
+    if isFlyJumpEnabled and isHoldingSpace then
+        local player = game:GetService("Players").LocalPlayer
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local hrp = player.Character.HumanoidRootPart
+            -- เพิ่มแรงต้านแรงโน้มถ่วง ดึงตัวให้ลอยขึ้น
+            hrp.Velocity = Vector3.new(hrp.Velocity.X, flyJumpPower, hrp.Velocity.Z)
+        end
+    end
+end)
+
 
 
 Title="Infinite Stamina",
