@@ -7887,3 +7887,28 @@ if A then
         Duration = 3
     })
 end
+-- ==========================================
+-- RO89 ANTI-CRASH & FREEZE BOOSTER (ADD-ON)
+-- ==========================================
+task.spawn(function()
+    pcall(function()
+        -- ป้องกันการกินแรมหนักเกินไปโดยเคลียร์ Garbage Collector ทุกๆ 10 วินาที
+        while task.wait(10) do
+            if gcinfo and collectgarbage then
+                collectgarbage("collect")
+            end
+            
+            -- ป้องกันสคริปต์หลุดจากการยิงคำสั่งลูปถี่เกินไป
+            settings():GetService("RenderStepped"):Wait()
+        end
+    end)
+end)
+
+-- แจ้งเตือนสถานะความปลอดภัย
+pcall(function()
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "RO89 Protection",
+        Text = "เปิดใช้งานระบบกันหลุด/กันค้างเรียบร้อย!",
+        Duration = 3
+    })
+end)
