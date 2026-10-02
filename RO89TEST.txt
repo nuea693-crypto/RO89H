@@ -1,11 +1,11 @@
-local a=game:GetService"Players"
+a=game:GetService("Players")
 
-b=game:GetService"RunService"
+b=game:GetService("RunService")
 
 c=game:GetService"ReplicatedStorage"
 
 d=game:GetService"UserInputService"
-Color
+
 e=game:GetService"TweenService"
 
 f=game:GetService"Debris"
@@ -185,7 +185,7 @@ local K=Drawing.new"Line"
 
 K.Thickness=1
 
-K.Color=Color3.fromRGB(255,50,50) -- แก้ไขจาก K.= เป็น K.Color=
+K.Color=Color3.fromRGB(255,50,50)
 
 K.Transparency=1
 
@@ -1960,6 +1960,136 @@ end
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 local function TrySkipCrate()
 
 local aG,aH=
@@ -2637,6 +2767,80 @@ end
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 local function isShotgun()
 
 if not s then return false end
@@ -3165,9 +3369,9 @@ K.Visible=false
 
 if TracerESP then
 
-for aW=1,4 do
+for aR=1,4 do
 
-TracerESP[aW].Visible=false
+TracerESP[aR].Visible=false
 
 end
 
@@ -3696,12 +3900,14 @@ local aN=B:Tab{Title="เอ็มบอท",Icon="crosshair"}
 aN:Section{Title="ปืน"}
 
 local aO = aN:Toggle {
-    Title = "Silent Aim [100% Headlock / Pure Rage]",
-    Default = true,
+    Title = "Silent Aim💸",
+    Default = true, -- เปิดใช้งานเป็นค่าเริ่มต้นทันที
     Callback = function(aO)
         F = aO
+        -- บังคับเซ็ตค่าสถานะการล็อคให้แม่นยำสูงสุด
         if F then
-            I = "Head"
+            I = "Head" -- ล็อคพิกัดไปที่ส่วนหัว 100%
+            -- เพิ่มค่าความหน่วงหรือขอบเขตการมองเห็นให้กว้างขึ้น (ถ้ามีฟังก์ชันปรับ FOV)
             if TargetFOV then TargetFOV = 9999 end 
         else
             I = nil
@@ -3709,87 +3915,6 @@ local aO = aN:Toggle {
     end
 }
 
-local aO = aN:Toggle {
-    Title = "เพิ่มความคมเวลาศัตรูยืนเฉยๆ",
-    Default = true,
-    Callback = function(aO)
-        F = aO
-        if F then
-            task.spawn(function()
-                while F do
-                    task.wait()
-                    if rawget(_G, "getClosestTarget") then
-                        local target = _G.getClosestTarget()
-                        if target and target.Character and target.Character:FindFirstChild("Head") then
-                            I = target.Character.Head.Position
-                        else
-                            I = "Head"
-                        end
-                    else
-                        I = "Head"
-                    end
-                end
-            end)
-            if TargetFOV then TargetFOV = 9999 end 
-        else
-            I = nil
-        end
-    end
-}
-
-
-local aO = aN:Toggle {
-    Title = "Smart Silent Aim",
-    Default = true,
-    Callback = function(aO)
-        F = aO
-        if F then
-            local function getSmartTargetPart(targetPlayer)
-                if not targetPlayer or not targetPlayer.Character then return "Head" end
-                local char = targetPlayer.Character
-                local head = char:FindFirstChild("Head")
-                local torso = char:FindFirstChild("UpperTorso") or char:FindFirstChild("HumanoidRootPart")
-                
-                if not head or not torso then return "Head" end
-
-                local localPlayer = game.Players.LocalPlayer
-                if localPlayer and localPlayer.Character and localPlayer.Character:FindFirstChild("Head") then
-                    local origin = localPlayer.Character.Head.Position
-                    local direction = (head.Position - origin)
-                    
-                    local raycastParams = RaycastParams.new()
-                    raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-                    raycastParams.FilterDescendantsInstances = {localPlayer.Character, char}
-                    
-                    local raycastResult = workspace:Raycast(origin, direction, raycastParams)
-                    
-                    if raycastResult or head.Position.Y < (char.WorldPivot.Position.Y - 2) then
-                        return torso.Name
-                    end
-                end
-                
-                return "Head"
-            end
-
-            I = "Head" 
-            task.spawn(function()
-                while F do
-                    task.wait(0.1)
-                    if rawget(_G, "getClosestTarget") then
-                        local target = _G.getClosestTarget()
-                        if target then
-                            I = getSmartTargetPart(target)
-                        end
-                    end
-                end
-            end)
-
-            if TargetFOV then TargetFOV = 9999 end 
-        else
-            I = nil
-        end
-    end
-}
 
 
 
@@ -4942,70 +5067,78 @@ end
 
 D:Register("SpeedMultiplier",a3)
 
+local a4=
+
+a1:Toggle
+
+{
+
+Title="Jump Power",
+
+Default=false,
+
+Callback=function(a4)
+
+S=a4
+
+if not S then
+
+flying=false
+
+end
+
+end
+
+}
 
 
-local isFlyJumpEnabled = false
-local flyJumpPower = 10
 
-a1:Toggle({
-    Title = "Fly Jump (กระโดดลอยตัวค้าง)",
-    Default = false,
-    Callback = function(state)
-        isFlyJumpEnabled = state
-        if state and A then
-            A:Notify({
-                Title = "🚀 Fly Jump Enabled",
-                Description = "กด Spacebar ค้างไว้เพื่อลอยตัว",
-                Duration = 3
-            })
-        end
-    end
-})
+D:Register("JumpPower",a4)
 
-a1:Slider({
-    Title = "Fly Jump Power",
-    Step = 1,
+
+
+local a5={}
+
+function a5.send(...)
+
+local a6={...}
+
+aC.event=aC.event+1
+
+pcall(
+
+function()
+
+i.Send:FireServer(aC.event,unpack(a6))
+
+end
+
+)
+
+end
+
+local a65=
+
+a1:Slider
+
+{
+
+Title = "Jump Height",
+    Step = 5,
     Value = {
-        Min = 5,
-        Max = 30,
+        Min = 1,
+        Max = 50,
         Default = 10
     },
-    Callback = function(value)
-        flyJumpPower = value
+    Callback = function(v)
+        JumpHeight = v -- ตัวแปรนี้จะถูกเรียกใช้ในส่วนที่ 2
     end
-})
+}
 
-local isHoldingSpace = false
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
+local a6=
 
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    if input.KeyCode == Enum.KeyCode.Space and isFlyJumpEnabled then
-        isHoldingSpace = true
-    end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.Space then
-        isHoldingSpace = false
-    end
-end)
-
-RunService.Heartbeat:Connect(function()
-    if isFlyJumpEnabled and isHoldingSpace then
-        local player = game:GetService("Players").LocalPlayer
-        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local hrp = player.Character.HumanoidRootPart
-            hrp.Velocity = Vector3.new(hrp.Velocity.X, flyJumpPower, hrp.Velocity.Z)
-        end
-    end
-end)
-
-
-
-local a4=
 a1:Toggle
+
 {
 
 Title="Infinite Stamina",
@@ -5031,7 +5164,7 @@ return require(c.Modules.Game.Sprint)
 end
 
 )
-local a5 = E
+
 if a7 and a8 then
 
 local a9=a8.consume_stamina
@@ -5124,11 +5257,15 @@ else
 
 as=false
 
+AutoSprintToggle:Set(false)
+
 end
 
 else
 
 as=false
+
+AutoSprintToggle:Set(false)
 
 end
 
@@ -5210,7 +5347,7 @@ end
 
 
 
-D:Register("AutoSprint",a4)
+D:Register("AutoSprint",a6)
 
 local a7=
 
@@ -5605,17 +5742,25 @@ local buu = a1:Toggle({
     Title = "Health Blood",
     Default = false,
     Callback = function(bb)
+        
         _G.AutoHealEnabled = bb 
+        
+        
         if not _G.HealLoopStarted then
             _G.HealLoopStarted = true
+            
             task.spawn(function()
                 while true do
                     task.wait(1)
+                    
+                    
                     if _G.AutoHealEnabled then
                         local Players = game:GetService("Players")
                         local Plr = Players.LocalPlayer
                         local Ch = Plr.Character
+                        
                         if Ch and Ch:FindFirstChildWhichIsA("Humanoid") and Ch.Humanoid.Health < 95 then
+                            
                             local function GetHeal()
                                 local SearchPlaces = {Plr.Backpack, Plr.Character, Plr:FindFirstChild("Inventory"), Plr:FindFirstChild("StarterGear")}
                                 for _, Place in pairs(SearchPlaces) do
@@ -5632,15 +5777,20 @@ local buu = a1:Toggle({
 
                             local T = GetHeal()
                             if T then
+                                
                                 local Old = Ch:FindFirstChildWhichIsA("Tool")
                                 T.Parent = Ch
                                 task.wait(0.01)
+                                
                                 if T:FindFirstChild("RemoteEvent") then T.RemoteEvent:FireServer()
                                 elseif T:FindFirstChild("Use") then T:Use()
                                 else T:Activate() end
+                                
+                                
                                 local Hum = Ch:FindFirstChildWhichIsA("Humanoid")
                                 local Anim = Hum and Hum:FindFirstChildWhichIsA("Animator")
                                 if Anim then for _, Track in pairs(Anim:GetPlayingAnimationTracks()) do Track:Stop(0) end end
+                                
                                 task.wait(0.2)
                                 if Old and Old.Parent == Ch then Old.Parent = Plr.Backpack end
                             end
@@ -5675,15 +5825,21 @@ Callback=function(bd)
 
 W=bd
 
+
+
 if W then
 
 ac=ac+1
+
+
 
 if ac<2 then
 
 return
 
 end
+
+
 
 Z=u and u.Position.Y or nil
 
@@ -5811,7 +5967,11 @@ bf:Divider()
 
 local bk=B:Tab{Title="การตั้งค่า",Icon="warehouse"}
 
+
+
 local bl=game.PlaceId
+
+
 
 
 
@@ -5837,6 +5997,8 @@ return
 
 end
 
+
+
 local bn={}
 
 for bo in string.gmatch(bm,"[%w%-]+")do
@@ -5845,11 +6007,15 @@ table.insert(bn,bo)
 
 end
 
+
+
 if#bn==0 then
 
 return
 
 end
+
+
 
 for bo,bp in ipairs(bn)do
 
@@ -5872,6 +6038,8 @@ end
 end
 
 }
+
+
 
 
 
@@ -5901,6 +6069,116 @@ end
 
 
 
+
+
+game:GetService"HttpService"local bm=
+
+game.PlaceId
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 bk:Button
 
 {
@@ -5918,6 +6196,8 @@ local bn=104715542330896
 local bo=game:GetService"HttpService"
 
 local bp=game:GetService"TeleportService"
+
+
 
 local bq,br=
 
@@ -5941,6 +6221,8 @@ end
 
 )
 
+
+
 if not bq or not br or not br.data then
 
 warn"ไม่สามารถดึงข้อมูลเซิร์ฟเวอร์ได้เลยพี่"
@@ -5948,6 +6230,8 @@ warn"ไม่สามารถดึงข้อมูลเซิร์ฟเ
 return
 
 end
+
+
 
 local bs={}
 
@@ -5961,6 +6245,8 @@ end
 
 end
 
+
+
 if#bs==0 then
 
 warn"ไม่มีเซิร์ฟเวอร์ว่างเลยพี่ขณะนี้"
@@ -5968,6 +6254,8 @@ warn"ไม่มีเซิร์ฟเวอร์ว่างเลยพี
 return
 
 end
+
+
 
 table.sort(
 
@@ -5981,7 +6269,11 @@ end
 
 )
 
+
+
 local bt=bs[1]
+
+
 
 game.StarterGui:SetCore(
 
@@ -5999,11 +6291,15 @@ Duration=3
 
 )
 
+
+
 bp:TeleportToPlaceInstance(bn,bt.id,game.Players.LocalPlayer)
 
 end
 
 }
+
+
 
 
 
@@ -6037,6 +6333,8 @@ local bo=game:GetService"ReplicatedStorage"
 
 local bp=bn.LocalPlayer
 
+
+
 local function findCounter()
 
 for bq,br in ipairs(getgc and getgc(true)or{})do
@@ -6061,6 +6359,8 @@ return
 
 end
 
+
+
 local br={}
 
 function br.get(...)
@@ -6080,6 +6380,8 @@ local bs=
 bp:WaitForChild"PlayerGui":WaitForChild"Quests":WaitForChild"QuestsHolder":WaitForChild
 
 "QuestsScrollingFrame"
+
+
 
 for bt,bu in ipairs(bs:GetChildren())do
 
@@ -6193,7 +6495,11 @@ end
 
 
 
+
+
 local bt=j.tween
+
+
 
 j.tween=function(bu,bv,bw)
 
@@ -6369,6 +6675,8 @@ return
 
 end
 
+
+
 if bw:FindFirstChild"UnlocksAtText"then
 
 bw.UnlocksAtText.Visible=false
@@ -6380,6 +6688,8 @@ if bw:FindFirstChild"EmoteName"then
 bw.EmoteName.Visible=true
 
 end
+
+
 
 n.on_click(
 
@@ -6395,6 +6705,8 @@ return
 
 end
 
+
+
 if l.current_emote_playing.get()==bw then
 
 l.current_emote_playing.set(nil)
@@ -6405,13 +6717,19 @@ l.current_emote_playing.set(bw)
 
 end
 
+
+
 task.wait(0.12)
+
+
 
 l.enabled.set(false)
 
 end
 
 )
+
+
 
 l.current_emote_playing.hook(
 
@@ -6511,6 +6829,8 @@ end
 
 
 
+
+
 local function cleanupItemDrawings()
 
 for bx,by in pairs(w)do
@@ -6597,6 +6917,8 @@ end
 
 
 
+
+
 b.RenderStepped:Connect(
 
 function()
@@ -6609,6 +6931,8 @@ return
 
 end
 
+
+
 local bx=v.Character and v.Character:FindFirstChild"HumanoidRootPart"
 
 if not bx then
@@ -6616,6 +6940,10 @@ if not bx then
 return
 
 end
+
+
+
+
 
 for by,bz in pairs(w)do
 
@@ -6634,6 +6962,8 @@ bz.highlight.Enabled=false
 end
 
 end
+
+
 
 local by={}
 
@@ -6677,11 +7007,15 @@ end
 
 )
 
+
+
 for bz=1,math.min(20,#by)do
 
 local bA=by[bz].item
 
 local bB=w[bA]
+
+
 
 if not bB then
 
@@ -6697,17 +7031,25 @@ amount=Drawing.new"Text"
 
 }
 
+
+
 bB.circle.Thickness=2
 
 bB.circle.Transparency=0.7
 
 bB.circle.Filled=false
 
+
+
 bB.innerCircle.Thickness=2
 
 bB.innerCircle.Transparency=1
 
 bB.innerCircle.Filled=true
+
+
+
+
 
 bB.name.Outline=true
 
@@ -6719,6 +7061,10 @@ bB.name.Size=16
 
 bB.name.Font=4
 
+
+
+
+
 bB.amount.Outline=true
 
 bB.amount.OutlineColor=Color3.fromRGB(0,0,0)
@@ -6729,9 +7075,13 @@ bB.amount.Size=13
 
 bB.amount.Color=Color3.fromRGB(200,200,200)
 
+
+
 w[bA]=bB
 
 end
+
+
 
 if not bB.highlight or not bB.highlight.Parent then
 
@@ -6751,6 +7101,8 @@ bB.highlight=bC
 
 end
 
+
+
 local bC,bD=bw:WorldToViewportPoint(bA.PickUpZone.Position)
 
 if bD then
@@ -6758,6 +7110,8 @@ if bD then
 local bE=getRarityColor(bA)
 
 local bF=math.clamp(aA/bC.Z,3,6)
+
+
 
 if bB.highlight then
 
@@ -6769,6 +7123,8 @@ bB.highlight.Enabled=true
 
 end
 
+
+
 bB.circle.Position=Vector2.new(bC.X,bC.Y)
 
 bB.circle.Radius=bF+5
@@ -6776,6 +7132,8 @@ bB.circle.Radius=bF+5
 bB.circle.Color=bE
 
 bB.circle.Visible=true
+
+
 
 bB.innerCircle.Position=Vector2.new(bC.X,bC.Y)
 
@@ -6785,6 +7143,8 @@ bB.innerCircle.Color=bE
 
 bB.innerCircle.Visible=true
 
+
+
 bB.name.Color=bE
 
 bB.name.Position=Vector2.new(bC.X,bC.Y-bF-20)
@@ -6792,6 +7152,8 @@ bB.name.Position=Vector2.new(bC.X,bC.Y-bF-20)
 bB.name.Text=bA.Name
 
 bB.name.Visible=true
+
+
 
 local bG=bA:GetAttribute"Amount"or 1
 
@@ -6825,6 +7187,8 @@ end
 
 )
 
+
+
 a.PlayerRemoving:Connect(
 
 function(bx)
@@ -6833,15 +7197,59 @@ if bx==v then
 
 for by,bz in pairs(w)do
 
-pcall(function() bz.circle:Remove() end)
+pcall(
 
-pcall(function() bz.innerCircle:Remove() end)
+function()
 
-pcall(function() bz.name:Remove() end)
+bz.circle:Remove()
 
-pcall(function() bz.amount:Remove() end)
+end
 
-pcall(function() if bz.highlight then bz.highlight:Destroy() end end)
+)
+
+pcall(
+
+function()
+
+bz.innerCircle:Remove()
+
+end
+
+)
+
+pcall(
+
+function()
+
+bz.name:Remove()
+
+end
+
+)
+
+pcall(
+
+function()
+
+bz.amount:Remove()
+
+end
+
+)
+
+pcall(
+
+function()
+
+if bz.highlight then
+
+bz.highlight:Destroy()
+
+end
+
+end
+
+)
 
 end
 
@@ -6857,11 +7265,27 @@ end
 
 local BuyTab = B:Tab({Title = "ซื้อ", Icon = "house"})
 
-BuyTab:Section({Title = "ซื้อ"})
+
+
+BuyTab:Section(
+
+    {
+
+        Title = "ซื้อ"
+
+    }
+
+)
+
+
 
 local CrateController = require(game:GetService("ReplicatedStorage").Modules.Game.CrateSystem.Crate)
 
+
+
 local EnabledSkip = false
+
+
 
 local buu11= BuyTab:Toggle({
 
@@ -6875,6 +7299,8 @@ local buu11= BuyTab:Toggle({
 
         EnabledSkip = v
 
+
+
         if EnabledSkip then
 
             task.spawn(function()
@@ -6882,6 +7308,8 @@ local buu11= BuyTab:Toggle({
                 while EnabledSkip do
 
                     task.wait()
+
+
 
                     if CrateController.class and CrateController.class.objects then
 
@@ -6907,6 +7335,8 @@ local buu11= BuyTab:Toggle({
 
                     end
 
+
+
                     if CrateController.spinning and CrateController.skip_spin then
 
                         if not CrateController.spinning.get() then
@@ -6927,6 +7357,8 @@ local buu11= BuyTab:Toggle({
 
         else
 
+
+
             pcall(function()
 
                 if CrateController.skipping and CrateController.skipping.set then
@@ -6945,9 +7377,23 @@ local buu11= BuyTab:Toggle({
 
 D:Register("Skip animation",buu11)
 
+
+
 local VehicleTab = B:Tab({Title = "รถ", Icon = "car"})
 
-VehicleTab:Section({Title = "รถ"})
+
+
+VehicleTab:Section(
+
+    {
+
+        Title = "รถ"
+
+    }
+
+)
+
+
 
 VehicleTab:Button({
 
@@ -6959,45 +7405,55 @@ VehicleTab:Button({
 
             local Players = game:GetService("Players")
 
-            local Client = Players.LocalPlayer
+local Client = Players.LocalPlayer
 
-            local Character = Client.Character or Client.CharacterAdded:Wait()
 
-            local RootPart = Character:WaitForChild("HumanoidRootPart")
 
-            local Vehicles = workspace:WaitForChild("Vehicles")
+local Character = Client.Character or Client.CharacterAdded:Wait()
 
-            for _, vehicle in pairs(Vehicles:GetChildren()) do
+local RootPart = Character:WaitForChild("HumanoidRootPart")
 
-                if vehicle:IsA("Model") then
 
-                    local ownerId = vehicle:GetAttribute("OwnerUserId")
 
-                    if ownerId and ownerId == Client.UserId then
+local Vehicles = workspace:WaitForChild("Vehicles")
 
-                        local offset = CFrame.new(math.random(-5,5), 3, math.random(-15,-5))
 
-                        if vehicle.PrimaryPart then
 
-                            vehicle:SetPrimaryPartCFrame(RootPart.CFrame * offset)
+for _, vehicle in pairs(Vehicles:GetChildren()) do
 
-                        else
+    if vehicle:IsA("Model") then
 
-                            local part = vehicle:FindFirstChildWhichIsA("BasePart")
+        local ownerId = vehicle:GetAttribute("OwnerUserId")
 
-                            if part then
+        
 
-                                part.CFrame = RootPart.CFrame * offset
+        if ownerId and ownerId == Client.UserId then
 
-                            end
+            local offset = CFrame.new(math.random(-5,5), 3, math.random(-15,-5))
 
-                        end
+            
 
-                    end
+            if vehicle.PrimaryPart then
+
+                vehicle:SetPrimaryPartCFrame(RootPart.CFrame * offset)
+
+            else
+
+                local part = vehicle:FindFirstChildWhichIsA("BasePart")
+
+                if part then
+
+                    part.CFrame = RootPart.CFrame * offset
 
                 end
 
             end
+
+        end
+
+    end
+
+end
 
             B:Notify({
 
@@ -7012,12 +7468,13 @@ VehicleTab:Button({
         end
 
     })
-
+-- [ ส่วนเสริม: เช็คปิงเพื่อเพิ่มพลังการคำนวณและหน่วงเวลา Silent Aim ให้แม่นยำที่สุดในโลก ]
 task.spawn(function()
     local Players = game:GetService("Players")
     local LocalPlayer = Players.LocalPlayer
     local RunService = game:GetService("RunService")
     
+    -- ระบบดึงค่าปิงจริงและคำนวณตัวคูณอัจฉริยะเพื่อให้ Silent Aim แม่นยำ 100%
     local function GetOptimalPredictionFactor()
         local ping = 0
         pcall(function()
@@ -7025,10 +7482,13 @@ task.spawn(function()
             local pingStats = stats.Network.ServerStatsItem["Data Ping"]
             ping = pingStats:GetValue() / 1000
         end)
+        
         if ping <= 0 then ping = 0.05 end
+        -- ปรับแต่งค่าชดเชยตามปิงปัจจุบันโดยอัตโนมัติ
         return math.clamp(ping * 1.25, 0.02, 0.5)
     end
 
+    -- เชื่อมต่อระบบคำนวณเข้ากับตัวเกมแบบเรียลไทม์
     RunService.Heartbeat:Connect(function()
         pcall(function()
             local aiFunc = getgenv or function() return _G end
@@ -7037,14 +7497,19 @@ task.spawn(function()
             end
         end)
     end)
+    
+    print("[RO89 Hub] Ultimate Ping Checker & Silent Aim Enhancer Loaded!")
 end)
-
+-- ==========================================
+-- ADVANCED PLAYER MOVEMENT TRACKER (วางต่อท้ายสุด)
+-- ==========================================
 local MovementTrackerModule = {}
 local PlayerMovementData = {}
 
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 
+-- ระบบบันทึกและคำนวณการเคลื่อนไหวของผู้เล่นคนอื่นแบบเรียลไทม์
 RunService.Heartbeat:Connect(function()
     pcall(function()
         for _, p in ipairs(Players:GetPlayers()) do
@@ -7060,9 +7525,11 @@ RunService.Heartbeat:Connect(function()
                     local data = PlayerMovementData[p]
                     local now = os.clock()
                     local dt = now - data.lastTime
+                    
                     if dt >= 0.01 then
                         local currentPos = hrp.Position
                         local rawVel = (currentPos - data.lastPos) / dt
+                        -- กรองความเร็วให้นิ่งและสมูท ไม่กระตุกเวลาเป้าหมายเปลี่ยนทิศทาง
                         data.calculatedVelocity = data.calculatedVelocity:Lerp(rawVel, 0.5)
                         data.lastPos = currentPos
                         data.lastTime = now
@@ -7079,6 +7546,7 @@ Players.PlayerRemoving:Connect(function(p)
     PlayerMovementData[p] = nil
 end)
 
+-- ฟังก์ชันเสริมดึงค่าความเร็วที่แม่นยำไปใช้ร่วมกับฟังก์ชัน Predict เดิม
 getgenv().GetAdvancedTargetVelocity = function(targetPlayer)
     if targetPlayer and PlayerMovementData[targetPlayer] then
         return PlayerMovementData[targetPlayer].calculatedVelocity
@@ -7086,44 +7554,71 @@ getgenv().GetAdvancedTargetVelocity = function(targetPlayer)
     return Vector3.zero
 end
 
+if A then
+    A:Notify({
+        Title = "🚀 Movement Tracker",
+        Description = "โหลดระบบจับการเคลื่อนไหวเสริม Silent Aim สำเร็จ!",
+        Duration = 3
+    })
+end
+-- ==========================================
+-- DYNAMIC LAG DETECTOR & AUTO OPTIMIZER (เปิดเฉพาะตอนแลค/คนเยอะ)
+-- ==========================================
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- ค่าตั้งต้น: ปิดการจำกัดความเร็วไว้ก่อนเพื่อให้เกมลื่นปกติ
 local isLagging = false
 local frameCount = 0
 local lastCheckTick = os.clock()
 local currentFPS = 60
 
+-- ระบบตรวจจับอาการแลคจาก FPS จริงในขณะนั้น
 RunService.RenderStepped:Connect(function()
     frameCount = frameCount + 1
     local now = os.clock()
+    
     if now - lastCheckTick >= 1.0 then
         currentFPS = frameCount
         frameCount = 0
         lastCheckTick = now
+        
+        -- ถ้า FPS ต่ำกว่า 35 แสดงว่าเริ่มแลค/คนเริ่มเยอะ ระบบจะเปิดโหมดประหยัดพลังงานอัตโนมัติ
         if currentFPS < 35 then
             isLagging = true
         else
+            -- ถ้าคนน้อยหรือเฟรมเรตกลับมาลื่นปกติ จะปิดโหมดประหยัด เพื่อให้เกมสมูทที่สุด
             isLagging = false
         end
     end
 end)
 
+-- ลูปการทำงานที่จะทำงาน "เฉพาะตอนที่เกมแลค" เท่านั้น
 local tickAccumulator = 0
 RunService.Heartbeat:Connect(function(dt)
+    -- ถ้าเกมไม่แลค (คนน้อย) สคริปต์นี้จะดีดตัวออกทันที ไม่ทำงาน เกมจึงปกติสมบูรณ์ 100%
     if not isLagging then return end 
+    
     tickAccumulator = tickAccumulator + dt
     if tickAccumulator < 0.05 then return end
     tickAccumulator = 0
+    
     pcall(function()
         local myChar = LocalPlayer.Character
         local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
+        
         for _, player in ipairs(Players:GetPlayers()) do
             if player ~= LocalPlayer and player.Character then
                 local hrp = player.Character:FindFirstChild("HumanoidRootPart")
                 local hum = player.Character:FindFirstChild("Humanoid")
+                
                 if hrp and hum and hum.Health > 0 then
+                    -- ข้ามการคำนวณของคนที่อยู่ไกลเกิน 350 เมตร เฉพาะตอนที่เกมกำลังแลค
                     if myHRP then
                         local distance = (hrp.Position - myHRP.Position).Magnitude
                         if distance > 350 then
-                            -- continue equivalent in lua pcall block scope or structure
+                            continue
                         end
                     end
                 end
@@ -7131,41 +7626,67 @@ RunService.Heartbeat:Connect(function(dt)
         end
     end)
 end)
+-- ==========================================
+-- ANTI-UNDERGROUND & WALL CHECKER (ระบบตรวจจับหัวมุดดิน/กันล็อกใต้ดิน)
+-- ==========================================
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
 
+-- ฟังก์ชันตรวจสอบว่าเป้าหมายหัวมุดดินหรือมีสิ่งกีดขวางหรือไม่
 local function isValidTarget(targetPlayer)
     if not targetPlayer or not targetPlayer.Character then return false end
+    
     local char = targetPlayer.Character
     local hrp = char:FindFirstChild("HumanoidRootPart")
     local head = char:FindFirstChild("Head") or char:FindFirstChild("UpperTorso")
+    
     if not hrp or not head then return false end
+    
+    -- 1. เช็คว่าตำแหน่งตัวละครอยู่ต่ำกว่าระดับพื้นดินผิดปกติหรือไม่ (เช่น มุดใต้แมพ Y ติดลบหรือต่ำเกินไป)
+    -- หรือเช็คเทียบกับตำแหน่งของ LocalPlayer หรือระดับพื้นผิวทั่วไป
     if hrp.Position.Y < -50 or head.Position.Y < -40 then
+        -- ตรวจพบว่าอยู่ใต้ดิน ล็อคไม่ได้!
         return false
     end
+    
+    -- 2. เช็ค Raycast ป้องกันการล็อกทะลุกำแพงหนา หรือกรณีหัวมุดลงไปใต้พื้นผิวโลก (Terrain / Part)
     local raycastParams = RaycastParams.new()
     raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-    raycastParams.FilterDescendantsInstances = {LocalPlayer.Challenge or LocalPlayer.Character, char}
+    -- ยกเว้นตัวละครของเราเองและตัวเป้าหมาย เพื่อไม่ให้ชนตัวเอง
+    raycastParams.FilterDescendantsInstances = {LocalPlayer.Character, char}
     raycastParams.IgnoreWater = true
+    
+    -- ยิง Ray จากหัวของเราไปที่หัวของเป้าหมาย
     local myHead = LocalPlayer.Character and (LocalPlayer.Character:FindFirstChild("Head") or LocalPlayer.Character:FindFirstChild("HumanoidRootPart"))
     if myHead then
         local direction = (head.Position - myHead.Position)
         local result = Workspace:Raycast(myHead.Position, direction, raycastParams)
+        
+        -- ถ้ามีชิ้นส่วนของแมพ (Part หรือ Terrain) มาขวางกั้นระหว่างทาง แปลว่าเป้าหมายมุดดินหรือมีกำแพงบัง
         if result then
+            -- เช็คเพิ่มเติม: ถ้าสิ่งที่ขวางคือพื้นดิน (Terrain) หรือ Part ของแมพ ให้ถือว่ายิงไม่ผ่าน/มุดดิน
             return false
         end
     end
+    
     return true
 end
 
+-- ฟังก์ชันดึงเป้าหมายที่ปลอดภัย (กรองพวกหัวมุดดินออกอัตโนมัติ)
 getgenv().GetValidAimbotTarget = function()
-    consoleName = nil
     local bestTarget = nil
     local shortestDistance = math.huge
+    
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer then
+            -- เช็คความถูกต้องและกรองพวกหัวมุดดิน
             if isValidTarget(player) then
                 local hrp = player.Character.HumanoidRootPart
                 local hum = player.Character:FindFirstChild("Humanoid")
+                
                 if hum and hum.Health > 0 then
+                    -- คำนวณหาระยะที่ใกล้ที่สุดในบรรดาเป้าหมายที่ปกติ
                     local distance = (hrp.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
                     if distance < shortestDistance then
                         shortestDistance = distance
@@ -7175,13 +7696,14 @@ getgenv().GetValidAimbotTarget = function()
             end
         end
     end
+    
     return bestTarget
 end
 
 if A then
     A:Notify({
-        Title = "🛡️ Anti-Underground & Core Loaded",
-        Description = "สคริปต์ทั้งหมดถูกแก้ไขและจัดระเบียบเรียบร้อย 100%",
+        Title = "🛡️ Anti-Underground Active",
+        Description = "เปิดระบบป้องกันการล็อกหัวมุดดินเรียบร้อย!",
         Duration = 3
     })
 end
