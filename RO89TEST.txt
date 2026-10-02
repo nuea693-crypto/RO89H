@@ -7928,3 +7928,41 @@ pcall(function()
         Duration = 3
     })
 end)
+
+-- ==========================================
+-- SAFEGUARD & CLEANUP SCRIPT (วางไว้บรรทัดสุดท้าย)
+-- ==========================================
+pcall(function()
+    -- 1. ยกเลิกการทำงานของ Loop เก่าที่ค้างในระบบทั้งหมด
+    local oldConnections = getconnections or get_signal_connections
+    if oldConnections then
+        -- ป้องกัน error หาก Executor ไม่รองรับฟังก์ชันนี้บางตัว
+        pcall(function()
+            for _, v in pairs(oldConnections(game:GetService("RunService").Heartbeat)) do
+                if v.Function and string.find(tostring(v.Function), "UnsafeLoop") then
+                    v:Disable()
+                end
+            end
+        end)
+    end
+
+    -- 2. ล้างพาร์ทหรือเอฟเฟกต์จำลองที่ค้างอยู่ใน Workspace
+    for _, obj in ipairs(workspace:GetChildren()) do
+        if obj.Name == "SafeDummyPart" or obj.Name == "TempVisual" then
+            obj:Destroy()
+        end
+    end
+
+    -- 3. คืนค่าสภาพแวดล้อม Camera ให้เป็นปกติ (แก้ปัญหาจอฟ้า/เกมเด้งจาก Metamethod)
+    local camera = workspace.CurrentCamera
+    if camera then
+        camera.CameraType = Enum.CameraType.Custom
+    end
+
+    -- 4. แจ้งเตือนสถานะเมื่อโหลดโค้ดเสริมสำเร็จ
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Safe Mode Active",
+        Text = "เคลียร์ระบบเบื้องหลัง ป้องกันเกมเด้งเรียบร้อย!",
+        Duration = 3
+    })
+end)
