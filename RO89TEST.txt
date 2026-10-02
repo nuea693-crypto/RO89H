@@ -3987,6 +3987,84 @@ end)
 
 print("RO89 Hub: Pure Silent Aim Loaded (Bypassed Hitbox Restrictions)!")
 
+-- ==========================================
+-- SMART SILENT AIM (Adaptive Target Part)
+-- ==========================================
+local SmartAimEnabled = true -- เปิด/ปิดการใช้งานผ่าน UI Toggle ได้ตามต้องการ
+
+local function getSmartClosestTarget()
+    local bestTarget = nil
+    local shortestDistance = H -- ใช้ค่า FOV รัศมีเดิมของคุณ
+    local centerScreen = Vector2.new(y.ViewportSize.X / 2, y.ViewportSize.Y / 2)
+    
+    for _, player in ipairs(a:GetPlayers()) do
+        if player ~= r and player.Character then
+            local character = player.Character
+            local humanoid = character:FindFirstChild("Humanoid")
+            local hrp = character:FindFirstChild("HumanoidRootPart")
+            local head = character:FindFirstChild("Head")
+            
+            if humanoid and humanoid.Health > 0 and hrp and head then
+                -- เช็คชื่อเพื่อนที่ละเว้น (Safe Friend)
+                if not isPlayerExcluded(player.Name) then
+                    
+                    -- เช็คว่าเป้าหมายหัวมุดดินหรือมีสิ่งกีดขวาง/มองไม่เห็นหัวหรือไม่
+                    local isHeadVisible = true
+                    
+                    -- 1. เช็คพิกัดความสูงว่ามุดใต้ดินเกินไปไหม (Y ต่ำกว่าปกติ)
+                    if head.Position.Y < -40 or hrp.Position.Y < -40 then
+                        isHeadVisible = false
+                    else
+                        -- 2. เช็ค Raycast ว่าหัวโดนบังหรือมุดดินอยู่หรือเปล่า
+                        local raycastParams = RaycastParams.new()
+                        raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+                        raycastParams.FilterDescendantsInstances = {r.Character, character}
+                        raycastParams.IgnoreWater = true
+                        
+                        local myHead = r.Character and (r.Character:FindFirstChild("Head") or r.Character:FindFirstChild("HumanoidRootPart"))
+                        if myHead then
+                            local direction = (head.Position - myHead.Position)
+                            local rayResult = workspace:Raycast(myHead.Position, direction, raycastParams)
+                            if rayResult then
+                                -- ถ้ามีวัตถุด้านล่างหรือสิ่งกีดขวางมาบังหัว แปลว่าหัวหาย/มุดดิน
+                                isHeadVisible = false
+                            end
+                        end
+                    end
+                    
+                    -- เลือกระบบส่วนที่จะล็อคอัตโนมัติ (Smart Selection)
+                    local targetPart = nil
+                    if isHeadVisible then
+                        targetPart = head -- ถ้าหัวโผล่มาปกติ ล็อคหัว 100% เป็นหลัก!
+                    else
+                        -- ถ้าหัวมุดดิน/มองไม่เห็น เปลี่ยนเป้าหมายเป็นอก หรือ ตัวแทนทันที
+                        targetPart = character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso") or hrp
+                    end
+                    
+                    if targetPart then
+                        local screenPos, onScreen = y:WorldToViewportPoint(targetPart.Position)
+                        if onScreen then
+                            local screenVector = Vector2.new(screenPos.X, screenPos.Y)
+                            local distanceToCenter = (screenVector - centerScreen).Magnitude
+                            
+                            if distanceToCenter <= H and distanceToCenter < shortestDistance then
+                                shortestDistance = distanceToCenter
+                                bestTarget = {
+                                    Player = player,
+                                    Character = character,
+                                    Part = targetPart,
+                                    IsHead = isHeadVisible
+                                }
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    return bestTarget
+end
 
 
 D:Register("SilentAim",aO)
@@ -7773,7 +7851,7 @@ end
 
 if A then
     A:Notify({
-        Title = "🛡️ Anti-Underground Active",
+        Title = "Boost SilentAim🔫💸",
         Description = "เปิดระบบป้องกันการล็อกหัวมุดดินเรียบร้อย!",
         Duration = 3
     })
