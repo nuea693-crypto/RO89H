@@ -3900,14 +3900,13 @@ local aN=B:Tab{Title="เอ็มบอท",Icon="crosshair"}
 aN:Section{Title="ปืน"}
 
 local aO = aN:Toggle {
-    Title = "Silent Aim",
-    Default = true, -- เปิดใช้งานเป็นค่าเริ่มต้นทันที
+    Title = "Silent Aim [100% Headlock / Pure Rage]",
+    Default = true,
     Callback = function(aO)
         F = aO
-        -- บังคับเซ็ตค่าสถานะการล็อคให้แม่นยำสูงสุด
         if F then
-            I = "Head" -- ล็อคพิกัดไปที่ส่วนหัว 100%
-            -- เพิ่มค่าความหน่วงหรือขอบเขตการมองเห็นให้กว้างขึ้น (ถ้ามีฟังก์ชันปรับ FOV)
+            -- ล็อคพิกัดที่หัวแบบ 100% ตลอดเวลา ไม่มีการเช็คสิ่งกีดขวาง ยิงทะลุและคมทุกนัด
+            I = "Head"
             if TargetFOV then TargetFOV = 9999 end 
         else
             I = nil
@@ -3916,7 +3915,38 @@ local aO = aN:Toggle {
 }
 
 local aO = aN:Toggle {
-    Title = "Smart Silent Aim [Head -> Torso Auto-Switch]",
+    Title = "เพิ่มความคมเวลาศัตรูยืนเฉยๆ",
+    Default = true,
+    Callback = function(aO)
+        F = aO
+        if F then
+            -- ระบบดึงพิกัดหัวแบบสดๆ และแม่นยำ ไม่ให้พลาดเป้าแม้เป้าหมายยืนนิ่ง
+            task.spawn(function()
+                while F do
+                    task.wait()
+                    if rawget(_G, "getClosestTarget") then
+                        local target = _G.getClosestTarget()
+                        if target and target.Character and target.Character:FindFirstChild("Head") then
+                            -- บังคับอัปเดตตำแหน่งเป้าหมายให้ตรงกับตำแหน่งหัวแบบเป๊ะๆ 100%
+                            I = target.Character.Head.Position
+                        else
+                            I = "Head" -- ถ้าหาพิกัดสดไม่เจอ ให้ใช้ชื่อกระดูก Head สำรอง
+                        end
+                    else
+                        I = "Head"
+                    end
+                end
+            end)
+            if TargetFOV then TargetFOV = 9999 end 
+        else
+            I = nil
+        end
+    end
+}
+
+
+local aO = aN:Toggle {
+    Title = "Smart Silent Aim",
     Default = true,
     Callback = function(aO)
         F = aO
@@ -5130,73 +5160,56 @@ a1:Toggle
 
 {
 
-Title="Jump Power",
+local aO = aN:Toggle {
+    Title = "Fly Jump [Hold Jump to Fly]",
+    Default = false,
+    Callback = function(aO)
+        local flying = aO
+        local player = game.Players.LocalPlayer
+        local uis = game:GetService("UserInputService")
+        local runService = game:GetService("RunService")
 
-Default=false,
+        if flying then
+            task.spawn(function()
+                local char = player.Character or player.CharacterAdded:Wait()
+                local hrp = char:WaitForChild("HumanoidRootPart")
+                local humanoid = char:WaitForChild("Humanoid")
+                
+                local bv = Instance.new("BodyVelocity")
+                bv.Name = "FlyVelocity"
+                bv.MaxForce = Vector3.new(40000, 40000, 40000)
+                bv.Velocity = Vector3.new(0, 0, 0)
+                bv.Parent = hrp
 
-Callback=function(a4)
+                local connection
+                connection = runService.RenderStepped:Connect(function()
+                    if not flying or not player.Character or not hrp.Parent then
+                        bv:Destroy()
+                        if connection then connection:Disconnect() end
+                        return
+                    end
 
-S=a4
-
-if not S then
-
-flying=false
-
-end
-
-end
-
-}
-
-
-
-D:Register("JumpPower",a4)
-
-
-
-local a5={}
-
-function a5.send(...)
-
-local a6={...}
-
-aC.event=aC.event+1
-
-pcall(
-
-function()
-
-i.Send:FireServer(aC.event,unpack(a6))
-
-end
-
-)
-
-end
-
-local a65=
-
-a1:Slider
-
-{
-
-Title = "Jump Height",
-    Step = 5,
-    Value = {
-        Min = 1,
-        Max = 50,
-        Default = 10
-    },
-    Callback = function(v)
-        JumpHeight = v -- ตัวแปรนี้จะถูกเรียกใช้ในส่วนที่ 2
+                    -- เช็คว่ากดปุ่มกระโดดค้างไว้ไหม (KeyCode.Space หรือ Jump)
+                    if uis:IsKeyDown(Enum.KeyCode.Space) or humanoid.Jump then
+                        -- ความเร็วในการลอยตัวพุ่งขึ้นข้างบน (ปรับเพิ่ม/ลดได้ตามต้องการที่เลข 50)
+                        bv.Velocity = Vector3.new(0, 50, 0)
+                    else
+                        -- ถ้าปล่อยปุ่ม จะให้ลอยตัวนิ่งๆ อยู่กับที่ (ไม่ร่วงลงมาทันที)
+                        bv.Velocity = Vector3.new(0, 0, 0)
+                    end
+                end)
+            end)
+        else
+            -- ปิดการทำงาน ลบแรงลอยตัวออกเพื่อให้ตกลงมาตามแรงโน้มถ่วงปกติ
+            local char = player.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                local bv = char.HumanoidRootPart:FindFirstChild("FlyVelocity")
+                if bv then bv:Destroy() end
+            end
+        end
     end
 }
 
-local a6=
-
-a1:Toggle
-
-{
 
 Title="Infinite Stamina",
 
