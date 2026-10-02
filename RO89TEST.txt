@@ -3369,9 +3369,9 @@ K.Visible=false
 
 if TracerESP then
 
-for aR=1,4 do
+for aW=1,4 do
 
-TracerESP[aR].Visible=false
+TracerESP[aW].Visible=false
 
 end
 
