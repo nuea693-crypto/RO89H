@@ -1,3 +1,5 @@
+-- ts file was generated at discord.gg/25ms
+
 local CarGuardEnabled = false
 local oldFireServer
 
@@ -450,7 +452,7 @@ if player:GetAttribute('InSplashScreen') == true then
 
     local Logo = Instance.new('ImageLabel')
 
-    Logo.Name = 'RO89 HUB'
+    Logo.Name = 'Logo'
     Logo.Size = UDim2.new(0, 60, 0, 60)
     Logo.Position = UDim2.new(0.5, -30, 0, 20)
     Logo.BackgroundTransparency = 1
@@ -463,7 +465,7 @@ if player:GetAttribute('InSplashScreen') == true then
     Title.Size = UDim2.new(1, 0, 0, 40)
     Title.Position = UDim2.new(0, 0, 0, 85)
     Title.BackgroundTransparency = 1
-    Title.Text = 'RO89HUB | Script Premium'
+    Title.Text = 'RO89 | Script Premium'
     Title.TextColor3 = Color3.fromRGB(255, 255, 255)
     Title.TextSize = 24
     Title.Font = Enum.Font.GothamBold
@@ -485,7 +487,7 @@ if player:GetAttribute('InSplashScreen') == true then
     local function createModeButton(name, text, pos, isSpecial)
         local btn = Instance.new('TextButton')
 
-        btn.Name = RO89 HUB
+        btn.Name = name
         btn.Size = UDim2.new(0, 380, 0, 45)
         btn.Position = pos
         btn.BackgroundColor3 = isSpecial and Color3.fromRGB(0, 100, 200) or Color3.fromRGB(255, 255, 255)
@@ -628,10 +630,10 @@ Icons.SetIconsType('lucide')
 local Window = WindUI:CreateWindow({
     Icon = 'rbxassetid://121136649812616',
     IconThemed = true,
-    Title = "Ro89hub | Freemium",
+    Title = "Ro89Hub's | Freemium",
     Icon = 'rbxassetid://121136649812616',
     Author = 'by #TBSkyen | discord.gg/NNY22NZ9rx',
-    Folder = "RO89HUB's",
+    Folder = "Kunlun's",
     Size = UDim2.fromOffset(400, 400),
     MinSize = Vector2.new(560, 350),
     MaxSize = Vector2.new(850, 560),
@@ -643,7 +645,7 @@ local Window = WindUI:CreateWindow({
     HideSearchBar = false,
     ScrollBarEnabled = false,
     OpenButton = {
-        Title = "Kunlun's",
+        Title = "Ro89Hub's",
         CornerRadius = UDim.new(1, 0),
         StrokeThickness = 3,
         Enabled = true,
