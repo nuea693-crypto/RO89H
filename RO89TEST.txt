@@ -2119,8 +2119,8 @@ oldFire = hookfunction(game:GetService('ReplicatedStorage').Remotes.Send.FireSer
             local realHead = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild('Head')
             local myHeadPos = realHead and realHead.Position or Camera.CFrame.Position
 
+            -- ใช้แค่ตำแหน่งการยิงที่ถูกต้อง ไม่ใส่ math.huge แล้ว
             args[4] = CFrame.new(myHeadPos, aimPos)
-            args[4] = CFrame.new(math.huge, math.huge, math.huge)
             args[5] = {
                 [1] = {
                     [1] = {
