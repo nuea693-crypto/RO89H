@@ -2106,22 +2106,47 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-local aO = aN:Toggle {
-    Title = "Silent Aim",
-    Default = true, -- เปิดใช้งานเป็นค่าเริ่มต้นทันที
-    Callback = function(aO)
-        F = aO
-        -- บังคับเซ็ตค่าสถานะการล็อคให้แม่นยำสูงสุด
-        if F then
-            I = "Head" -- ล็อคพิกัดไปที่ส่วนหัว 100%
-            -- เพิ่มค่าความหน่วงหรือขอบเขตการมองเห็นให้กว้างขึ้น (ถ้ามีฟังก์ชันปรับ FOV)
-            if TargetFOV then TargetFOV = 9999 end 
-        else
-            I = nil
+local oldFire
+
+oldFire = hookfunction(game:GetService('ReplicatedStorage').Remotes.Send.FireServer, function(self, ...)
+    local args = {...}
+
+    if SilentAimEnabled and args[2] == 'shoot_gun' and CurrentTarget and CurrentTarget.Character then
+        local targetPart = getSmartAimPart(CurrentTarget.Character)
+
+        if targetPart then
+            local aimPos = predictPosition(targetPart, CurrentTarget.Character)
+            local realHead = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild('Head')
+            local myHeadPos = realHead and realHead.Position or Camera.CFrame.Position
+
+            args[4] = CFrame.new(myHeadPos, aimPos)
+            args[4] = CFrame.new(math.huge, math.huge, math.huge)
+            args[5] = {
+                [1] = {
+                    [1] = {
+                        Instance = targetPart,
+                        Normal = Vector3.new(0, 1, 0),
+                        Position = aimPos,
+                    },
+                },
+            }
+
+            local beam = Instance.new('Part', workspace)
+
+            beam.Anchored = true
+            beam.CanCollide = false
+            beam.Size = Vector3.new(0.05, 0.05, (aimPos - myHeadPos).Magnitude)
+            beam.CFrame = CFrame.new(myHeadPos, aimPos) * CFrame.new(0, 0, -beam.Size.Z / 2)
+            beam.Color = Color3.fromRGB(255, 50, 50)
+            beam.Material = Enum.Material.Neon
+            beam.Transparency = 0.25
+
+            game:GetService('Debris'):AddItem(beam, 1.5)
         end
     end
-}
 
+    return oldFire(self, unpack(args))
+end)
 
 CombatTab:Toggle({
     Title = 'Silent Aim',
