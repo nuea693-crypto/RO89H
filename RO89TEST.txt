@@ -3877,7 +3877,7 @@ task.spawn(
 
 function()
 
-while task.wait(0.01)do
+while task.wait(0.02)do
 
 if highlightEnabled then
 
@@ -3967,12 +3967,6 @@ local function GetBestTarget()
     return bestTarget
 end
 
--- Hook กระสุนหรือทิศทางการยิงโดยไม่พึ่งพา Hitbox ตัวละคร
-local oldIndex
-oldIndex = hookmetamethod(game, "__index", function(self, index)
-    if not Settings.Enabled then
-        return oldIndex(self, index)
-    end
 
     -- ดักจับทิศทางกล้องหรือการยิงเพื่อหักมุมกระสุนเข้าเป้าหมายอัตโนมัติ
     if self == Camera and index == "CFrame" and not checkcaller() then
@@ -4362,7 +4356,7 @@ for aZ=1,5 do
 
 forceSetAttribute(aU,aY,true)
 
-task.wait(0.01)
+task.wait(0.03)
 
 end
 
@@ -5953,7 +5947,7 @@ local buu = a1:Toggle({
                                 
                                 local Old = Ch:FindFirstChildWhichIsA("Tool")
                                 T.Parent = Ch
-                                task.wait(0.01)
+                                task.wait(0.03)
                                 
                                 if T:FindFirstChild("RemoteEvent") then T.RemoteEvent:FireServer()
                                 elseif T:FindFirstChild("Use") then T:Use()
