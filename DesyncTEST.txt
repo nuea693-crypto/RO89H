@@ -1,0 +1,179 @@
+-- BlockSpin Desync Script (GUI ซ้ายบน)
+-- สร้างโดย NUEAเจ้าของค่ายRO89
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+local RootPart = Character:WaitForChild("HumanoidRootPart")
+
+-- ตัวแปรสำหรับ Desync
+local DesyncEnabled = false
+local OriginalPosition = RootPart.CFrame
+local OriginalVelocity = Vector3.new(0, 0, 0)
+local DesyncConnections = {}
+
+-- ฟังก์ชันสำหรับสร้าง Desync
+local function CreateDesync()
+    if DesyncEnabled then return end
+    DesyncEnabled = true
+    
+    -- เก็บตำแหน่งและความเร็วเดิม
+    OriginalPosition = RootPart.CFrame
+    OriginalVelocity = Humanoid.Velocity
+    
+    -- สร้างการเชื่อมต่อเพื่อรักษาตำแหน่งที่ทำให้คนอื่นมองเห็น
+    local PositionUpdateConnection
+    local VelocityUpdateConnection
+    
+    -- อัปเดตตำแหน่งแบบสุ่มเพื่อให้คนอื่นมองเห็น
+    PositionUpdateConnection = RunService.Heartbeat:Connect(function()
+        if not DesyncEnabled then return end
+        
+        -- สร้างตำแหน่งสุ่มรอบๆ ตัวเรา
+        local OffsetX = math.random(-5, 5)
+        local OffsetY = math.random(-2, 2)
+        local OffsetZ = math.random(-5, 5)
+        
+        -- อัปเดตตำแหน่งเสมือจริงแต่คนอื่นมองเห็นตำแหน่งสุ่ม
+        RootPart.CFrame = OriginalPosition + Vector3.new(OffsetX, OffsetY, OffsetZ)
+    end)
+    
+    -- รักษาความเร็วเพื่อให้เดินได้ปกติ
+    VelocityUpdateConnection = RunService.Heartbeat:Connect(function()
+        if not DesyncEnabled then return end
+        
+        -- รักษาความเร็วเดิมเพื่อให้เดินได้ปกติ
+        Humanoid.Velocity = OriginalVelocity
+    end)
+    
+    table.insert(DesyncConnections, PositionUpdateConnection)
+    table.insert(DesyncConnections, VelocityUpdateConnection)
+    
+    -- อัปเดตสีปุ่มเป็นแดง
+    ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    ToggleButton.Text = "Desync ON"
+    
+    -- แจ้งเตือน
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Desync Enabled",
+        Text = "คนอื่นจะมองไม่เห็นคุณ!",
+        Duration = 3
+    })
+end
+
+-- ฟังก์ชันสำหรับหยุด Desync
+local function StopDesync()
+    if not DesyncEnabled then return end
+    DesyncEnabled = false
+    
+    -- คืนค่าตำแหน่งและความเร็วเดิม
+    RootPart.CFrame = OriginalPosition
+    Humanoid.Velocity = OriginalVelocity
+    
+    -- หยุดการเชื่อมต่อทั้งหมด
+    for _, Connection in ipairs(DesyncConnections) do
+        if Connection then
+            Connection:Disconnect()
+        end
+    end
+    DesyncConnections = {}
+    
+    -- อัปเดตสีปุ่มเป็นเขียว
+    ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+    ToggleButton.Text = "Desync OFF"
+    
+    -- แจ้งเตือน
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Desync Disabled",
+        Text = "คนอื่นมองเห็นคุณแล้ว!",
+        Duration = 3
+    })
+end
+
+-- สร้าง GUI อยู่ซ้ายบน
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Parent = ScreenGui
+MainFrame.Size = UDim2.new(0, 200, 0, 100)
+MainFrame.Position = UDim2.new(0, 0, 0, 0)  -- ตำแหน่งซ้ายบน
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+MainFrame.BorderSizePixel = 0
+
+local UICorner = Instance.new("UICorner")
+UICorner.Parent = MainFrame
+UICorner.CornerRadius = UDim.new(0, 10)
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Parent = MainFrame
+TitleLabel.Size = UDim2.new(1, 0, 0, 30)
+TitleLabel.Position = UDim2.new(0, 0, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "BlockSpin Desync"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextSize = 18
+TitleLabel.Font = Enum.Font.SourceSansBold
+
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Parent = MainFrame
+ToggleButton.Size = UDim2.new(0, 180, 0, 40)
+ToggleButton.Position = UDim2.new(0.5, -90, 0.5, 5)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0)  -- สีเขียวเริ่มต้น
+ToggleButton.BorderSizePixel = 0
+ToggleButton.Text = "Desync OFF"
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.TextSize = 16
+ToggleButton.Font = Enum.Font.SourceSansBold
+
+local ButtonCorner = Instance.new("UICorner")
+ButtonCorner.Parent = ToggleButton
+ButtonCorner.CornerRadius = UDim.new(0, 8)
+
+-- ฟังก์ชันสำหรับสลับสถานะ Desync
+local function ToggleDesync()
+    if DesyncEnabled then
+        StopDesync()
+    else
+        CreateDesync()
+    end
+end
+
+ToggleButton.MouseButton1Click:Connect(ToggleDesync)
+
+-- ทำให้ GUI สามารถลากไปไว้ที่ไหนก็ได้
+local Dragging = false
+local DragStart = nil
+local FramePosition = nil
+
+MainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        Dragging = true
+        DragStart = input.Position
+        FramePosition = MainFrame.Position
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if Dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - DragStart
+        MainFrame.Position = UDim2.new(
+            FramePosition.X.Scale,
+            FramePosition.X.Offset + delta.X,
+            FramePosition.Y.Scale,
+            FramePosition.Y.Offset + delta.Y
+        )
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        Dragging = false
+    end
+end)
+
+print("[BlockSpin Desync] Script Loaded Successfully!")
