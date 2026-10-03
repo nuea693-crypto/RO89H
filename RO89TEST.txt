@@ -655,7 +655,7 @@ local Window = WindUI:CreateWindow({
 })
 
 Window:Tag({
-    Title = 'v1.0.4',
+    Title = 'PAID💸,
     Color = Color3.fromHex('#30ff6a'),
     Radius = 13,
 })
@@ -4276,3 +4276,68 @@ pcall(function()
         end
     end
 end)
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+
+-- สมมติฐานตัวแปร Library (ถ้าสคริปต์เดิมของคุณมี Library UI อยู่แล้ว นำส่วนนี้ไปใส่ในส่วนสร้าง Tab ได้เลยครับ)
+-- ตัวอย่างการสร้าง Tab ชื่อ "พิเศษ"
+local Window = YourLibraryName:CreateWindow("ชื่อสคริปต์ของคุณ") -- เปลี่ยนเป็นตัวแปร Window ของคุณ
+local SpecialTab = Window:CreateTab("พิเศษ")
+
+-- ตัวแปรระบบร่างเงา
+getgenv().DecoyEnabled = false
+local decoyModel = nil
+local realCFrame = nil
+
+-- เพิ่ม Toggle ลงใน Tab "พิเศษ"
+SpecialTab:CreateToggle({
+    Name = "ระบบร่างเงา (Decoy Clone)",
+    CurrentValue = false,
+    Flag = "DecoyToggle",
+    Callback = function(Value)
+        getgenv().DecoyEnabled = Value
+        
+        if getgenv().DecoyEnabled then
+            -- เปิดใช้งานร่างเงา
+            Character = LocalPlayer.Character
+            if Character and Character:FindFirstChild("HumanoidRootPart") then
+                realCFrame = Character.HumanoidRootPart.CFrame
+                
+                -- สร้างร่างโคลนให้คนอื่นเห็น
+                Character.Archivable = true
+                decoyModel = Character:Clone()
+                decoyModel.Parent = workspace
+                decoyModel.Name = "Decoy_Ghost"
+                
+                -- ลบสคริปต์ข้างในทิ้งเพื่อไม่ให้ขยับ
+                for _, v in pairs(decoyModel:GetDescendants()) do
+                    if v:IsA("Script") or v:IsA("LocalScript") then
+                        v:Destroy()
+                    end
+                end
+                
+                -- ล็อคตำแหน่งร่างโคลนให้อยู่จุดเดิม
+                if decoyModel:FindFirstChild("HumanoidRootPart") then
+                    decoyModel.HumanoidRootPart.CFrame = realCFrame
+                    decoyModel.HumanoidRootPart.Anchored = true
+                end
+                
+                print("[Special Tab] เปิดใช้งานร่างเงาเรียบร้อย!")
+            end
+        else
+            -- ปิดใช้งานร่างเงา (ดึงตัวจริงกลับ / ลบร่างโคลน)
+            if decoyModel then
+                decoyModel:Destroy()
+                decoyModel = nil
+            end
+            
+            if realCFrame and Character and Character:FindFirstChild("HumanoidRootPart") then
+                Character.HumanoidRootPart.CFrame = realCFrame
+            end
+            
+            print("[Special Tab] ปิดใช้งานร่างเงา กลับสู่ร่างปกติ")
+        end
+    end
+})
