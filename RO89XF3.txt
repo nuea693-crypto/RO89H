@@ -1,3 +1,8 @@
+-- =====================================================================
+-- Name: RO89xF3 Hub
+-- Description: สคริปต์ = ไม่บัครันติด | ความเก่ง = ที่สุดในโลก | ฟังก์ชัน = โหดที่สุดในสามโลก
+-- =====================================================================
+
 local a=game:GetService("Players")
 local b=game:GetService("RunService")
 local c=game:GetService("ReplicatedStorage")
@@ -55,18 +60,18 @@ end)
 local B
 if A then
     B=A:CreateWindow({
-        Title=" Hub",
+        Title="RO89xF3 Hub",
         Icon="rbxassetid://111671492838197",
-        Author="RO89",
-        Folder="RO89HUB",
+        Author="RO89xF3",
+        Folder="RO89xF3Hub",
         Size=UDim2.fromOffset(650,400),
         Theme="Dark",
         Transparent=true,
         Resizable=true,
-        KeyCode=Enum.KeyCode.RO89
+        KeyCode=Enum.KeyCode.F3
     })
     B:EditOpenButton({
-        Title = "RO89 HUB",
+        Title = "RO89xF3 Hub",
         Icon = "rbxassetid://111671492838197",
         CornerRadius = UDim.new(0,16),
         StrokeThickness = 2,
@@ -76,7 +81,7 @@ if A then
         Draggable = true,
     })
     B:Tag({
-        Title = "PVP | Paid",
+        Title = "RO89xF3 | Ultimate",
         Icon = "github",
         Color = Color3.fromHex("#FF0000"),
         Radius = 13,
@@ -86,7 +91,7 @@ else
 end
 
 local C=B.ConfigManager
-local D=C:CreateConfig("F3HubConfig")
+local D=C:CreateConfig("RO89xF3HubConfig")
 local E
 pcall(function() E=c:WaitForChild("Remotes",5):WaitForChild("Send",5) end)
 
@@ -711,7 +716,8 @@ end
 
 local function isShotgun()
     if not s then return false end
-    for aM,aN in ipairs(s:GetChildren()) do
+    local aM=s:GetChildren()
+    for _, aN in ipairs(aM) do
         if aN:IsA("Tool") then
             local aO=aN:GetAttribute("AmmoType")
             if aO=="shotgun" or aO=="shootgun" then return true end
@@ -945,7 +951,7 @@ end)
 StartAutoAttack()
 
 for aN,aO in ipairs({"gun","melee","throwable","consumable","farming","misc","rod","fish"}) do
-    registerItems(c:WaitForChild("Items")[aO])
+    registerItems(c:WaitForChild("Items")[aN])
 end
 
 a.PlayerAdded:Connect(function(aN)
@@ -1088,3 +1094,564 @@ local function modifyFists(aU,aV)
         end
     end
 end
+
+local aU_list={}
+for aV,aW in ipairs(q:GetChildren()) do table.insert(aU_list,aW.Name) end
+
+local function isMeleeTool(aV)
+    if not aV:IsA("Tool") then return false end
+    if aV.Name=="Fists" then return true end
+    for aW,aX in ipairs(aU_list) do if aV.Name==aX then return true end end
+    return false
+end
+
+local function checkAndModifyFists()
+    local aV=r.Character; local aW=r:FindFirstChild("Backpack")
+    if not aV or not aW then return end
+    local aX={}
+    for aY,aZ in ipairs(aV:GetChildren()) do if isMeleeTool(aZ) then table.insert(aX,aZ) end end
+    for aY,aZ in ipairs(aW:GetChildren()) do if isMeleeTool(aZ) then table.insert(aX,aZ) end end
+    for aY,aZ in ipairs(aX) do modifyFists(aZ,ay) end
+end
+
+b.Heartbeat:Connect(function() if ay then checkAndModifyFists() end end)
+r.CharacterAdded:Connect(function() task.wait(1) if ay then checkAndModifyFists() end end)
+
+D:Register("Fists Modifier",aS_tab:Toggle({Title="Melee Aura",Desc="WideFists",Default=false,Callback=function(aV) ay=aV; checkAndModifyFists() end}))
+local aV_toggle=aS_tab:Toggle({Title="Auto Attack",Default=false,Callback=function(aV) ab=aV end})
+D:Register("AutoAttack_Enabled",aV_toggle)
+
+local aW_tab=B:Tab({Title="ESP",Icon="eye"})
+aW_tab:Section({Title="Visual"})
+local aX=aW_tab:Toggle({Title="Inventory Viewer",Default=false,Callback=function(aX)
+    aw=aX
+    if aX then
+        for aY,aZ in ipairs(a:GetPlayers()) do if aZ~=r and aZ.Character then createBillboardForPlayer(aZ) end end
+        ax=b.Heartbeat:Connect(function() for aY,aZ in ipairs(a:GetPlayers()) do if aZ~=r and aZ.Character then createBillboardForPlayer(aZ) end end end)
+        if A then A:Notify({Title="✅ ESP Items Enabled",Duration=3}) end
+    else
+        if ax then ax:Disconnect(); ax=nil end
+        for aY,aZ in pairs(av) do aZ:Destroy() end
+        av={}
+        if A then A:Notify({Title="❌ ESP Items Disabled",Duration=3}) end
+    end
+end})
+D:Register("ItemsESP",aX)
+local aY=aW_tab:Toggle({Title="Name",Default=false,Callback=function(aY) M=aY end})
+D:Register("NameESP",aY)
+local aZ=aW_tab:Toggle({Title="Health",Default=false,Callback=function(aZ) O=aZ end})
+D:Register("HealthESP",aZ)
+local a__=aW_tab:Toggle({Title="Distance",Default=false,Callback=function(a_) N=a_ end})
+D:Register("DistanceESP",a__)
+local a0=aW_tab:Toggle({Title="Highlight",Default=false,Callback=function(a0)
+    highlightEnabled=a0
+    for a1,a2 in pairs(game.Players:GetPlayers()) do updateHighlight(a2) end
+end})
+D:Register("HighlightESP",a0)
+
+function updateHighlight(a1)
+    if a1==game.Players.LocalPlayer then return end
+    if not a1.Character then return end
+    local a2=a1.Character:FindFirstChild("HumanoidRootPart")
+    if not a2 then return end
+    if aB[a1] then aB[a1]:Destroy(); aB[a1]=nil end
+    if highlightEnabled then
+        local a3=Instance.new("Highlight")
+        a3.Name="PlayerHighlight"; a3.Adornee=a1.Character
+        a3.FillColor=Color3.fromRGB(0,170,255); a3.OutlineColor=Color3.fromRGB(0,170,255)
+        a3.Parent=workspace; aB[a1]=a3
+    end
+end
+
+game.Players.PlayerAdded:Connect(function(a1)
+    a1.CharacterAdded:Connect(function() task.wait(0.1) updateHighlight(a1) end)
+end)
+game.Players.PlayerRemoving:Connect(function(a1) if aB[a1] then aB[a1]:Destroy(); aB[a1]=nil end end)
+for a1,a2 in pairs(game.Players:GetPlayers()) do
+    if a2~=game.Players.LocalPlayer then
+        a2.CharacterAdded:Connect(function() task.wait(0.1) updateHighlight(a2) end)
+        updateHighlight(a2)
+    end
+end
+
+local a1_tab=B:Tab({Title="CHARACTER",Icon="user"})
+a1_tab:Section({Title="CHARACTER"})
+local a2=a1_tab:Toggle({Title="Walk Speed",Default=false,Callback=function(a2) Q=a2 end})
+D:Register("WalkSpeed",a2)
+local a3=a1_tab:Slider({Title="Speed Multiplier",Step=0.5,Value={Min=1,Max=5,Default=2},Callback=function(a3) R=a3*0.05 end})
+D:Register("SpeedMultiplier",a3)
+local a4=a1_tab:Toggle({Title="Jump Power",Default=false,Callback=function(a4) S=a4; if not S then flying=false end end})
+D:Register("JumpPower",a4)
+
+local a5={}
+function a5.send(...)
+    local a6={...}; aC.event=aC.event+1
+    pcall(function() i.Send:FireServer(aC.event,unpack(a6)) end)
+end
+
+local a6=a1_tab:Toggle({Title="Infinite Stamina",Default=false,Callback=function(a6)
+    as=a6
+    if as then
+        local a7,a8=pcall(function() return require(c.Modules.Game.Sprint) end)
+        if a7 and a8 then
+            local a9=a8.consume_stamina; local ba=getupvalue(a9,2).sprint_bar
+            if ba then
+                local bb=ba.update
+                ba.update=function(...) return bb(function() return 1 end) end
+                ai().OriginalSprintUpdate=bb
+                ai().AutoSprintLoop=task.spawn(function()
+                    while as do
+                        pcall(function() a5.send("set_sprinting_1",true); task.wait(0.5); a5.send("set_sprinting_1",false) end)
+                        task.wait(0.1)
+                    end
+                    pcall(function() a5.send("set_sprinting_1",false) end)
+                end)
+                if A then A:Notify({Title="✅ INF STAMINA",Duration=3}) end
+            else as=false; AutoSprintToggle:Set(false) end
+        else as=false; AutoSprintToggle:Set(false) end
+    else
+        if ai().AutoSprintLoop then task.cancel(ai().AutoSprintLoop); ai().AutoSprintLoop=nil end
+        pcall(function() a5.send("set_sprinting_1",false) end)
+        local a7,a8=pcall(function() return require(c.Modules.Game.Sprint) end)
+        if a7 and a8 then
+            local a9=a8.consume_stamina; local ba=getupvalue(a9,2).sprint_bar
+            if ba and ai().OriginalSprintUpdate then ba.update=ai().OriginalSprintUpdate; ai().OriginalSprintUpdate=nil end
+        end
+        if A then A:Notify({Title="❌ Auto Sprint Disabled",Duration=3}) end
+    end
+end})
+D:Register("AutoSprint",a6)
+
+local a7=a1_tab:Toggle({Title="Anti Lock",Default=false,Callback=function(a7) ai().Sky=a7; if a7 then ai().SkyAmount=1000 end end})
+D:Register("AntiLock",a7)
+local a8=a1_tab:Toggle({Title="Anti Kill",Default=false,Callback=function(a8)
+    enabled=a8
+    if a8 then if A then A:Notify({Title="✅ Anti Kill Enabled",Duration=3}) end
+    else if A then A:Notify({Title="❌ Anti Kill Disabled",Duration=3}) end end
+end})
+D:Register("AntiKill",a8)
+
+local a9=a1_tab:Toggle({Title="Pickup items",Default=false,Callback=function(a9) ak=a9 end})
+D:Register("PickupItems",a9)
+
+local ba=a1_tab:Toggle({Title="Anti Ragdoll",Default=false,Callback=function(ba)
+    local bb=ba
+    if not bb then return end
+    pcall(function()
+        local bc=game:GetService("ReplicatedStorage"); local bd=game:GetService("Players"); local be=bd.LocalPlayer
+        local function findCounter()
+            for bf,bg in ipairs(getgc and getgc(true) or {}) do
+                if typeof(bg)=="table" and rawget(bg,"event") and rawget(bg,"func") then return bg end
+            end
+        end
+        local bf=findCounter()
+        if not bf then return end
+        local function sendRemoteAction(bg)
+            bf.event=(bf.event or 0)+1
+            local bh=bc:WaitForChild("Remotes"):WaitForChild("Send")
+            bh:FireServer(bf.event,bg)
+        end
+        task.spawn(function()
+            while bb do
+                sendRemoteAction("end_ragdoll_early"); task.wait(0.3)
+                if not bb then break end
+                sendRemoteAction("clear_ragdoll"); task.wait(0.3)
+            end
+        end)
+    end)
+end})
+D:Register("AntiRagdoll",ba)
+
+local bb=a1_tab:Toggle({Title="Hide Name",Default=false,Callback=function(bb)
+    pcall(function()
+        local bc=a.LocalPlayer; local bd=bc.Character or bc.CharacterAdded:Wait()
+        local be=bd:WaitForChild("HumanoidRootPart"); local bf=be:FindFirstChild("CharacterBillboardGui")
+        if bf then
+            local bg=bf:FindFirstChild("PlayerName")
+            if bg and bg:IsA("TextLabel") then bg.Visible=not bb end
+        end
+    end)
+end})
+D:Register("HideName",bb)
+
+local bc=a1_tab:Toggle({Title="Auto Respawn",Default=false,Callback=function(bc)
+    local bd=bc
+    if not bd then return end
+    pcall(function()
+        local be=game:GetService("ReplicatedStorage"); local bf=game:GetService("Players"); local bg=bf.LocalPlayer
+        local function findCounter()
+            for bh,bi in ipairs(getgc and getgc(true) or {}) do
+                if typeof(bi)=="table" and rawget(bi,"event") and rawget(bi,"func") then return bi end
+            end
+        end
+        local bh=findCounter()
+        if not bh then return end
+        local function sendRemoteAction(bi)
+            bh.event=(bh.event or 0)+1
+            local bj=be:WaitForChild("Remotes"):WaitForChild("Send")
+            bj:FireServer(bh.event,bi)
+        end
+        task.spawn(function()
+            while bd do
+                local bi=bg.Character; local bj=bi and bi:FindFirstChildOfClass("Humanoid")
+                if bj and bj.Health<=0 then
+                    task.wait(6)
+                    if bd then sendRemoteAction("death_screen_request_respawn") end
+                end
+                task.wait(0.5)
+            end
+        end)
+    end)
+end})
+D:Register("AutoRespawn",bc)
+
+a1_tab:Section({Title="PC HOLD (Z) - มุดดิน"})
+local bd=a1_tab:Toggle({Title="Snap Under Map (มุดดิน)",Default=false,Callback=function(bd)
+    W=bd
+    if W then
+        ac=ac+1
+        if ac<2 then return end
+        Z=u and u.Position.Y or nil; V=true; performTeleport()
+    else V=false; X=nil; Z=nil end
+end})
+D:Register("SnapUnderMap",bd)
+local be=a1_tab:Slider({Title="Snap Height",Step=1,Value={Min=1,Max=300,Default=10},Callback=function(be)
+    Y=be
+    if V and u and Z then
+        local bf=Vector3.new(u.Position.X,Z-Y,u.Position.Z)
+        u.CFrame=CFrame.new(bf); X=bf.Y
+    end
+end})
+D:Register("SnapHeight",be)
+
+local bf_tab=B:Tab({Title="PLAYER",Icon="person-standing"})
+bf_tab:Section({Title="PLAYER"})
+local bg=Instance.new("Folder",g); local bh=Instance.new("Part",bg); Instance.new("Attachment",bh)
+bh.Anchored=true; bh.CanCollide=false; bh.Transparency=1
+
+local bi=bf_tab:Toggle({Title="Auto Finnish",Default=false,Callback=function(bi)
+    ad=bi
+    if bi then applyToAll(); if A then A:Notify({Title="✅ Auto Finish Enabled",Duration=3}) end
+    else if A then A:Notify({Title="❌ Auto Disabled",Duration=3}) end end
+end})
+D:Register("AutoFinnish",bi)
+
+local bk_tab=B:Tab({Title="MISC",Icon="warehouse"})
+local bl=game.PlaceId
+bk_tab:Input({Title="Server Hop by ID",Value="",InputIcon="send",Type="Input",Placeholder="id sever here!",Callback=function(bm)
+    if not bm or bm=="" then return end
+    local bn={}
+    for bo in string.gmatch(bm,"[%w%-]+") do table.insert(bn,bo) end
+    if #bn==0 then return end
+    for bo,bp in ipairs(bn) do
+        task.wait(0.5)
+        pcall(function() game:GetService("TeleportService"):TeleportToPlaceInstance(bl,bp,r) end)
+    end
+end})
+
+bk_tab:Button({Title="Server Rejoin",Desc="Come back old sever",Callback=function()
+    game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId,game.JobId,game.Players.LocalPlayer)
+end})
+
+bk_tab:Button({Title="Server Hop",Desc="Hop to a new server",Locked=false,Callback=function()
+    local bn=104715542330896; local bo=game:GetService("HttpService"); local bp=game:GetService("TeleportService")
+    local bq,br=pcall(function() return bo:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/"..bn.."/servers/Public?sortOrder=Desc&limit=100")) end)
+    if not bq or not br or not br.data then return end
+    local bs={}
+    for bt,bu in ipairs(br.data) do
+        if bu.playing<bu.maxPlayers and bu.id~=game.JobId then table.insert(bs,bu) end
+    end
+    if #bs==0 then return end
+    table.sort(bs,function(bt,bu) return bt.playing>bu.playing end)
+    local bt=bs[1]
+    bp:TeleportToPlaceInstance(bn,bt.id,game.Players.LocalPlayer)
+end})
+
+local bn=bk_tab:Button({Title="Claim All Quest",Callback=function()
+    task.spawn(function()
+        pcall(function()
+            local bn=game:GetService("Players"); local bo=game:GetService("ReplicatedStorage"); local bp=bn.LocalPlayer
+            local function findCounter()
+                for bq,br in ipairs(getgc and getgc(true) or {}) do
+                    if typeof(br)=="table" and rawget(br,"event") and rawget(br,"func") then return br end
+                end
+                return nil
+            end
+            local bq=findCounter()
+            if not bq then return end
+            local br={}
+            function br.get(...)
+                local bs={...}; bq.func=(bq.func or 0)+1
+                local bt=bo:WaitForChild("Remotes"):WaitForChild("Get")
+                return bt:InvokeServer(bq.func,table.unpack(bs))
+            end
+            local bs=bp:WaitForChild("PlayerGui"):WaitForChild("Quests"):WaitForChild("QuestsHolder"):WaitForChild("QuestsScrollingFrame")
+            for bt,bu in ipairs(bs:GetChildren()) do
+                if bu:IsA("Frame") or bu:IsA("TextButton") or bu:IsA("ImageButton") then
+                    br.get("claim_quest",bu.Name); task.wait(0.2)
+                end
+            end
+        end)
+    end)
+end})
+D:Register("ClaimAllQuest",bn)
+
+-- ==================== CONFIG MANAGEMENT ====================
+local bo=D.Save; local bp=D.Delete; local bq=D.Load
+bk_tab:Section({Title="Config Management"})
+local br=bk_tab:Button({Title="Save Config",Callback=function() if bo then bo(D) end end})
+D:Register("SaveConfig",br)
+local bs=bk_tab:Button({Title="Delete Config",Callback=function() if bp then bp(D) end end})
+D:Register("DeleteConfig",bs)
+if bq then bq(D) end
+
+-- ==================== BYPASS & EXTRAS ====================
+local bt=j.tween
+j.tween=function(bu,bv,bw)
+    if bu and bu:IsA("NumberValue") and bw and bw.Value~=nil then
+        bu.Value=bw.Value; return {Cancel=function() end}
+    end
+    return bt(bu,bv,bw)
+end
+
+local bu,bv=pcall(function() return k.get("SellPromptSellButton") end)
+if bu and bv then
+    local bw=bv:FindFirstChild("HoldStroke",true)
+    if bw then
+        bw.Enabled=false; local bx=bw:FindFirstChildOfClass("UIGradient")
+        if bx then bx.Enabled=false end
+    end
+    for bx,by in pairs(bv:GetDescendants()) do if by:IsA("NumberValue") then by.Value=1 end end
+end
+task.wait(2)
+
+local function lockTool(bw)
+    if bw and bw:IsA("Tool") then pcall(function() bw:SetAttribute("Locked",true) end) end
+end
+local function setupBackpack(bw)
+    if not bw then return end
+    for bx,by in ipairs(bw:GetChildren()) do lockTool(by) end
+    bw.ChildAdded:Connect(lockTool)
+end
+local function init()
+    local bw=r:FindFirstChildOfClass("Backpack")
+    if bw then setupBackpack(bw) else
+        r.ChildAdded:Connect(function(bx) if bx:IsA("Backpack") then setupBackpack(bx) end end)
+    end
+end
+init()
+r.CharacterAdded:Connect(function() task.wait(1); init() end)
+task.wait(1)
+
+local function hookButton(bw)
+    if not bw then return end
+    if bw:FindFirstChild("UnlocksAtText") then bw.UnlocksAtText.Visible=false end
+    if bw:FindFirstChild("EmoteName") then bw.EmoteName.Visible=true end
+    n.on_click(bw,function()
+        local bx=o.get_hum()
+        if not bx or bx.Health<=0 then return end
+        if l.current_emote_playing.get()==bw then l.current_emote_playing.set(nil) else l.current_emote_playing.set(bw) end
+        task.wait(0.12); l.enabled.set(false)
+    end)
+    l.current_emote_playing.hook(function(bx)
+        if bw:FindFirstChild("EmoteEquipped") then bw.EmoteEquipped.Visible=(bx==bw) end
+    end)
+end
+local function hookAllEmotes()
+    for bw,bx in pairs(m) do
+        local by=n.get("EmoteTemplate").Parent:FindFirstChild(bx.name)
+        hookButton(by)
+    end
+end
+hookAllEmotes()
+r.CharacterAdded:Connect(function() task.wait(1); hookAllEmotes() end)
+
+task.wait(2)
+local bw; repeat task.wait() until workspace.CurrentCamera; bw=workspace.CurrentCamera
+
+local function getRarityColor(bx)
+    if bx.Name=="Money" then return Color3.fromRGB(0,255,0) end
+    for by,bz in ipairs(p:GetChildren()) do
+        if bz:IsA("Folder") then
+            local bA=bz:FindFirstChild(bx.Name)
+            if bA and bA:GetAttribute("RarityName") then local bB=bA:GetAttribute("RarityName"); return at[bB] or Color3.fromRGB(255,255,255) end
+        end
+    end
+    return Color3.fromRGB(255,255,255)
+end
+
+local function cleanupItemDrawings()
+    for bx,by in pairs(w) do
+        if not bx or not bx.Parent then
+            if by.circle then pcall(function() by.circle:Remove() end) end
+            if by.innerCircle then pcall(function() by.innerCircle:Remove() end) end
+            if by.name then pcall(function() by.name:Remove() end) end
+            if by.amount then pcall(function() by.amount:Remove() end) end
+            if by.highlight then pcall(function() by.highlight:Destroy() end) end
+            w[bx]=nil
+        end
+    end
+end
+
+b.RenderStepped:Connect(function()
+    cleanupItemDrawings()
+    if not x then return end
+    local bx=v.Character and v.Character:FindFirstChild("HumanoidRootPart")
+    if not bx then return end
+    for by,bz in pairs(w) do
+        bz.circle.Visible=false; bz.innerCircle.Visible=false; bz.name.Visible=false; bz.amount.Visible=false
+        if bz.highlight then bz.highlight.Enabled=false end
+    end
+    local by={}
+    for bz,bA in ipairs(x:GetChildren()) do
+        if bA:IsA("Model") and bA:FindFirstChild("PickUpZone") and not bA:GetAttribute("Locked") then
+            local bB,bC=pcall(function() return bA.PickUpZone.Position end)
+            if bB and bC then
+                local bD=(bC-bx.Position).Magnitude; table.insert(by,{item=bA,dist=bD})
+            end
+        end
+    end
+    table.sort(by,function(bz,bA) return bz.dist<bA.dist end)
+    for bz=1,math.min(20,#by) do
+        local bA=by[bz].item; local bB=w[bA]
+        if not bB then
+            bB={circle=Drawing.new("Circle"),innerCircle=Drawing.new("Circle"),name=Drawing.new("Text"),amount=Drawing.new("Text")}
+            bB.circle.Thickness=2; bB.circle.Transparency=0.7; bB.circle.Filled=false
+            bB.innerCircle.Thickness=2; bB.innerCircle.Transparency=1; bB.innerCircle.Filled=true
+            bB.name.Outline=true; bB.name.OutlineColor=Color3.fromRGB(0,0,0); bB.name.Center=true; bB.name.Size=16; bB.name.Font=4
+            bB.amount.Outline=true; bB.amount.OutlineColor=Color3.fromRGB(0,0,0); bB.amount.Center=true; bB.amount.Size=13; bB.amount.Color=Color3.fromRGB(200,200,200)
+            w[bA]=bB
+        end
+        if not bB.highlight or not bB.highlight.Parent then
+            local bC=Instance.new("Highlight")
+            bC.Name="ESP_Highlight"; bC.FillTransparency=0.5; bC.OutlineTransparency=0.1; bC.Adornee=bA; bC.Parent=bA; bB.highlight=bC
+        end
+        local bC,bD=bw:WorldToViewportPoint(bA.PickUpZone.Position)
+        if bD then
+            local bE=getRarityColor(bA); local bF=math.clamp(aA/bC.Z,3,6)
+            if bB.highlight then bB.highlight.FillColor=bE; bB.highlight.OutlineColor=bE; bB.highlight.Enabled=true end
+            bB.circle.Position=Vector2.new(bC.X,bC.Y); bB.circle.Radius=bF+5; bB.circle.Color=bE; bB.circle.Visible=true
+            bB.innerCircle.Position=Vector2.new(bC.X,bC.Y); bB.innerCircle.Radius=bF; bB.innerCircle.Color=bE; bB.innerCircle.Visible=true
+            bB.name.Color=bE; bB.name.Position=Vector2.new(bC.X,bC.Y-bF-20); bB.name.Text=bA.Name; bB.name.Visible=true
+            local bG=bA:GetAttribute("Amount") or 1
+            bB.amount.Position=Vector2.new(bC.X,bC.Y+bF+15); bB.amount.Text=bG>1 and "["..tostring(bG).."]" or ""; bB.amount.Visible=bG>1
+        else
+            bB.circle.Visible=false; bB.innerCircle.Visible=false; bB.name.Visible=false; bB.amount.Visible=false
+            if bB.highlight then bB.highlight.Enabled=false end
+        end
+    end
+end)
+
+a.PlayerRemoving:Connect(function(bx)
+    if bx==v then
+        for by,bz in pairs(w) do
+            pcall(function() bz.circle:Remove() end); pcall(function() bz.innerCircle:Remove() end)
+            pcall(function() bz.name:Remove() end); pcall(function() bz.amount:Remove() end)
+            pcall(function() if bz.highlight then bz.highlight:Destroy() end end)
+        end
+        w={}
+    end
+end)
+
+-- ==================== BUY & VEHICLE TABS ====================
+local BuyTab = B:Tab({Title = "Buy", Icon = "house"})
+BuyTab:Section({Title = "Buy"})
+local CrateController = require(game:GetService("ReplicatedStorage").Modules.Game.CrateSystem.Crate)
+local EnabledSkip = false
+BuyTab:Toggle({Title = "Skip animation",Desc = "",Value = false,Callback = function(v)
+    EnabledSkip = v
+    if EnabledSkip then
+        task.spawn(function()
+            while EnabledSkip do
+                task.wait()
+                if CrateController.class and CrateController.class.objects then
+                    for _, crate in pairs(CrateController.class.objects) do
+                        pcall(function()
+                            if crate.states and crate.states.open and crate.states.open.set then crate.states.open.set(true) end
+                            if CrateController.skipping and CrateController.skipping.set then CrateController.skipping.set(true) end
+                        end)
+                    end
+                end
+                if CrateController.spinning and CrateController.skip_spin then
+                    if not CrateController.spinning.get() then pcall(function() CrateController.skip_spin() end) end
+                end
+            end
+        end)
+    else
+        pcall(function() if CrateController.skipping and CrateController.skipping.set then CrateController.skipping.set(false) end end)
+    end
+end})
+
+local VehicleTab = B:Tab({Title = "Vehicle", Icon = "car"})
+VehicleTab:Section({Title = "Vehicle"})
+VehicleTab:Button({Title = "Pull Car Owner",Desc = "",Callback = function()
+    local Players = game:GetService("Players"); local Client = Players.LocalPlayer
+    local Character = Client.Character or Client.CharacterAdded:Wait()
+    local RootPart = Character:WaitForChild("HumanoidRootPart")
+    local Vehicles = workspace:WaitForChild("Vehicles")
+    for _, vehicle in pairs(Vehicles:GetChildren()) do
+        if vehicle:IsA("Model") then
+            local ownerId = vehicle:GetAttribute("OwnerUserId")
+            if ownerId and ownerId == Client.UserId then
+                local offset = CFrame.new(math.random(-5,5), 3, math.random(-15,-5))
+                if vehicle.PrimaryPart then vehicle:SetPrimaryPartCFrame(RootPart.CFrame * offset)
+                else
+                    local part = vehicle:FindFirstChildWhichIsA("BasePart")
+                    if part then part.CFrame = RootPart.CFrame * offset end
+                end
+            end
+        end
+    end
+    B:Notify({Title = "Success",Desc = "Vehicles pulled.",Time = 3})
+end})
+
+-- ==================== SPIN GUI ====================
+local player = game.Players.LocalPlayer; local playerGui = player:WaitForChild("PlayerGui")
+local isSpinning = false; local spinSpeed = 50
+local screenGui = Instance.new("ScreenGui"); screenGui.Name = "SpinGui"; screenGui.ResetOnSpawn = false; screenGui.Parent = playerGui
+local mainFrame = Instance.new("Frame"); mainFrame.Name = "MainFrame"; mainFrame.Size = UDim2.new(0, 140, 0, 50); mainFrame.Position = UDim2.new(0, 15, 0, 15)
+mainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 20); mainFrame.BorderSizePixel = 0; mainFrame.Parent = screenGui
+local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 10); corner.Parent = mainFrame
+local stroke = Instance.new("UIStroke"); stroke.Color = Color3.fromRGB(220, 20, 60); stroke.Thickness = 2; stroke.Parent = mainFrame
+local button = Instance.new("TextButton"); button.Name = "SpinButton"; button.Size = UDim2.new(0, 100, 0, 40); button.Position = UDim2.new(0, 5, 0, 5)
+button.BackgroundColor3 = Color3.fromRGB(25, 25, 35); button.TextColor3 = Color3.fromRGB(200, 200, 220); button.TextSize = 13; button.Font = Enum.Font.GothamBold; button.Text = "🔄 OFF"; button.BorderSizePixel = 0; button.Parent = mainFrame
+local buttonCorner = Instance.new("UICorner"); buttonCorner.CornerRadius = UDim.new(0, 7); buttonCorner.Parent = button
+local buttonStroke = Instance.new("UIStroke"); buttonStroke.Color = Color3.fromRGB(220, 20, 60); buttonStroke.Thickness = 1.5; buttonStroke.Parent = button
+local closeButton = Instance.new("TextButton"); closeButton.Name = "CloseButton"; closeButton.Size = UDim2.new(0, 30, 0, 40); closeButton.Position = UDim2.new(0, 110, 0, 5)
+closeButton.BackgroundColor3 = Color3.fromRGB(180, 20, 20); closeButton.TextColor3 = Color3.fromRGB(255, 255, 255); closeButton.TextSize = 16; closeButton.Font = Enum.Font.GothamBold; closeButton.Text = "×"; closeButton.BorderSizePixel = 0; closeButton.Parent = mainFrame
+local closeCorner = Instance.new("UICorner"); closeCorner.CornerRadius = UDim.new(0, 6); closeCorner.Parent = closeButton
+local closeStroke = Instance.new("UIStroke"); closeStroke.Color = Color3.fromRGB(255, 100, 100); closeStroke.Thickness = 1.5; closeStroke.Parent = closeButton
+
+local function spinCharacter()
+    local character = player.Character
+    if not character then return end
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then return end
+    while isSpinning and humanoidRootPart and character.Parent do
+        humanoidRootPart.CFrame = humanoidRootPart.CFrame * CFrame.Angles(0, math.rad(spinSpeed), 0)
+        game:GetService("RunService").RenderStepped:Wait()
+    end
+end
+
+button.MouseEnter:Connect(function() button.BackgroundColor3 = isSpinning and Color3.fromRGB(50, 100, 50) or Color3.fromRGB(40, 40, 50) end)
+button.MouseLeave:Connect(function() button.BackgroundColor3 = isSpinning and Color3.fromRGB(30, 80, 30) or Color3.fromRGB(25, 25, 35) end)
+closeButton.MouseEnter:Connect(function() closeButton.BackgroundColor3 = Color3.fromRGB(220, 50, 50) end)
+closeButton.MouseLeave:Connect(function() closeButton.BackgroundColor3 = Color3.fromRGB(180, 20, 20) end)
+
+button.MouseButton1Click:Connect(function()
+    isSpinning = not isSpinning
+    if isSpinning then
+        button.BackgroundColor3 = Color3.fromRGB(30, 80, 30); button.TextColor3 = Color3.fromRGB(100, 255, 100); button.Text = "✓ ON"
+        task.spawn(spinCharacter)
+    else
+        button.BackgroundColor3 = Color3.fromRGB(25, 25, 35); button.TextColor3 = Color3.fromRGB(220, 220, 220); button.Text = "🔄 OFF"
+    end
+end)
+
+closeButton.MouseButton1Click:Connect(function() screenGui:Destroy() end)
+player.CharacterAdded:Connect(function(newCharacter)
+    isSpinning = false; button.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    button.TextColor3 = Color3.fromRGB(220, 220, 220); button.Text = "🔄 OFF"
+end)
+
+print("✅ RO89xF3 Hub Loaded Successfully! All Features, Config & Underground System Active.")
