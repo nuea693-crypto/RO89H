@@ -2,7 +2,6 @@
 --// RO89 HUB | ULTIMATE COMBAT EDITION (WINDUI)
 --// ==========================================
 
--- โหลด WindUI Library และสร้างหน้าต่างหลักอัตโนมัติ (ป้องกัน Error กรณีไม่ได้สร้างมาก่อน)
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
 local Window = WindUI:CreateWindow({
@@ -127,7 +126,8 @@ else
     TargetCircleFrame.Name = 'Circle'
     TargetCircleFrame.AnchorPoint = Vector2.new(0.5, 0.5)
     TargetCircleFrame.BackgroundTransparency = 1
-    TargetCircleFrame.Size = UDim2.new(0, 30, 0, 30)
+    -- ปรับขนาดวงกลมเป้าหมายให้เล็กลงพอดีกับหัวเป้าหมาย ไม่ให้ใหญ่จนเกินไป
+    TargetCircleFrame.Size = UDim2.new(0, 16, 0, 16)
     TargetCircleFrame.Visible = false
     TargetCircleFrame.Parent = TargetCircleGui
 
@@ -330,25 +330,30 @@ RunService.RenderStepped:Connect(function()
 
     if CurrentTarget and CurrentTarget.Character then
         local targetPart = getSmartAimPart(CurrentTarget.Character)
-        local myHead = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild('Head')
+        -- ใช้ตำแหน่งกึ่งกลางหน้าจอเป็นจุดเริ่มต้นของ Tracer (หรือเปลี่ยนเป็นหัวตัวเราได้ตามสะดวก)
+        local startPos = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
 
-        if targetPart and myHead then
-            local myScreenPos, myOnScreen = Camera:WorldToViewportPoint(myHead.Position)
+        if targetPart then
             local targetScreenPos, targetOnScreen = Camera:WorldToViewportPoint(targetPart.Position)
 
             if targetOnScreen then
                 if not IsMobile then
                     Tracer.Visible = true
-                    Tracer.From = Vector2.new(myScreenPos.X, myScreenPos.Y)
+                    Tracer.From = startPos
                     Tracer.To = Vector2.new(targetScreenPos.X, targetScreenPos.Y)
                     TargetHeadCircle.Visible = true
                     TargetHeadCircle.Position = Vector2.new(targetScreenPos.X, targetScreenPos.Y)
                 else
                     if TracerFrame then
-                        local dx, dy = targetScreenPos.X - myScreenPos.X, targetScreenPos.Y - myScreenPos.Y
-                        TracerFrame.Size = UDim2.new(0, math.sqrt(dx * dx + dy * dy), 0, 2)
-                        TracerFrame.Position = UDim2.new(0, myScreenPos.X, 0, myScreenPos.Y)
-                        TracerFrame.Rotation = math.deg(math.atan2(dx, dy))
+                        local dx = targetScreenPos.X - startPos.X
+                        local dy = targetScreenPos.Y - startPos.Y
+                        local length = math.sqrt(dx * dx + dy * dy)
+                        local angle = math.deg(math.atan2(dy, dx))
+
+                        -- แก้ไขการคำนวณมุมเส้น Tracer บนมือถือให้ตรงเป๊ะพุ่งเข้าหาเป้าหมาย
+                        TracerFrame.Size = UDim2.new(0, length, 0, 2)
+                        TracerFrame.Position = UDim2.new(0, startPos.X, 0, startPos.Y)
+                        TracerFrame.Rotation = angle
                         TracerFrame.Visible = true
                     end
                     if TargetCircleFrame then
