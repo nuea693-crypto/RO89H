@@ -1,10 +1,17 @@
 --// ==========================================
---// RO89 HUB | แจกดีมั้ย🔫💸 (WINDUI)
+--// RO89 HUB | ULTIMATE COMBAT EDITION (WINDUI)
 --// ==========================================
 
--- ตรวจสอบและสร้างหน้าต่าง WindUI (สมมติว่า Window ถูกประกาศไว้แล้วจากสคริปต์หลัก หรือโหลดใหม่)
--- local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
--- local Window = Window or WindUI:CreateWindow({ Title = "RO89 HUB", Icon = "crosshair", Author = "RO89", Folder = "RO89Hub", Size = UDim2.fromOffset(550, 400) })
+-- โหลด WindUI Library และสร้างหน้าต่างหลักอัตโนมัติ (ป้องกัน Error กรณีไม่ได้สร้างมาก่อน)
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+
+local Window = WindUI:CreateWindow({
+    Title = "RO89 HUB | แจกดีมั้ยพี่ๆ🔫💸",
+    Icon = "crosshair",
+    Author = "RO89",
+    Folder = "RO89Hub",
+    Size = UDim2.fromOffset(550, 400),
+})
 
 local CombatTab = Window:Tab({
     Title = 'Combat',
@@ -270,7 +277,7 @@ local function predictPosition(targetPart, character)
         if VelocitySpikes[player] and VelocitySpikes[player].isAntiLock then
             return targetPart.Position + (avgVel * ping * 0.75)
         else
-            return targetPart.Position + (avgVel * ping * 1.45) -- ปรับแต่งความฉลาด Prediction 1000000x
+            return targetPart.Position + (avgVel * ping * 1.45)
         end
     else
         local velocity = hrp and (hrp.AssemblyLinearVelocity or hrp.Velocity) or Vector3.zero
@@ -360,7 +367,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Hook Remote สำหรับระบบยิง (แก้ไขให้ยิงเข้าและซิงค์ดาเมจสมบูรณ์)
+-- Hook Remote สำหรับระบบยิง
 local oldFire
 oldFire = hookfunction(game:GetService('ReplicatedStorage').Remotes.Send.FireServer, function(self, ...)
     local args = {...}
@@ -383,7 +390,6 @@ oldFire = hookfunction(game:GetService('ReplicatedStorage').Remotes.Send.FireSer
                 },
             }
 
-            -- เอฟเฟกต์กระสุนพุ่ง
             local beam = Instance.new('Part', workspace)
             beam.Anchored = true
             beam.CanCollide = false
