@@ -1,202 +1,107 @@
 --// ==========================================
---// RO89 HUB | CUSTOM KEY SYSTEM GATEKEEPER (วางไว้บนสุดของสุดๆ)
+--// RO89 HUB | KEY SYSTEM GATEKEEPER (วางไว้บรรทัดแรกสุด)
 --// ==========================================
 
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 local Players = game:GetService("Players")
-local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 
--- ลบ UI เก่าทิ้งกันบัคซ้อน
-if CoreGui:FindFirstChild("RO89_KeySystem") then
-    CoreGui.RO89_KeySystem:Destroy()
-end
-
-local KeySystemGui = Instance.new("ScreenGui")
-KeySystemGui.Name = "RO89_KeySystem"
-KeySystemGui.IgnoreGuiInset = true
-KeySystemGui.ResetOnSpawn = false
-KeySystemGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-KeySystemGui.Parent = CoreGui
-
--- ฉากหลังเบลอ/มืด
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
-MainFrame.BorderColor3 = Color3.fromRGB(40, 40, 50)
-MainFrame.BorderSizePixel = 2
-MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-MainFrame.Size = UDim2.new(0, 420, 0, 260)
-MainFrame.Parent = KeySystemGui
-
-local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 12)
-UICorner.Parent = MainFrame
-
-local UIStroke = Instance.new("UIStroke")
-UIStroke.Color = Color3.fromRGB(70, 70, 90)
-UIStroke.Thickness = 1.5
-UIStroke.Parent = MainFrame
-
--- หัวข้อ (Title)
-local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Name = "Title"
-TitleLabel.BackgroundTransparency = 1
-TitleLabel.Position = UDim2.new(0, 20, 0, 20)
-TitleLabel.Size = UDim2.new(1, -40, 0, 30)
-TitleLabel.Font = Enum.Font.GothamBold
-TitleLabel.Text = "🔑 RO89 HUB | SECURITY GATEWAY"
-TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-TitleLabel.TextSize = 18
-TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-TitleLabel.Parent = MainFrame
-
-local SubTitle = Instance.new("TextLabel")
-SubTitle.Name = "SubTitle"
-SubTitle.BackgroundTransparency = 1
-SubTitle.Position = UDim2.new(0, 20, 0, 50)
-SubTitle.Size = UDim2.new(1, -40, 0, 20)
-SubTitle.Font = Enum.Font.Gotham
-SubTitle.Text = "กรุณากรอกคีย์เพื่อเข้าสู่ระบบ Ultimate Master Edition"
-SubTitle.TextColor3 = Color3.fromRGB(160, 160, 180)
-SubTitle.TextSize = 12
-SubTitle.TextXAlignment = Enum.TextXAlignment.Left
-SubTitle.Parent = MainFrame
-
--- ช่องกรอกคีย์ (TextBox)
-local KeyBox = Instance.new("TextBox")
-KeyBox.Name = "KeyBox"
-KeyBox.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-KeyBox.BorderColor3 = Color3.fromRGB(60, 60, 80)
-KeyBox.Position = UDim2.new(0, 20, 0, 90)
-KeyBox.Size = UDim2.new(1, -40, 0, 45)
-KeyBox.Font = Enum.Font.GothamMedium
-KeyBox.PlaceholderText = "กรอกคีย์ของคุณที่นี่ (เช่น RO89-VIP-XXXX)"
-KeyBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 120)
-KeyBox.Text = ""
-KeyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-KeyBox.TextSize = 14
-KeyBox.ClearTextOnFocus = false
-KeyBox.Parent = MainFrame
-
-local BoxCorner = Instance.new("UICorner")
-BoxCorner.CornerRadius = UDim.new(0, 8)
-BoxCorner.Parent = KeyBox
-
--- ปุ่มยืนยัน (Verify Button)
-local VerifyBtn = Instance.new("TextButton")
-VerifyBtn.Name = "VerifyBtn"
-VerifyBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-VerifyBtn.Position = UDim2.new(0, 20, 0, 150)
-VerifyBtn.Size = UDim2.new(0.5, -25, 0, 45)
-VerifyBtn.Font = Enum.Font.GothamBold
-VerifyBtn.Text = "🔓 ยืนยันคีย์"
-VerifyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-VerifyBtn.TextSize = 14
-VerifyBtn.Parent = MainFrame
-
-local BtnCorner1 = Instance.new("UICorner")
-BtnCorner1.CornerRadius = UDim.new(0, 8)
-BtnCorner1.Parent = VerifyBtn
-
--- ปุ่มรับคีย์ (Get Key Button)
-local GetKeyBtn = Instance.new("TextButton")
-GetKeyBtn.Name = "GetKeyBtn"
-GetKeyBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
-GetKeyBtn.Position = UDim2.new(0.5, 5, 0, 150)
-GetKeyBtn.Size = UDim2.new(0.5, -25, 0, 45)
-GetKeyBtn.Font = Enum.Font.GothamBold
-GetKeyBtn.Text = "💬 รับคีย์"
-GetKeyBtn.TextColor3 = Color3.fromRGB(200, 200, 220)
-GetKeyBtn.TextSize = 14
-GetKeyBtn.Parent = MainFrame
-
-local BtnCorner2 = Instance.new("UICorner")
-BtnCorner2.CornerRadius = UDim.new(0, 8)
-BtnCorner2.Parent = GetKeyBtn
-
--- สถานะแจ้งเตือน (Status Label)
-local StatusLabel = Instance.new("TextLabel")
-StatusLabel.Name = "Status"
-StatusLabel.BackgroundTransparency = 1
-StatusLabel.Position = UDim2.new(0, 20, 0, 210)
-StatusLabel.Size = UDim2.new(1, -40, 0, 25)
-StatusLabel.Font = Enum.Font.GothamMedium
-StatusLabel.Text = "สถานะ: รอการกรอกคีย์ (คีย์เทส: RO89-FREE-TEST)"
-StatusLabel.TextColor3 = Color3.fromRGB(200, 200, 100)
-StatusLabel.TextSize = 12
-StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
-StatusLabel.Parent = MainFrame
-
--- ระบบลอจิกเช็คคีย์
 local KeyVerified = false
 
-VerifyBtn.MouseButton1Click:Connect(function()
-    _G.RO89_Database = _G.RO89_Database or {}
-    
-    -- คีย์เทสสำรองด่วน
-    if not _G.RO89_Database["RO89-FREE-TEST"] then
-        _G.RO89_Database["RO89-FREE-TEST"] = {
-            MaxUses = 999,
-            UsedCount = 0,
-            UsersList = {},
-            ExpireTime = "Lifetime",
-        }
-    end
+local KeyWindow = WindUI:CreateWindow({
+    Title = "RO89 HUB | Authentication Required",
+    Icon = "key",
+    Author = "RO89 Security",
+    Folder = "RO89HubKey",
+    Size = UDim2.fromOffset(420, 260),
+})
 
-    local inputtedKey = KeyBox.Text
-    local keyData = _G.RO89_Database[inputtedKey]
+local KeyTab = KeyWindow:Tab({
+    Title = 'Login',
+    Icon = 'lock',
+})
 
-    if not keyData then
-        StatusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
-        StatusLabel.Text = "❌ คีย์ไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง"
-        return
-    end
+local InputtedKey = ""
 
-    if keyData.ExpireTime ~= "Lifetime" and os.time() > keyData.ExpireTime then
-        StatusLabel.TextColor3 = Color3.fromRGB(255, 150, 0)
-        StatusLabel.Text = "⌛ คีย์นี้หมดอายุการใช้งานแล้ว"
-        return
-    end
+KeyTab:Input({
+    Title = "กรอกคีย์เข้าใช้งาน (Enter Key)",
+    Flag = "key_input",
+    Placeholder = "เช่น RO89-VIP-XXXX-XXXX",
+    Callback = function(text)
+        InputtedKey = text
+    end,
+})
 
-    local alreadyUsed = false
-    for _, userId in ipairs(keyData.UsersList) do
-        if userId == LocalPlayer.UserId then
-            alreadyUsed = true
-            break
+KeyTab:Button({
+    Title = "🔓 ยืนยันคีย์ (Verify Key)",
+    Callback = function()
+        _G.RO89_Database = _G.RO89_Database or {}
+        
+        -- คีย์เทสสำหรับเข้าใช้งานด่วน
+        if not _G.RO89_Database["RO89-FREE-TEST"] then
+            _G.RO89_Database["RO89-FREE-TEST"] = {
+                DurationDays = 99999,
+                MaxUses = 999,
+                UsedCount = 0,
+                UsersList = {},
+                ExpireTime = "Lifetime",
+            }
         end
-    end
 
-    if not alreadyUsed then
-        if keyData.UsedCount >= keyData.MaxUses then
-            StatusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
-            StatusLabel.Text = "🚫 โควต้าการใช้งานคีย์นี้เต็มแล้ว"
+        local keyData = _G.RO89_Database[InputtedKey]
+
+        if not keyData then
+            WindUI:Notify({ Title = "❌ คีย์ไม่ถูกต้อง", Content = "ไม่พบข้อมูลคีย์นี้ในระบบ กรุณาตรวจสอบอีกครั้ง", Duration = 4 })
             return
-        else
-            keyData.UsedCount = keyData.UsedCount + 1
-            table.insert(keyData.UsersList, LocalPlayer.UserId)
         end
-    end
 
-    StatusLabel.TextColor3 = Color3.fromRGB(80, 255, 120)
-    StatusLabel.Text = "✅ ยืนยันคีย์สำเร็จ กำลังเปิด RO89 HUB..."
-    
-    task.wait(0.8)
-    KeyVerified = true
-    KeySystemGui:Destroy()
-end)
+        if keyData.ExpireTime ~= "Lifetime" and os.time() > keyData.ExpireTime then
+            WindUI:Notify({ Title = "⌛ คีย์หมดอายุแล้ว", Content = "คีย์นี้หมดอายุการใช้งานเรียบร้อยแล้ว", Duration = 4 })
+            return
+        end
 
-GetKeyBtn.MouseButton1Click:Connect(function()
-    pcall(function() setclipboard("https://discord.gg/ro89hub") end)
-    StatusLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
-    StatusLabel.Text = "💬 คัดลอกลิงก์รับคีย์ลงคลิปบอร์ดแล้ว!"
-end)
+        local alreadyUsed = false
+        for _, userId in ipairs(keyData.UsersList) do
+            if userId == LocalPlayer.UserId then
+                alreadyUsed = true
+                break
+            end
+        end
 
--- ดักรอจนกว่าจะกด Verify ผ่าน
+        if not alreadyUsed then
+            if keyData.UsedCount >= keyData.MaxUses then
+                WindUI:Notify({ Title = "🚫 โควต้าเต็ม", Content = "คีย์นี้ถูกใช้งานครบจำนวนจำกัดคนแล้ว", Duration = 4 })
+                return
+            else
+                keyData.UsedCount = keyData.UsedCount + 1
+                table.insert(keyData.UsersList, LocalPlayer.UserId)
+            end
+        end
+
+        WindUI:Notify({ Title = "✅ ยืนยันคีย์สำเร็จ!", Content = "ยินดีต้อนรับเข้าสู่ RO89 HUB", Duration = 3 })
+        
+        -- ปิดหน้าต่างคีย์แล้วปล่อยให้โค้ดหลักรันต่อ
+        KeyVerified = true
+        pcall(function() KeyWindow:Close() end)
+    end,
+})
+
+KeyTab:Button({
+    Title = "💬 รับคีย์ (Get Key)",
+    Callback = function()
+        pcall(function() setclipboard("https://discord.gg/ro89hub") end)
+        WindUI:Notify({ Title = "ลิงก์รับคีย์", Content = "คัดลอกลิงก์รับคีย์ลงคลิปบอร์ดแล้ว!", Duration = 4 })
+    end,
+})
+
+-- ลูปหน่วงเวลาดักรอจนกว่าจะกด Verify ผ่าน ถึงจะปล่อยให้โค้ดดั้งเดิมด้านล่างรัน
 repeat task.wait() until KeyVerified
 
 --// ==========================================
---// วางสคริปต์หลัก (WindUI ของมึง) ต่อจากตรงนี้ลงไปได้เลยเพื่อน!
+--// โค้ดดั้งเดิมของมึง (ต่อจากตรงนี้ลงไปยาวๆ ตามปกติเลย)
+--// ==========================================
+--// ==========================================
+--// RO89 HUB | ULTIMATE MASTER EDITION (FULL 100% NO CUT)
 --// ==========================================
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
@@ -891,295 +796,10 @@ CharacterTab:Toggle({
     end,
 })
 
---// ==========================================
---// WALK SPEED ADD-ON (วางต่อท้ายใน CharacterTab)
---// ==========================================
-
-local Q = false
-local R = 2 * 0.05 -- ค่าเริ่มต้นตามสไลเดอร์ Default = 2
-
-local walkToggle = CharacterTab:Toggle({
-    Title = "Walk Speed",
-    Flag = "walk_speed_toggle",
-    Desc = "เปิดใช้งานความเร็วเดินพิเศษ",
-    Icon = "footprints",
-    Type = "Checkbox",
-    Default = false,
-    Callback = function(state)
-        Q = state
-    end,
-})
-
-local speedSlider = CharacterTab:Slider({
-    Title = "Speed Multiplier",
-    Flag = "speed_multiplier_slider",
-    Desc = "ปรับตัวคูณความเร็วเคลื่อนที่",
-    Step = 0.5,
-    Value = {Min = 1, Max = 5, Default = 2},
-    Callback = function(value)
-        R = value * 0.05
-    end,
-})
-
--- ลูปคุมความเร็วเดินจริง (ผูกกับ RenderStepped หรือ Heartbeat เพื่อให้เดินไวขึ้นตามที่ปรับ)
-RunService.RenderStepped:Connect(function()
-    if Q then
-        pcall(function()
-            local char = LocalPlayer.Character
-            if char then
-                local humanoid = char:FindFirstChildOfClass("Humanoid")
-                if humanoid then
-                    -- ปรับความเร็วตามตัวคูณ R (หรือเอาไปปรับเทียบกับ WalkSpeed ปกติของเกม)
-                    humanoid.WalkSpeed = 16 * (1 + R)
-                end
-            end
-        end)
-    end
-end)
-
 print("[RO89 HUB] Ultimate Master Edition Loaded Successfully!")
 --// ==========================================
---// RO89 HUB | VISUALS & ESP ADD-ON (TAB 3)
+--// RO89 HUB | ULTIMATE MASTER EDITION (FULL 100% NO CUT)
 --// ==========================================
-
-task.spawn(function()
-    local Window = Window -- ดึงหน้าต่างหลักมาจากสคริปต์เดิม
-
-    if Window then
-        -- สร้างแท็บใหม่ทางซ้ายมือ (Visuals / มองทะลุ)
-        local VisualsTab = Window:Tab({
-            Title = 'Visuals (มองทะลุ)',
-            Icon = 'eye',
-        })
-
-        -- หัวข้อที่ 1: มองชื่อ (Name ESP)
-        VisualsTab:Toggle({
-            Title = 'มองชื่อ (Name ESP)',
-            Flag = 'esp_name',
-            Desc = 'แสดงชื่อผู้เล่นทะลุกำแพง',
-            Icon = 'user',
-            Type = 'Checkbox',
-            Default = false,
-            Callback = function(state)
-                if state then
-                    print("[RO89 HUB] Name ESP Enabled!")
-                else
-                    print("[RO89 HUB] Name ESP Disabled!")
-                end
-            end,
-        })
-
-        -- หัวข้อที่ 2: มองเลือด (Health ESP)
-        VisualsTab:Toggle({
-            Title = 'มองเลือด (Health ESP)',
-            Flag = 'esp_health',
-            Desc = 'แสดงหลอดเลือดและเลือดคงเหลือของเป้าหมาย',
-            Icon = 'heart',
-            Type = 'Checkbox',
-            Default = false,
-            Callback = function(state)
-                if state then
-                    print("[RO89 HUB] Health ESP Enabled!")
-                else
-                    print("[RO89 HUB] Health ESP Disabled!")
-                end
-            end,
-        })
-
-            --// ==========================================
---// RO89 HUB | VISUALS & WEAPON ESP ADD-ON (TAB 3 INTEGRATION)
---// ==========================================
-
-task.spawn(function()
-    local Players = game:GetService("Players")
-    local RunService = game:GetService("RunService")
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
-    local LocalPlayer = Players.LocalPlayer
-
-    -- ฐานข้อมูลความหายากและสีขอบไอเท็ม
-    local RarityColors = {
-        Common = Color3.fromRGB(255, 255, 255),
-        Uncommon = Color3.fromRGB(99, 255, 52),
-        Rare = Color3.fromRGB(51, 170, 255),
-        Epic = Color3.fromRGB(237, 44, 255),
-        Legendary = Color3.fromRGB(255, 150, 0),
-        Omega = Color3.fromRGB(255, 20, 51),
-    }
-
-    local WeaponDB = {}
-
-    local function getItemKey(tool)
-        local handle = tool:FindFirstChild("Handle")
-        local displayName = tool:GetAttribute("DisplayName") or tool.Name
-        local itemId = tool:GetAttribute("ItemId") or tool:GetAttribute("Id") or tool.Name
-        local rarity = tool:GetAttribute("RarityName") or "Common"
-
-        if handle then
-            local mesh = handle:FindFirstChildOfClass("SpecialMesh")
-            if mesh and mesh.MeshId ~= "" then
-                return mesh.MeshId .. (mesh.TextureId or "") .. "_RARITY_" .. rarity
-            elseif handle:IsA("MeshPart") and handle.MeshId ~= "" then
-                return handle.MeshId .. (handle.TextureID or "") .. "_RARITY_" .. rarity
-            end
-        end
-        if itemId and itemId ~= "" and itemId ~= tool.Name then
-            return "ITEMID_" .. itemId .. "_RARITY_" .. rarity
-        end
-        return "NAME_" .. displayName .. "_" .. tool.Name .. "_RARITY_" .. rarity
-    end
-
-    local ItemsFolder = ReplicatedStorage:FindFirstChild("Items")
-    if ItemsFolder then
-        for _, item in ipairs(ItemsFolder:GetDescendants()) do
-            if item:IsA("Tool") then
-                WeaponDB[getItemKey(item)] = {
-                    Name = item:GetAttribute("DisplayName") or item.Name,
-                    Rarity = item:GetAttribute("RarityName") or "Common",
-                    ImageId = item:GetAttribute("ImageId") or "rbxassetid://7072725737",
-                }
-            end
-        end
-    end
-
-    local function getWeaponInfo(tool)
-        if not tool or not tool:IsA("Tool") then
-            return nil
-        end
-        return WeaponDB[getItemKey(tool)]
-    end
-
-    local WeaponESPEnabled = false
-    local billboards = {}
-
-    local function createBillboardForPlayer(player)
-        if not WeaponESPEnabled or player == LocalPlayer then
-            return
-        end
-        local char = player.Character
-        if not char then
-            return
-        end
-        local root = char:FindFirstChild("HumanoidRootPart")
-        if not root then
-            return
-        end
-
-        if billboards[player] then
-            billboards[player]:Destroy()
-            billboards[player] = nil
-        end
-
-        local gui = Instance.new("BillboardGui")
-        gui.Name = "WeaponESP_Billboard"
-        gui.Adornee = root
-        gui.Size = UDim2.new(0, 90, 0, 20)
-        gui.StudsOffset = Vector3.new(0, -5, 0)
-        gui.AlwaysOnTop = true
-        gui.Parent = char
-
-        local layout = Instance.new("UIListLayout", gui)
-        layout.FillDirection = Enum.FillDirection.Horizontal
-        layout.SortOrder = Enum.SortOrder.LayoutOrder
-        layout.Padding = UDim.new(0, 5)
-        layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-
-        local tools = {}
-        for _, containerName in ipairs({"Backpack", "StarterGear", "StarterPack"}) do
-            local container = player:FindFirstChild(containerName)
-            if container then
-                for _, tool in ipairs(container:GetChildren()) do
-                    if tool:IsA("Tool") and tool.Name ~= "Fists" then
-                        table.insert(tools, tool)
-                    end
-                end
-            end
-        end
-        for _, tool in ipairs(char:GetChildren()) do
-            if tool:IsA("Tool") and tool.Name ~= "Fists" then
-                table.insert(tools, tool)
-            end
-        end
-
-        for _, tool in ipairs(tools) do
-            local info = getWeaponInfo(tool)
-            if info then
-                local icon = Instance.new("ImageLabel", gui)
-                icon.Size = UDim2.new(0, 20, 0, 20)
-                icon.BackgroundTransparency = 0.1
-                icon.Image = info.ImageId
-                icon.BackgroundColor3 = Color3.fromRGB(240, 248, 255)
-                Instance.new("UICorner", icon).CornerRadius = UDim.new(0, 10)
-                local stroke = Instance.new("UIStroke", icon)
-                stroke.Color = RarityColors[info.Rarity] or Color3.new(1, 1, 1)
-                stroke.Thickness = 2
-            end
-        end
-
-        billboards[player] = gui
-    end
-
-    local heartbeatConnection
-    local function setWeaponESP(state)
-        WeaponESPEnabled = state
-        if state then
-            for _, player in ipairs(Players:GetPlayers()) do
-                createBillboardForPlayer(player)
-            end
-            heartbeatConnection = RunService.Heartbeat:Connect(function()
-                for _, player in ipairs(Players:GetPlayers()) do
-                    if player ~= LocalPlayer and player.Character then
-                        createBillboardForPlayer(player)
-                    end
-                end
-            end)
-            print("[RO89 HUB] Weapon ESP Enabled!")
-        else
-            if heartbeatConnection then
-                heartbeatConnection:Disconnect()
-                heartbeatConnection = nil
-            end
-            for _, gui in pairs(billboards) do
-                if gui then gui:Destroy() end
-            end
-            billboards = {}
-            print("[RO89 HUB] Weapon ESP Disabled!")
-        end
-    end
-
-    Players.PlayerRemoving:Connect(function(player)
-        if billboards[player] then
-            billboards[player]:Destroy()
-            billboards[player] = nil
-        end
-    end)
-
-    -- เชื่อมต่อเข้ากับหน้าต่างหลัก WindUI (ดึง Window มาใช้)
-    local Window = Window
-    if Window then
-        local VisualsTab = Window:Tab({
-            Title = 'Visuals (มองทะลุ)',
-            Icon = 'eye',
-        })
-
-        -- ปุ่มเปิด-ปิด Weapon ESP ในแท็บ Visuals
-        VisualsTab:Toggle({
-            Title = 'มองของ/อาวุธ (Weapon ESP)',
-            Flag = 'weapon_esp',
-            Desc = 'แสดงไอคอนอาวุธบนหัวผู้เล่น แยกตามความหายาก',
-            Icon = 'package',
-            Type = 'Checkbox',
-            Default = false,
-            Callback = function(state)
-                setWeaponESP(state)
-            end,
-        })
-
-        print("[RO89 Tools] Weapon ESP Integrated into Visuals Tab Successfully!")
-    else
-        warn("[RO89 Tools] Error: Window not found for Weapon ESP tab integration!")
-    end
-end)
-
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
@@ -1873,291 +1493,4 @@ CharacterTab:Toggle({
     end,
 })
 
---// ==========================================
---// WALK SPEED ADD-ON (วางต่อท้ายใน CharacterTab)
---// ==========================================
-
-local Q = false
-local R = 2 * 0.05 -- ค่าเริ่มต้นตามสไลเดอร์ Default = 2
-
-local walkToggle = CharacterTab:Toggle({
-    Title = "Walk Speed",
-    Flag = "walk_speed_toggle",
-    Desc = "เปิดใช้งานความเร็วเดินพิเศษ",
-    Icon = "footprints",
-    Type = "Checkbox",
-    Default = false,
-    Callback = function(state)
-        Q = state
-    end,
-})
-
-local speedSlider = CharacterTab:Slider({
-    Title = "Speed Multiplier",
-    Flag = "speed_multiplier_slider",
-    Desc = "ปรับตัวคูณความเร็วเคลื่อนที่",
-    Step = 0.5,
-    Value = {Min = 1, Max = 5, Default = 2},
-    Callback = function(value)
-        R = value * 0.05
-    end,
-})
-
--- ลูปคุมความเร็วเดินจริง (ผูกกับ RenderStepped หรือ Heartbeat เพื่อให้เดินไวขึ้นตามที่ปรับ)
-RunService.RenderStepped:Connect(function()
-    if Q then
-        pcall(function()
-            local char = LocalPlayer.Character
-            if char then
-                local humanoid = char:FindFirstChildOfClass("Humanoid")
-                if humanoid then
-                    -- ปรับความเร็วตามตัวคูณ R (หรือเอาไปปรับเทียบกับ WalkSpeed ปกติของเกม)
-                    humanoid.WalkSpeed = 16 * (1 + R)
-                end
-            end
-        end)
-    end
-end)
-
 print("[RO89 HUB] Ultimate Master Edition Loaded Successfully!")
---// ==========================================
---// RO89 HUB | VISUALS & ESP ADD-ON (TAB 3)
---// ==========================================
-
-task.spawn(function()
-    local Window = Window -- ดึงหน้าต่างหลักมาจากสคริปต์เดิม
-
-    if Window then
-        -- สร้างแท็บใหม่ทางซ้ายมือ (Visuals / มองทะลุ)
-        local VisualsTab = Window:Tab({
-            Title = 'Visuals (มองทะลุ)',
-            Icon = 'eye',
-        })
-
-        -- หัวข้อที่ 1: มองชื่อ (Name ESP)
-        VisualsTab:Toggle({
-            Title = 'มองชื่อ (Name ESP)',
-            Flag = 'esp_name',
-            Desc = 'แสดงชื่อผู้เล่นทะลุกำแพง',
-            Icon = 'user',
-            Type = 'Checkbox',
-            Default = false,
-            Callback = function(state)
-                if state then
-                    print("[RO89 HUB] Name ESP Enabled!")
-                else
-                    print("[RO89 HUB] Name ESP Disabled!")
-                end
-            end,
-        })
-
-        -- หัวข้อที่ 2: มองเลือด (Health ESP)
-        VisualsTab:Toggle({
-            Title = 'มองเลือด (Health ESP)',
-            Flag = 'esp_health',
-            Desc = 'แสดงหลอดเลือดและเลือดคงเหลือของเป้าหมาย',
-            Icon = 'heart',
-            Type = 'Checkbox',
-            Default = false,
-            Callback = function(state)
-                if state then
-                    print("[RO89 HUB] Health ESP Enabled!")
-                else
-                    print("[RO89 HUB] Health ESP Disabled!")
-                end
-            end,
-        })
-
-            --// ==========================================
---// RO89 HUB | VISUALS & WEAPON ESP ADD-ON (TAB 3 INTEGRATION)
---// ==========================================
-
-task.spawn(function()
-    local Players = game:GetService("Players")
-    local RunService = game:GetService("RunService")
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
-    local LocalPlayer = Players.LocalPlayer
-
-    -- ฐานข้อมูลความหายากและสีขอบไอเท็ม
-    local RarityColors = {
-        Common = Color3.fromRGB(255, 255, 255),
-        Uncommon = Color3.fromRGB(99, 255, 52),
-        Rare = Color3.fromRGB(51, 170, 255),
-        Epic = Color3.fromRGB(237, 44, 255),
-        Legendary = Color3.fromRGB(255, 150, 0),
-        Omega = Color3.fromRGB(255, 20, 51),
-    }
-
-    local WeaponDB = {}
-
-    local function getItemKey(tool)
-        local handle = tool:FindFirstChild("Handle")
-        local displayName = tool:GetAttribute("DisplayName") or tool.Name
-        local itemId = tool:GetAttribute("ItemId") or tool:GetAttribute("Id") or tool.Name
-        local rarity = tool:GetAttribute("RarityName") or "Common"
-
-        if handle then
-            local mesh = handle:FindFirstChildOfClass("SpecialMesh")
-            if mesh and mesh.MeshId ~= "" then
-                return mesh.MeshId .. (mesh.TextureId or "") .. "_RARITY_" .. rarity
-            elseif handle:IsA("MeshPart") and handle.MeshId ~= "" then
-                return handle.MeshId .. (handle.TextureID or "") .. "_RARITY_" .. rarity
-            end
-        end
-        if itemId and itemId ~= "" and itemId ~= tool.Name then
-            return "ITEMID_" .. itemId .. "_RARITY_" .. rarity
-        end
-        return "NAME_" .. displayName .. "_" .. tool.Name .. "_RARITY_" .. rarity
-    end
-
-    local ItemsFolder = ReplicatedStorage:FindFirstChild("Items")
-    if ItemsFolder then
-        for _, item in ipairs(ItemsFolder:GetDescendants()) do
-            if item:IsA("Tool") then
-                WeaponDB[getItemKey(item)] = {
-                    Name = item:GetAttribute("DisplayName") or item.Name,
-                    Rarity = item:GetAttribute("RarityName") or "Common",
-                    ImageId = item:GetAttribute("ImageId") or "rbxassetid://7072725737",
-                }
-            end
-        end
-    end
-
-    local function getWeaponInfo(tool)
-        if not tool or not tool:IsA("Tool") then
-            return nil
-        end
-        return WeaponDB[getItemKey(tool)]
-    end
-
-    local WeaponESPEnabled = false
-    local billboards = {}
-
-    local function createBillboardForPlayer(player)
-        if not WeaponESPEnabled or player == LocalPlayer then
-            return
-        end
-        local char = player.Character
-        if not char then
-            return
-        end
-        local root = char:FindFirstChild("HumanoidRootPart")
-        if not root then
-            return
-        end
-
-        if billboards[player] then
-            billboards[player]:Destroy()
-            billboards[player] = nil
-        end
-
-        local gui = Instance.new("BillboardGui")
-        gui.Name = "WeaponESP_Billboard"
-        gui.Adornee = root
-        gui.Size = UDim2.new(0, 90, 0, 20)
-        gui.StudsOffset = Vector3.new(0, -5, 0)
-        gui.AlwaysOnTop = true
-        gui.Parent = char
-
-        local layout = Instance.new("UIListLayout", gui)
-        layout.FillDirection = Enum.FillDirection.Horizontal
-        layout.SortOrder = Enum.SortOrder.LayoutOrder
-        layout.Padding = UDim.new(0, 5)
-        layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-
-        local tools = {}
-        for _, containerName in ipairs({"Backpack", "StarterGear", "StarterPack"}) do
-            local container = player:FindFirstChild(containerName)
-            if container then
-                for _, tool in ipairs(container:GetChildren()) do
-                    if tool:IsA("Tool") and tool.Name ~= "Fists" then
-                        table.insert(tools, tool)
-                    end
-                end
-            end
-        end
-        for _, tool in ipairs(char:GetChildren()) do
-            if tool:IsA("Tool") and tool.Name ~= "Fists" then
-                table.insert(tools, tool)
-            end
-        end
-
-        for _, tool in ipairs(tools) do
-            local info = getWeaponInfo(tool)
-            if info then
-                local icon = Instance.new("ImageLabel", gui)
-                icon.Size = UDim2.new(0, 20, 0, 20)
-                icon.BackgroundTransparency = 0.1
-                icon.Image = info.ImageId
-                icon.BackgroundColor3 = Color3.fromRGB(240, 248, 255)
-                Instance.new("UICorner", icon).CornerRadius = UDim.new(0, 10)
-                local stroke = Instance.new("UIStroke", icon)
-                stroke.Color = RarityColors[info.Rarity] or Color3.new(1, 1, 1)
-                stroke.Thickness = 2
-            end
-        end
-
-        billboards[player] = gui
-    end
-
-    local heartbeatConnection
-    local function setWeaponESP(state)
-        WeaponESPEnabled = state
-        if state then
-            for _, player in ipairs(Players:GetPlayers()) do
-                createBillboardForPlayer(player)
-            end
-            heartbeatConnection = RunService.Heartbeat:Connect(function()
-                for _, player in ipairs(Players:GetPlayers()) do
-                    if player ~= LocalPlayer and player.Character then
-                        createBillboardForPlayer(player)
-                    end
-                end
-            end)
-            print("[RO89 HUB] Weapon ESP Enabled!")
-        else
-            if heartbeatConnection then
-                heartbeatConnection:Disconnect()
-                heartbeatConnection = nil
-            end
-            for _, gui in pairs(billboards) do
-                if gui then gui:Destroy() end
-            end
-            billboards = {}
-            print("[RO89 HUB] Weapon ESP Disabled!")
-        end
-    end
-
-    Players.PlayerRemoving:Connect(function(player)
-        if billboards[player] then
-            billboards[player]:Destroy()
-            billboards[player] = nil
-        end
-    end)
-
-    -- เชื่อมต่อเข้ากับหน้าต่างหลัก WindUI (ดึง Window มาใช้)
-    local Window = Window
-    if Window then
-        local VisualsTab = Window:Tab({
-            Title = 'Visuals (มองทะลุ)',
-            Icon = 'eye',
-        })
-
-        -- ปุ่มเปิด-ปิด Weapon ESP ในแท็บ Visuals
-        VisualsTab:Toggle({
-            Title = 'มองของ/อาวุธ (Weapon ESP)',
-            Flag = 'weapon_esp',
-            Desc = 'แสดงไอคอนอาวุธบนหัวผู้เล่น แยกตามความหายาก',
-            Icon = 'package',
-            Type = 'Checkbox',
-            Default = false,
-            Callback = function(state)
-                setWeaponESP(state)
-            end,
-        })
-
-        print("[RO89 Tools] Weapon ESP Integrated into Visuals Tab Successfully!")
-    else
-        warn("[RO89 Tools] Error: Window not found for Weapon ESP tab integration!")
-    end
-end)
