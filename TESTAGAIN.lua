@@ -1,5 +1,5 @@
 --// ==========================================
---// RO89 HUB | ULTIMATE COMBAT EDITION (WINDUI)
+--// RO89 HUB | ULTIMATE COMBAT & CHARACTER EDITION
 --// ==========================================
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
@@ -12,6 +12,9 @@ local Window = WindUI:CreateWindow({
     Size = UDim2.fromOffset(550, 400),
 })
 
+-- ==========================================
+-- 1. COMBAT TAB & SILENT AIM MODULE
+-- ==========================================
 local CombatTab = Window:Tab({
     Title = 'Combat',
     Icon = 'swords',
@@ -126,7 +129,6 @@ else
     TargetCircleFrame.Name = 'Circle'
     TargetCircleFrame.AnchorPoint = Vector2.new(0.5, 0.5)
     TargetCircleFrame.BackgroundTransparency = 1
-    -- ปรับขนาดวงกลมเป้าหมายให้เล็กลงพอดีกับหัวเป้าหมาย ไม่ให้ใหญ่จนเกินไป
     TargetCircleFrame.Size = UDim2.new(0, 16, 0, 16)
     TargetCircleFrame.Visible = false
     TargetCircleFrame.Parent = TargetCircleGui
@@ -330,7 +332,6 @@ RunService.RenderStepped:Connect(function()
 
     if CurrentTarget and CurrentTarget.Character then
         local targetPart = getSmartAimPart(CurrentTarget.Character)
-        -- ใช้ตำแหน่งกึ่งกลางหน้าจอเป็นจุดเริ่มต้นของ Tracer (หรือเปลี่ยนเป็นหัวตัวเราได้ตามสะดวก)
         local startPos = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
 
         if targetPart then
@@ -350,7 +351,6 @@ RunService.RenderStepped:Connect(function()
                         local length = math.sqrt(dx * dx + dy * dy)
                         local angle = math.deg(math.atan2(dy, dx))
 
-                        -- แก้ไขการคำนวณมุมเส้น Tracer บนมือถือให้ตรงเป๊ะพุ่งเข้าหาเป้าหมาย
                         TracerFrame.Size = UDim2.new(0, length, 0, 2)
                         TracerFrame.Position = UDim2.new(0, startPos.X, 0, startPos.Y)
                         TracerFrame.Rotation = angle
@@ -410,7 +410,6 @@ oldFire = hookfunction(game:GetService('ReplicatedStorage').Remotes.Send.FireSer
     return oldFire(self, unpack(args))
 end)
 
--- UI Toggles & Sliders
 CombatTab:Toggle({
     Title = 'Silent Aim',
     Flag = 'silent aim',
@@ -472,29 +471,19 @@ CombatTab:Slider({
     Callback = function(value) VelocityThreshold = tonumber(value) or 250 end,
 })
 
-print("[RO89 HUB] Combat Tab & Ultra Smart Silent Aim Loaded Successfully!")
 
---// ==========================================
---// RO89 HUB | CHARACTER TAB & ANTI-LOCK MODULE
---// ==========================================
-
--- สมมติฐานกรณีใช้ WindUI (ถ้าใช้ Window ตัวเดิม สามารถเอาโค้ดชุดนี้ไปใส่เพิ่มใน Window ของคุณได้เลย)
--- ตัวอย่างการสร้าง Tab "Character" และ Toggle
+-- ==========================================
+-- 2. CHARACTER TAB & ANTI-LOCK MODULE (FIXED)
+-- ==========================================
 local CharacterTab = Window:Tab({
     Title = 'Character',
     Icon = 'user',
 })
 
 local AntiLockEnabled = false
-local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-
--- ตัวแปรเก็บค่าส่ายแบบสุ่ม
 local lastJitterTime = 0
 local randomOffset = Vector3.new(0, 0, 0)
 
--- ฟังก์ชัน Anti-Lock (ตัวส่ายแต่ม้องกล้องนิ่ง)
 RunService.RenderStepped:Connect(function()
     if not AntiLockEnabled then return end
     
@@ -505,23 +494,20 @@ RunService.RenderStepped:Connect(function()
     local humanoid = character:FindFirstChild("Humanoid")
     
     if humanoidRootPart and humanoid then
-        -- เช็คว่าตัวละครกำลังเคลื่อนที่ (เดินหรือวิ่ง) อยู่หรือไม่
         local isMoving = humanoid.MoveDirection.Magnitude > 0
         
         if isMoving then
             local currentTime = tick()
-            -- สุ่มทิศทางและความเร็วในการส่ายทุกๆ 0.05 วินาที เพื่อความสะบัดแบบรัวและเร็วสุดๆ
-            if currentTime - lastJitterTime > 0.05 then
+            if currentTime - lastJitterTime > 0.04 then
                 lastJitterTime = currentTime
-                -- สุ่มค่าออฟเซ็ตตำแหน่งตัวละคร (ซ้าย, ขวา, บน, ล่าง, หน้า, หลัง) แบบคาดเดาไม่ได้
+                -- สุ่มสะบัดแบบรวดเร็วรอบทิศทาง (ซ้าย ขวา บน ล่าง หน้า หลัง)
                 randomOffset = Vector3.new(
-                    math.random(-35, 35) / 10,  -- ขยับซ้ายขวา
-                    math.random(-20, 30) / 10,  -- ขยับขึ้นลง
-                    math.random(-35, 35) / 10   -- ขยับหน้าหลัง
+                    math.random(-40, 40) / 10,
+                    math.random(-25, 35) / 10,
+                    math.random(-40, 40) / 10
                 )
             end
             
-            -- บังคับขยับตำแหน่งพาร์ทหลักของตัวละครให้ส่าย แต่กล้องจะไม่ถูกดึงตามเพราะเราไม่ได้ยุ่งกับ Camera.CFrame
             pcall(function()
                 humanoidRootPart.CFrame = humanoidRootPart.CFrame + randomOffset
             end)
@@ -531,22 +517,16 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- สร้าง Toggle ในแท็บ Character
 CharacterTab:Toggle({
     Title = 'กันล็อค (กันพวกโปร)',
     Flag = 'antilock_toggle',
-    Desc = 'ตัวส่ายหลบโปรแกรมล็อกเป้า',
+    Desc = 'ตัวส่ายหลบโปรแกรมล็อกเป้า แต่มุมกล้องนิ่งปกติ',
     Icon = 'shield-alert',
     Type = 'Checkbox',
     Default = false,
     Callback = function(state)
         AntiLockEnabled = state
-        if state then
-            print("[RO89 HUB] Anti-Lock (Jitter Mode) Enabled!")
-        else
-            print("[RO89 HUB] Anti-Lock Disabled!")
-        end
     end,
 })
 
-print("[RO89 Tools] Character Tab & Anti-Lock Module Loaded Successfully!")
+print("[RO89 HUB] Combat & Character Tabs Loaded Successfully!")
