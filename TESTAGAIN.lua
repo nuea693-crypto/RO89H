@@ -473,3 +473,80 @@ CombatTab:Slider({
 })
 
 print("[RO89 HUB] Combat Tab & Ultra Smart Silent Aim Loaded Successfully!")
+
+--// ==========================================
+--// RO89 HUB | CHARACTER TAB & ANTI-LOCK MODULE
+--// ==========================================
+
+-- สมมติฐานกรณีใช้ WindUI (ถ้าใช้ Window ตัวเดิม สามารถเอาโค้ดชุดนี้ไปใส่เพิ่มใน Window ของคุณได้เลย)
+-- ตัวอย่างการสร้าง Tab "Character" และ Toggle
+local CharacterTab = Window:Tab({
+    Title = 'Character',
+    Icon = 'user',
+})
+
+local AntiLockEnabled = false
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- ตัวแปรเก็บค่าส่ายแบบสุ่ม
+local lastJitterTime = 0
+local randomOffset = Vector3.new(0, 0, 0)
+
+-- ฟังก์ชัน Anti-Lock (ตัวส่ายแต่ม้องกล้องนิ่ง)
+RunService.RenderStepped:Connect(function()
+    if not AntiLockEnabled then return end
+    
+    local character = LocalPlayer.Character
+    if not character then return end
+    
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    local humanoid = character:FindFirstChild("Humanoid")
+    
+    if humanoidRootPart and humanoid then
+        -- เช็คว่าตัวละครกำลังเคลื่อนที่ (เดินหรือวิ่ง) อยู่หรือไม่
+        local isMoving = humanoid.MoveDirection.Magnitude > 0
+        
+        if isMoving then
+            local currentTime = tick()
+            -- สุ่มทิศทางและความเร็วในการส่ายทุกๆ 0.05 วินาที เพื่อความสะบัดแบบรัวและเร็วสุดๆ
+            if currentTime - lastJitterTime > 0.05 then
+                lastJitterTime = currentTime
+                -- สุ่มค่าออฟเซ็ตตำแหน่งตัวละคร (ซ้าย, ขวา, บน, ล่าง, หน้า, หลัง) แบบคาดเดาไม่ได้
+                randomOffset = Vector3.new(
+                    math.random(-35, 35) / 10,  -- ขยับซ้ายขวา
+                    math.random(-20, 30) / 10,  -- ขยับขึ้นลง
+                    math.random(-35, 35) / 10   -- ขยับหน้าหลัง
+                )
+            end
+            
+            -- บังคับขยับตำแหน่งพาร์ทหลักของตัวละครให้ส่าย แต่กล้องจะไม่ถูกดึงตามเพราะเราไม่ได้ยุ่งกับ Camera.CFrame
+            pcall(function()
+                humanoidRootPart.CFrame = humanoidRootPart.CFrame + randomOffset
+            end)
+        else
+            randomOffset = Vector3.new(0, 0, 0)
+        end
+    end
+end)
+
+-- สร้าง Toggle ในแท็บ Character
+CharacterTab:Toggle({
+    Title = 'กันล็อค (กันพวกโปร)',
+    Flag = 'antilock_toggle',
+    Desc = 'ตัวส่ายหลบโปรแกรมล็อกเป้า',
+    Icon = 'shield-alert',
+    Type = 'Checkbox',
+    Default = false,
+    Callback = function(state)
+        AntiLockEnabled = state
+        if state then
+            print("[RO89 HUB] Anti-Lock (Jitter Mode) Enabled!")
+        else
+            print("[RO89 HUB] Anti-Lock Disabled!")
+        end
+    end,
+})
+
+print("[RO89 Tools] Character Tab & Anti-Lock Module Loaded Successfully!")
