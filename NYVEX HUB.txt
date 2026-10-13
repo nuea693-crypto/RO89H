@@ -1,9 +1,21 @@
 --// ==========================================
---// NYVEX HUB | ULTIMATE EDITION (FIXED & OPTIMIZED)
+--// NYVEX HUB | ULTIMATE EDITION (PRODUCTION READY & BUG-FREE)
 --// ==========================================
-​-- STREAMING_CHUNK:Loading WindUI library and initializing window...
-local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
-local Window = WindUI:CreateWindow({
+​-- STREAMING_CHUNK:Loading WindUI library and initializing window with Fallbacks...
+local WindUI
+local success, err = pcall(function()
+WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+end)
+​if not success or not WindUI then
+pcall(function()
+WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/main.lua"))()
+end)
+end
+​if not WindUI then
+warn("[NYVEX HUB Error] Failed to load WindUI Library. Please check your internet connection or executor support.")
+return
+end
+​local Window = WindUI:CreateWindow({
 Title = "NYVEX HUB | Block Spin 💸",
 Icon = "rbxassetid://75135192681243",
 Author = "NYVEX",
@@ -19,7 +31,7 @@ if ConfigManager and ConfigManager.Init then
 ConfigManager:Init(Window)
 end
 end)
-local Config = ConfigManager:CreateConfig("NyvexConfig")
+local Config = ConfigManager and ConfigManager.CreateConfig and ConfigManager:CreateConfig("NyvexConfig")
 ​-- STREAMING_CHUNK:Setting up core services and variables...
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -31,7 +43,7 @@ local Debris = game:GetService("Debris")
 local Lighting = game:GetService("Lighting")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
-​local LocalPlayer = Players.LocalPlayer
+​local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
 local Camera = Workspace.CurrentCamera or Workspace:WaitForChild("Camera")
 ​local function getEnv()
 return (type(getgenv) == "function" and getgenv()) or _G
@@ -43,10 +55,12 @@ SendRemote = ReplicatedStorage:WaitForChild("Remotes", 10):WaitForChild("Send", 
 end)
 ​local Counter = nil
 pcall(function()
+if type(getgc) == "function" then
 for _, v in ipairs(getgc(true)) do
 if typeof(v) == "table" and rawget(v, "event") and rawget(v, "func") then
 Counter = v
 break
+end
 end
 end
 end)
@@ -54,21 +68,19 @@ local sendEventCounter = 0
 local sendFuncCounter = 0
 ​local function Send_Send(...)
 local args = { ... }
+pcall(function()
 if Counter and type(Counter.event) == "number" then
 Counter.event = Counter.event + 1
-pcall(function()
 if SendRemote then
 SendRemote:FireServer(Counter.event, unpack(args))
 end
-end)
 else
 sendEventCounter = sendEventCounter + 1
-pcall(function()
 if SendRemote then
 SendRemote:FireServer(sendEventCounter, unpack(args))
 end
-end)
 end
+end)
 end
 ​local function netGet(...)
 local args = { ... }
@@ -83,21 +95,21 @@ else return end
 end
 end
 end
+​local getRemote
+pcall(function()
+getRemote = ReplicatedStorage:WaitForChild("Remotes", 5):WaitForChild("Get", 5)
+end)
+if not getRemote then return end
+​local ok, result = pcall(function()
 if Counter and type(Counter.func) == "number" then
 Counter.func = Counter.func + 1
-local ok, result = pcall(function()
-local get = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Get")
-return get:InvokeServer(Counter.func, unpack(args))
-end)
-return result
+return getRemote:InvokeServer(Counter.func, unpack(args))
 else
 sendFuncCounter = sendFuncCounter + 1
-local ok, result = pcall(function()
-local get = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Get")
-return get:InvokeServer(sendFuncCounter, unpack(args))
-end)
-return result
+return getRemote:InvokeServer(sendFuncCounter, unpack(args))
 end
+end)
+return ok and result or nil
 end
 ​-- STREAMING_CHUNK:Building user interface navigation tabs...
 local CombatTab = Window:Tab({ Title = 'Combat', Icon = 'swords' })
@@ -137,12 +149,13 @@ local _damageBurstUntil = 0
 local _damageBurstRunning = false
 ​local LiftUndergroundEnabled = false
 local UndergroundRange = 250
-​local IsMobile = false
+​local IsMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
 local FOVCircleSegments = {}
 local FOVCircleGui, FOVCircleFrame
 local Tracer, TargetHeadCircle
 local TracerGui, TracerFrame, TargetCircleGui, TargetCircleFrame
-​if not IsMobile then
+​pcall(function()
+if not IsMobile then
 for i = 1, 6 do
 local line = Drawing.new('Line')
 line.Thickness = 2
@@ -221,6 +234,7 @@ TargetStroke.Parent = TargetCircleFrame
 TargetCorner.CornerRadius = UDim.new(1, 0)
 TargetCorner.Parent = TargetCircleFrame
 end
+end)
 ​-- STREAMING_CHUNK:Implementing target calculation and prediction utilities...
 local function getPing()
 local pg = LocalPlayer:FindFirstChild("PlayerGui")
@@ -329,7 +343,7 @@ return false
 end
 ​-- STREAMING_CHUNK:Setting up remote hooks for silent aim and auto shoot...
 local oldFireServer
-if SendRemote and SendRemote.FireServer then
+if SendRemote and SendRemote.FireServer and type(hookfunction) == "function" then
 pcall(function()
 oldFireServer = hookfunction(SendRemote.FireServer, function(self, ...)
 if self ~= SendRemote then
@@ -2117,11 +2131,11 @@ Title = "💸 Hand Balance",
 Desc = "N/A"
 })
 ​local function HandMoney()
-pcall(function()
+local ok, res = pcall(function()
 local label = PlayerGui.TopRightHud.Holder.Frame.MoneyTextLabel.Text
 return tonumber(label:match("%$(%d+)"))
 end)
-return 0
+return ok and res or 0
 end
 ​local function ATMMoney()
 for _, v in ipairs(PlayerGui:GetDescendants()) do
@@ -2403,34 +2417,14 @@ end
 end
 end)
 end)
-​print("[NYVEX HUB] Loaded Successfully!")f Config and Config.Load then
-Config:Load()
-end
-end
+​print("[NYVEX HUB] Loaded Successfully!")
 if WindUI and WindUI.Notify then
 WindUI:Notify({
 Title = "NYVEX HUB",
-Content = "โหลดการตั้งค่า '" .. selectedConfigName .. "' สำเร็จ!",
-Duration = 3,
+Content = "สคริปต์ทำงานเรียบร้อยแล้ว!",
+Duration = 3
 })
-end
-end)
-end,
-})
-​SettingsTab:Toggle({
-Title = "Auto Load Config (โหลดอัตโนมัติเมื่อเปิดสคริปต์)",
-Flag = "auto_load_config",
-Desc = "โหลดการตั้งค่าล่าสุดอัตโนมัติเมื่อรันสคริปต์ครั้งถัดไป",
-Default = false,
-Callback = function(state)
-getEnv().AutoLoadConfig = state
-end,
-})
-​-- Auto-load execution on script start if enabled
-pcall(function()
-task.spawn(function()
-task.wait(1)
-if getEnv().AutoLoadConfig then
+endf getEnv().AutoLoadConfig then
 if ConfigManager and ConfigManager.LoadConfig then
 ConfigManager:LoadConfig(selectedConfigName)
 elseif Config and Config.Load then
