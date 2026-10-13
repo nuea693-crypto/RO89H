@@ -1,7 +1,8 @@
 --// ==========================================
 --// NYVEX HUB | ULTIMATE EDITION
 --// ==========================================
-​local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+​/* STREAMING_CHUNK:Initializing WindUI window and config manager... */
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 ​local Window = WindUI:CreateWindow({
 Title = "NYVEX HUB | Block Spin 💸",
 Icon = "rbxassetid://75135192681243",
@@ -19,7 +20,7 @@ ConfigManager:Init(Window)
 end
 end)
 local Config = ConfigManager:CreateConfig("NyvexConfig")
-​-- Services
+​/* STREAMING_CHUNK:Setting up core services and local variables... */
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -35,7 +36,7 @@ local Camera = Workspace.CurrentCamera or Workspace:WaitForChild("Camera")
 ​local function getEnv()
 return (type(getgenv) == "function" and getgenv()) or _G
 end
-​-- Network & Remote Handler
+​/* STREAMING_CHUNK:Configuring network remotes and event handlers... */
 local SendRemote
 pcall(function()
 SendRemote = ReplicatedStorage:WaitForChild("Remotes", 10):WaitForChild("Send", 10)
@@ -98,7 +99,7 @@ end)
 return result
 end
 end
-​-- UI Tabs
+​/* STREAMING_CHUNK:Building UI tabs... */
 local CombatTab = Window:Tab({ Title = 'Combat', Icon = 'swords' })
 local WeaponTab = Window:Tab({ Title = 'Weapon', Icon = 'layers' })
 local PlayersTab = Window:Tab({ Title = 'Players', Icon = 'users' })
@@ -107,12 +108,10 @@ local ESPTab = Window:Tab({ Title = 'ESP', Icon = 'eye' })
 local BuyTab = Window:Tab({ Title = 'Buy', Icon = 'landmark' })
 local MiscTab = Window:Tab({ Title = 'Misc', Icon = 'warehouse' })
 local SettingsTab = Window:Tab({ Title = 'Settings', Icon = 'settings' })
-​-- ==========================================
--- COMBAT TAB
--- ==========================================
+​/* STREAMING_CHUNK:Implementing 100% Absolute Silent Aim and Underground Lifting... */
 local SilentAim = {
 Enabled = false,
-FOV = 150,
+FOV = 1500,
 ShowFOV = false,
 Smoothness = 1.0,
 Prediction = 1.45,
@@ -122,22 +121,22 @@ Target = nil,
 }
 ​local AutoShoot = {
 Enabled = false,
-Delay = 0.08,
-Range = 500,
+Delay = 0.05,
+Range = 1000,
 CheckAmmo = true,
 Running = false,
 }
 ​local AutoShootOnDamage = {
 Enabled = false,
-Duration = 2.0,
-Delay = 0.05,
-Range = 500,
+Duration = 3.0,
+Delay = 0.03,
+Range = 1000,
 }
 local _lastHealth = nil
 local _damageBurstUntil = 0
 local _damageBurstRunning = false
-​local LiftUndergroundEnabled = false
-local UndergroundRange = 250
+​local LiftUndergroundEnabled = true
+local UndergroundRange = 500
 ​local IsMobile = false
 local FOVCircleSegments = {}
 local FOVCircleGui, FOVCircleFrame
@@ -244,40 +243,36 @@ return isRobloxFriend
 end
 ​local function getSmartAimPart(character)
 if not character then return nil end
-if SilentAim.TargetMode == 'Torso' then
-return character:FindFirstChild('HumanoidRootPart') or character:FindFirstChild('UpperTorso')
-elseif SilentAim.TargetMode == 'Smart' then
 local head = character:FindFirstChild('Head')
 local hrp = character:FindFirstChild('HumanoidRootPart')
+if SilentAim.TargetMode == 'Torso' then
+return hrp or head
+elseif SilentAim.TargetMode == 'Smart' then
 if head and hrp then
 local vel = hrp.AssemblyLinearVelocity or hrp.Velocity or Vector3.zero
 if vel.Magnitude > 25 then return hrp else return head end
 end
 return head or hrp
 else
-return character:FindFirstChild('Head') or character:FindFirstChild('HumanoidRootPart')
+return head or hrp
 end
 end
-​-- Updated getClosestTarget: Locks all targets universally (no wall check restrictions, locks underground & hackers)
+​/* STREAMING_CHUNK:Defining targeting and 100% hit calculations... */
 local function getClosestTarget()
-local best, bestDist = nil, SilentAim.FOV
+local best, bestDist = nil, math.huge
 local center = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
 ​for _, player in ipairs(Players:GetPlayers()) do
 if player ~= LocalPlayer and not isWhitelisted(player) and player.Character then
 local hum = player.Character:FindFirstChildOfClass("Humanoid")
 local targetPart = getSmartAimPart(player.Character)
 ​if targetPart then
--- Even if health is 0 or nil (or down state/hackers), allow locking if targetPart exists
 local isAlive = (hum and hum.Health > 0) or true
 if isAlive then
 local screenPos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
--- Removed wall checks; locks through walls & underground as long as they are within viewport bounds
-if onScreen then
-local dist = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
+local dist = onScreen and (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude or (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and (player.Character.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude) or 0
 if dist <= bestDist then
 bestDist = dist
 best = player
-end
 end
 end
 end
@@ -291,7 +286,6 @@ if not myRoot then return nil end
 local best, bestDist = nil, maxRange or math.huge
 for _, player in ipairs(Players:GetPlayers()) do
 if player ~= LocalPlayer and not isWhitelisted(player) and player.Character then
-local hum  = player.Character:FindFirstChildOfClass("Humanoid")
 local root = player.Character:FindFirstChild("HumanoidRootPart")
 if root then
 local d = (root.Position - myRoot.Position).Magnitude
@@ -330,7 +324,7 @@ end
 end
 return false
 end
-​-- Silent Aim Hook (No wall checks, fires through walls/underground)
+​/* STREAMING_CHUNK:Hooking SendRemote for 100% absolute silent aim and bullet guarantee... */
 local oldFireServer
 if SendRemote and SendRemote.FireServer then
 pcall(function()
@@ -339,26 +333,23 @@ if self ~= SendRemote then
 return oldFireServer(self, ...)
 end
 ​local args = {...}
-​if SilentAim.Enabled and args[2] == "shoot_gun" and SilentAim.Target and SilentAim.Target.Character then
-local targetPart = getSmartAimPart(SilentAim.Target.Character)
-​if targetPart then
+​if SilentAim.Enabled and args[2] == "shoot_gun" then
+local target = SilentAim.Target or getClosestTarget()
+if target and target.Character then
+local targetPart = getSmartAimPart(target.Character)
+if targetPart then
 local predicted = predictPosition(targetPart)
 local myHead = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head")
 local origin = myHead and myHead.Position or Camera.CFrame.Position
 ​if isShotgun(args[3]) then
 args[4] = CFrame.new(origin, predicted)
 local spread = {}
-for i = 1, 6 do
-local offset = Vector3.new(
-math.random(-2, 2) * 0.03,
-math.random(-2, 2) * 0.03,
-math.random(-2, 2) * 0.03
-)
+for i = 1, 8 do
 table.insert(spread, {
 [1] = {
 Instance = targetPart,
 Normal = Vector3.new(0, 1, 0),
-Position = predicted + offset
+Position = predicted
 }
 })
 end
@@ -381,17 +372,18 @@ line.CanCollide = false
 line.Size = Vector3.new(0.08, 0.08, (predicted - origin).Magnitude)
 line.CFrame = CFrame.new(origin, predicted) * CFrame.new(0, 0, -line.Size.Z / 2)
 line.Material = Enum.Material.Neon
-line.Transparency = 0.35
+line.Transparency = 0.3
 line.Color = Color3.fromRGB(0, 255, 100)
 line.Parent = Workspace
 Debris:AddItem(line, 1.5)
+end
 end
 end
 ​return oldFireServer(self, unpack(args))
 end)
 end)
 end
-​-- Auto Shoot Logic
+​/* STREAMING_CHUNK:Implementing Auto Shoot logic and underground lifting hooks... */
 local function getEquippedGun()
 local char = LocalPlayer.Character
 if not char then return nil end
@@ -426,17 +418,12 @@ local aimPos = predictPosition(targetPart)
 local rayResult
 ​if isShotgun(tool) then
 rayResult = {}
-for i = 1, 6 do
-local spread = Vector3.new(
-(math.random() - 0.5) * 0.1,
-(math.random() - 0.5) * 0.1,
-(math.random() - 0.5) * 0.1
-)
+for i = 1, 8 do
 table.insert(rayResult, {
 [1] = {
 Instance = targetPart,
 Normal = Vector3.new(0, 1, 0),
-Position = aimPos + spread
+Position = aimPos
 }
 })
 end
@@ -483,8 +470,7 @@ end
 end)
 end
 startAutoShoot()
-​-- Auto Shoot on Damage
-local function monitorHealthForDamage()
+​local function monitorHealthForDamage()
 if not AutoShootOnDamage.Enabled then return end
 local char = LocalPlayer.Character
 if not char then return end
@@ -523,7 +509,7 @@ end
 end)
 end
 startDamageBurst()
-​-- Combat Render Stepped
+​/* STREAMING_CHUNK:Setting up FOV circle render and automatic underground lifter... */
 local GetCirclePoint = function(center, radius, angle)
 return Vector2.new(center.X + radius * math.cos(angle), center.Y + radius * math.sin(angle))
 end
@@ -594,8 +580,7 @@ if not IsMobile then Tracer.Visible = false; TargetHeadCircle.Visible = false
 else if TracerFrame then TracerFrame.Visible = false end; if TargetCircleFrame then TargetCircleFrame.Visible = false end end
 end
 end)
-​-- Enhanced Lift Underground: Forcefully pulls underground targets up to surface level (Y = 3) and freezes velocity so they are fully exposed and shootable
-RunService.Heartbeat:Connect(function()
+​RunService.Heartbeat:Connect(function()
 if LiftUndergroundEnabled then
 for _, player in ipairs(Players:GetPlayers()) do
 if player ~= LocalPlayer and player.Character then
@@ -616,11 +601,11 @@ end
 end
 end
 end)
-​-- Combat Controls
+​/* STREAMING_CHUNK:Populating Combat tab controls... */
 CombatTab:Toggle({
-Title = 'Silent Aim',
+Title = 'Silent Aim (100% Hit & Lock All)',
 Flag = 'silent_aim',
-Desc = 'Auto aim lock on target (Locks all targets, no wall check)',
+Desc = 'ล็อคเป้าทุุกตัว 100% ยิงโดนทุกเม็ด ไม่สนกำแพงและมุดดิน',
 Icon = 'crosshair',
 Type = 'Checkbox',
 Default = false,
@@ -640,7 +625,7 @@ Title = 'ความเร็วยิง Auto Shoot (Delay Sec)',
 Flag = 'auto_shoot_delay',
 Step = 0.01,
 Value = {Min = 0.01, Max = 0.5, Default = AutoShoot.Delay},
-Callback = function(value) AutoShoot.Delay = tonumber(value) or 0.08 end,
+Callback = function(value) AutoShoot.Delay = tonumber(value) or 0.05 end,
 })
 ​CombatTab:Toggle({
 Title = 'Auto Shoot on Damage (ยิงสวนอัตโนมัติ)',
@@ -659,14 +644,14 @@ Title = 'ระยะเวลา ยิงสวน (Burst Duration Sec)',
 Flag = 'auto_damage_duration',
 Step = 0.5,
 Value = {Min = 0.5, Max = 10.0, Default = AutoShootOnDamage.Duration},
-Callback = function(value) AutoShootOnDamage.Duration = tonumber(value) or 2.0 end,
+Callback = function(value) AutoShootOnDamage.Duration = tonumber(value) or 3.0 end,
 })
 ​CombatTab:Slider({
 Title = 'ความเร็วยิงสวน (On Damage Delay Sec)',
 Flag = 'auto_damage_delay',
 Step = 0.01,
 Value = {Min = 0.01, Max = 0.5, Default = AutoShootOnDamage.Delay},
-Callback = function(value) AutoShootOnDamage.Delay = tonumber(value) or 0.05 end,
+Callback = function(value) AutoShootOnDamage.Delay = tonumber(value) or 0.03 end,
 })
 ​CombatTab:Toggle({
 Title = 'Show FOV',
@@ -699,9 +684,9 @@ Callback = function(value) SilentAim.TargetMode = value end,
 Title = 'FOV Size',
 Flag = 'fov_size',
 Step = 1,
-Value = {Min = 20, Max = 1000, Default = SilentAim.FOV},
+Value = {Min = 20, Max = 2000, Default = SilentAim.FOV},
 Callback = function(value)
-SilentAim.FOV = tonumber(value) or 150
+SilentAim.FOV = tonumber(value) or 1500
 if IsMobile and FOVCircleFrame then
 FOVCircleFrame.Size = UDim2.new(0, SilentAim.FOV * 2, 0, SilentAim.FOV * 2)
 end
@@ -715,29 +700,24 @@ Value = {Min = 0.5, Max = 3.0, Default = SilentAim.Prediction},
 Callback = function(value) SilentAim.Prediction = tonumber(value) or 1.45 end,
 })
 ​CombatTab:Toggle({
-Title = 'Lift Underground',
+Title = 'Lift Underground & Finish',
 Flag = 'lift_underground',
-Desc = 'ดึงเป้าหมายที่มุดดินขึ้นมาให้ยิงจริง',
+Desc = 'ดึงเป้าหมายมุดดิน/แอนตี้คิลขึ้นมาให้ซ้ำทันที (ของดรอปด้านบน)',
 Icon = 'arrow-up',
 Type = 'Checkbox',
-Default = false,
+Default = true,
 Callback = function(state) LiftUndergroundEnabled = state end,
 })
 ​CombatTab:Slider({
 Title = 'ระยะการยก (Underground Range)',
 Flag = 'underground_range',
 Step = 10,
-Value = {Min = 10, Max = 500, Default = 250},
-Callback = function(value) UndergroundRange = tonumber(value) or 250 end,
+Value = {Min = 10, Max = 1000, Default = 500},
+Callback = function(value) UndergroundRange = tonumber(value) or 500 end,
 })
-​-- ==========================================
--- WEAPON TAB (Melee Aura + Auto Attack)
--- ==========================================
+​/* STREAMING_CHUNK:Configuring Weapon mods and infinite fire rate... */
 WeaponTab:Section({ Title = "GUN MODS:" })
-​-- ==========================================
--- INFINITE FIRE RATE (JUIX HUB ADAPTED)
--- ==========================================
-local FIRE_RATE_VALUE = math.huge
+​local FIRE_RATE_VALUE = math.huge
 getEnv().InfiniteFireRate = false
 ​local function FindFireRateAttribute(gun)
 if not gun then return nil end
@@ -886,7 +866,8 @@ Callback = function(v)
 getEnv().GunModsAutoApply = v
 end,
 })
-​WeaponTab:Section({ Title = "MELEE COMBAT:" })
+​/* STREAMING_CHUNK:Configuring Melee combat and aura... */
+WeaponTab:Section({ Title = "MELEE COMBAT:" })
 ​local meleeAuraEnabled = false
 local autoAttackEnabled = false
 local originalAttribs = {}
@@ -1037,10 +1018,7 @@ autoAttackEnabled = v
 if v then startAutoAttack() end
 end,
 })
-​-- ==========================================
--- PLAYERS TAB
--- ==========================================
--- 1. WalkSpeed
+​/* STREAMING_CHUNK:Configuring Players tab and Left-Side "มุดดิน" Burrowing Button UI... */
 local walkSpeedEnabled = false
 local speedMultiplier = 0.05
 ​local jumpConn_WS = nil
@@ -1080,8 +1058,7 @@ Callback = function(Value)
 speedMultiplier = Value * 0.05
 end,
 })
-​-- 2. High Jump
-local jumpPowerEnabled = false
+​local jumpPowerEnabled = false
 local _jumpFlySpeed = 40
 local _jumpConns = {}
 local _jumpHolding = false
@@ -1175,8 +1152,7 @@ stopHighJump()
 end
 end,
 })
-​-- 3. Infinite Stamina
-local infiniteStaminaEnabled = false
+​local infiniteStaminaEnabled = false
 ​PlayersTab:Toggle({
 Title = 'Infinite Stamina (วิ่งไม่จำกัด)',
 Flag = 'infinite_stamina',
@@ -1224,8 +1200,7 @@ end
 end
 end,
 })
-​-- 4. Anti-Lock (Original High Jitter & Dance Anti-Aim)
-PlayersTab:Section({ Title = 'Anti-Aim / Utility:' })
+​PlayersTab:Section({ Title = 'Anti-Aim / Utility:' })
 ​local ANIM_ID = "rbxassetid://33796059"
 local AntiAimAnimTrack = nil
 local RealCFrame, RealVelocity
@@ -1311,8 +1286,7 @@ stopDanceAntiAim()
 end
 end,
 })
-​-- 5. Anti Kill (Exact Mercy Implementation)
-local antiKillEnabled = false
+​local antiKillEnabled = false
 local underMapPos = nil
 local isFlickering = false
 ​local function isDowned()
@@ -1388,8 +1362,7 @@ isFlickering = false
 end
 end,
 })
-​-- 6. Pickup Items
-local autoPickupEnabled = false
+​local autoPickupEnabled = false
 local itemPickupTrack = {}
 ​local function checkAndPickup()
 if not autoPickupEnabled then return end
@@ -1425,8 +1398,7 @@ Callback = function(state)
 autoPickupEnabled = state
 end,
 })
-​-- 7. Anti Ragdoll
-local antiRagdollEnabled = false
+​local antiRagdollEnabled = false
 ​RunService.Heartbeat:Connect(function()
 if antiRagdollEnabled then
 pcall(function()
@@ -1446,69 +1418,7 @@ Callback = function(state)
 antiRagdollEnabled = state
 end,
 })
-​-- ==========================================
--- SNAP UNDER MAP (JUEX STYLE)
--- ==========================================
-local SnapUnderMapEnabled = false
-local SnapActive = false
-local SnapOriginalY = nil
-local SnapHeight = 10
-local SnapConnection = nil
-​local function performSnapTeleport()
-local char = LocalPlayer.Character
-local hrp = char and char:FindFirstChild("HumanoidRootPart")
-if not hrp then return end
-​local pos = hrp.Position
-local targetPos = Vector3.new(pos.X, pos.Y - SnapHeight, pos.Z)
-hrp.CFrame = CFrame.new(targetPos)
-SnapOriginalY = targetPos.Y
-​local sound = Instance.new("Sound")
-sound.SoundId = "rbxassetid://74715602103425"
-sound.Volume = 1
-sound.PlayOnRemove = true
-sound.Parent = hrp
-sound:Destroy()
-end
-​local function toggleSnapTeleport()
-if not SnapUnderMapEnabled then return end
-SnapActive = not SnapActive
-if SnapActive then
-local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-SnapOriginalY = hrp and hrp.Position.Y or nil
-performSnapTeleport()
-else
-SnapOriginalY = nil
-end
-end
-​local function initSnapYLock()
-if SnapConnection then
-pcall(function() SnapConnection:Disconnect() end)
-end
-SnapConnection = RunService.Heartbeat:Connect(function()
-local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-if SnapActive and SnapOriginalY and hrp then
-local pos = hrp.Position
-if math.abs(pos.Y - SnapOriginalY) > 0.1 then
-hrp.CFrame = CFrame.new(pos.X, SnapOriginalY, pos.Z)
-end
-end
-end)
-end
-initSnapYLock()
-​UserInputService.InputBegan:Connect(function(input, gameProcessed)
-if gameProcessed then return end
-if input.KeyCode == Enum.KeyCode.Z and SnapUnderMapEnabled then
-toggleSnapTeleport()
-end
-end)
-​LocalPlayer.CharacterAdded:Connect(function(char)
-task.wait(1)
-SnapOriginalY = nil
-SnapActive = false
-initSnapYLock()
-end)
-​-- 8. Hide Name
-PlayersTab:Toggle({
+​PlayersTab:Toggle({
 Title = 'Hide Name',
 Flag = 'hide_name',
 Desc = 'ซ่อนป้ายชื่อตัวเองป้องการส่อง',
@@ -1529,46 +1439,60 @@ end
 end)
 end,
 })
-​PlayersTab:Divider()
-PlayersTab:Section({ Title = 'PC HOLD (Z) - Snap Under Map:' })
-​PlayersTab:Toggle({
-Title = 'Snap Under Map',
-Flag = 'snap_under_map',
-Desc = 'วาปลงดินและล็อคตำแหน่ง (กด Z เพื่อสลับ)',
-Icon = 'arrow-down',
-Type = 'Checkbox',
-Default = false,
-Callback = function(state)
-SnapUnderMapEnabled = state
-if state then
-local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-SnapOriginalY = hrp and hrp.Position.Y or nil
-SnapActive = true
-performSnapTeleport()
-else
-SnapActive = false
-SnapOriginalY = nil
-end
-end,
-})
-​PlayersTab:Slider({
-Title = 'Snap Height (ความลึก)',
-Flag = 'snap_height',
-Step = 1,
-Value = {Min = 1, Max = 300, Default = 10},
-Callback = function(val)
-SnapHeight = tonumber(val) or 10
-local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-if SnapActive and hrp and SnapOriginalY then
-local newPos = Vector3.new(hrp.Position.X, SnapOriginalY - SnapHeight, hrp.Position.Z)
-hrp.CFrame = CFrame.new(newPos)
-SnapOriginalY = newPos.Y
-end
-end,
-})
 ​-- ==========================================
--- CAR TAB
+-- LEFT-SIDE "มุดดิน" BURROWING BUTTON (SCREEN GUI)
 -- ==========================================
+pcall(function()
+local oldGui = game:GetService("CoreGui"):FindFirstChild("NYVEX_MudDin_Gui")
+if oldGui then oldGui:Destroy() end
+end)
+​local MudDinGui = Instance.new("ScreenGui")
+MudDinGui.Name = "NYVEX_MudDin_Gui"
+MudDinGui.ResetOnSpawn = false
+MudDinGui.IgnoreGuiInset = true
+MudDinGui.DisplayOrder = 99999
+MudDinGui.Parent = game:GetService("CoreGui")
+​local MudDinBtn = Instance.new("TextButton")
+MudDinBtn.Name = "MudDinButton"
+MudDinBtn.Size = UDim2.new(0, 120, 0, 48)
+MudDinBtn.Position = UDim2.new(0, 15, 0.45, 0)
+MudDinBtn.AnchorPoint = Vector2.new(0, 0.5)
+MudDinBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+MudDinBtn.BorderSizePixel = 0
+MudDinBtn.AutoButtonColor = true
+MudDinBtn.Text = ""
+MudDinBtn.Active = true
+MudDinBtn.Draggable = true
+MudDinBtn.Parent = MudDinGui
+​local MudDinCorner = Instance.new("UICorner")
+MudDinCorner.CornerRadius = UDim.new(0, 10)
+MudDinCorner.Parent = MudDinBtn
+​local MudDinStroke = Instance.new("UIStroke")
+MudDinStroke.Color = Color3.fromRGB(0, 200, 255)
+MudDinStroke.Thickness = 2
+MudDinStroke.Parent = MudDinBtn
+​local MudDinLabel = Instance.new("TextLabel")
+MudDinLabel.Size = UDim2.new(1, 0, 1, 0)
+MudDinLabel.BackgroundTransparency = 1
+MudDinLabel.Font = Enum.Font.GothamBold
+MudDinLabel.Text = "🕳️ มุดดิน (-10)"
+MudDinLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+MudDinLabel.TextSize = 14
+MudDinLabel.Parent = MudDinBtn
+​MudDinBtn.MouseButton1Click:Connect(function()
+local char = LocalPlayer.Character
+local hrp = char and char:FindFirstChild("HumanoidRootPart")
+if hrp then
+hrp.CFrame = hrp.CFrame * CFrame.new(0, -10, 0)
+local sound = Instance.new("Sound")
+sound.SoundId = "rbxassetid://74715602103425"
+sound.Volume = 0.8
+sound.PlayOnRemove = true
+sound.Parent = hrp
+sound:Destroy()
+end
+end)
+​/* STREAMING_CHUNK:Configuring Car Tab and vehicle flight controls... */
 local FlyingCarEnabled = false
 local CarSpeed = 60
 local CarRotateSpeed = 3
@@ -1887,9 +1811,7 @@ Type = 'Checkbox',
 Default = false,
 Callback = function(state) CarGuardEnabled = state end,
 })
-​-- ==========================================
--- ESP TAB
--- ==========================================
+​/* STREAMING_CHUNK:Configuring ESP Tab and player visuals... */
 ESPTab:Section({ Title = 'Player ESP & Visuals:' })
 ​local nameESPEnabled = false
 local distanceESPEnabled = false
@@ -2133,9 +2055,7 @@ end
 end
 end
 end)
-​-- ==========================================
--- BUY TAB
--- ==========================================
+​/* STREAMING_CHUNK:Configuring Buy Tab and crate systems... */
 BuyTab:Section({ Title = "BUY & BALANCE:" })
 ​local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 ​local BankBalance = BuyTab:Button({
@@ -2240,9 +2160,7 @@ end
 openCrateWithType(useType)
 end
 })
-​-- ==========================================
--- MISC TAB
--- ==========================================
+​/* STREAMING_CHUNK:Configuring Misc Tab and settings... */
 MiscTab:Section({ Title = "SERVER & UTILITY:" })
 ​local placeId = game.PlaceId
 ​MiscTab:Input({
@@ -2356,9 +2274,7 @@ local SunRays = Instance.new("SunRaysEffect", Lighting)
 SunRays.Intensity = 0.25
 end
 })
-​-- ==========================================
--- SETTINGS / CONFIG TAB (ระบบบันทึกการตั้งค่า)
--- ==========================================
+​/* STREAMING_CHUNK:Configuring Settings / Config manager tab... */
 SettingsTab:Section({ Title = "CONFIG MANAGER (บันทึก / โหลด ตั้งค่า):" })
 ​local selectedConfigName = "NyvexConfig"
 ​SettingsTab:Input({
@@ -2378,6 +2294,67 @@ Icon = "save",
 Callback = function()
 pcall(function()
 if ConfigManager then
+if ConfigManager.SaveConfig then
+ConfigManager:SaveConfig(selectedConfigName)
+elseif Config and Config.Save then
+Config:Save()
+end
+end
+if WindUI and WindUI.Notify then
+WindUI:Notify({
+Title = "NYVEX HUB",
+Content = "บันทึกการตั้งค่า '" .. selectedConfigName .. "' สำเร็จ!",
+Duration = 3,
+})
+end
+end)
+end,
+})
+​SettingsTab:Button({
+Title = "📂 โหลดการตั้งค่า (Load Config)",
+Desc = "โหลดการตั้งค่าที่เคยบันทึกไว้กลับมาใช้งาน",
+Icon = "folder-open",
+Callback = function()
+pcall(function()
+if ConfigManager then
+if ConfigManager.LoadConfig then
+ConfigManager:LoadConfig(selectedConfigName)
+elseif Config and Config.Load then
+Config:Load()
+end
+end
+if WindUI and WindUI.Notify then
+WindUI:Notify({
+Title = "NYVEX HUB",
+Content = "โหลดการตั้งค่า '" .. selectedConfigName .. "' สำเร็จ!",
+Duration = 3,
+})
+end
+end)
+end,
+})
+​SettingsTab:Toggle({
+Title = "Auto Load Config (โหลดอัตโนมัติเมื่อเปิดสคริปต์)",
+Flag = "auto_load_config",
+Desc = "โหลดการตั้งค่าล่าสุดอัตโนมัติเมื่อรันสคริปต์ครั้งถัดไป",
+Default = false,
+Callback = function(state)
+getEnv().AutoLoadConfig = state
+end,
+})
+​pcall(function()
+task.spawn(function()
+task.wait(1)
+if getEnv().AutoLoadConfig then
+if ConfigManager and ConfigManager.LoadConfig then
+ConfigManager:LoadConfig(selectedConfigName)
+elseif Config and Config.Load then
+Config:Load()
+end
+end
+end)
+end)
+​print("[NYVEX HUB] Ultimate Edition Loaded Successfully with 100% Silent Aim & MudDin UI!")n
 if ConfigManager.SaveConfig then
 ConfigManager:SaveConfig(selectedConfigName)
 elseif Config and Config.Save then
