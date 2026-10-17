@@ -5,7 +5,7 @@
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
 local Window = WindUI:CreateWindow({
-    Title = "NYVEX HUB | Block Spin ",
+    Title = "NYVEX HUB | Block Spin 💸",
     Icon = "rbxassetid://75135192681243",
     Author = "NYVEX",
     Folder = "NYVEXHUB!",
@@ -118,7 +118,7 @@ local ESPTab = Window:Tab({ Title = 'ESP', Icon = 'eye' })
 local BuyTab = Window:Tab({ Title = 'Buy', Icon = 'landmark' })
 local MiscTab = Window:Tab({ Title = 'Misc', Icon = 'warehouse' })
 local SettingsTab = Window:Tab({ Title = 'Settings', Icon = 'settings' })
-local CreditsTab = Window:Tab({ Title = '', Icon = 'award' })
+local CreditsTab = Window:Tab({ Title = 'เครดิตผู้สร้าง', Icon = 'award' })
 
 -- ==========================================
 -- DAMAGE POPUP GUI SYSTEM
@@ -180,8 +180,8 @@ end
 -- ==========================================
 pcall(function()
     CreditsTab:Paragraph({
-        Title = "",
-        Content = ": bigbike_452\n: NYVEX HUB "
+        Title = "ข้อมูลผู้สร้างและระบบ",
+        Content = "เครดิตผู้สร้าง: bigbike_452\nลูกน้อง: NYVEX HUB 🔫💸"
     })
 end)
 
@@ -968,27 +968,27 @@ end)
 
 CombatTab:Toggle({
     Title = 'Silent Aim',
-    Desc = 'Auto aim lock ()',
+    Desc = 'Auto aim lock (รองรับเป้าหมายบนรถและสลับจุดยิง)',
     Default = false,
     Callback = function(state) SilentAim.Enabled = state end,
 })
 
 CombatTab:Toggle({
-    Title = 'Auto Shoot ()',
-    Desc = ',  ',
+    Title = 'Auto Shoot (ยิงอัตโนมัติ)',
+    Desc = 'เช็กหลังกำแพง, ยิงคนบนรถ และสลับจุดยิงออโต้',
     Default = false,
     Callback = function(state) AutoShoot.Enabled = state end,
 })
 
 CombatTab:Toggle({
-    Title = 'Auto Reload ()',
-    Desc = '',
+    Title = 'Auto Reload (รีโหลดกระสุนออโต้)',
+    Desc = 'สลับเก็บและถือปืนใหม่เพื่อรีโหลดกระสุนอัตโนมัติเมื่อกระสุนหมด',
     Default = false,
     Callback = function(state) AutoReload.Enabled = state end,
 })
 
 CombatTab:Slider({
-    Title = ' Auto Shoot (Delay Sec)',
+    Title = 'ความเร็วยิง Auto Shoot (Delay Sec)',
     Min = 0.01,
     Max = 0.5,
     Default = AutoShoot.Delay,
@@ -997,8 +997,8 @@ CombatTab:Slider({
 })
 
 CombatTab:Toggle({
-    Title = 'Auto Shoot on Damage ()',
-    Desc = ' / HP ',
+    Title = 'Auto Shoot on Damage (ยิงสวนอัตโนมัติ)',
+    Desc = 'ยิงตอบโต้อัตโนมัติเมื่อโดนโจมตี / HP ลดลง',
     Default = false,
     Callback = function(state)
         AutoShootOnDamage.Enabled = state
@@ -1007,7 +1007,7 @@ CombatTab:Toggle({
 })
 
 CombatTab:Slider({
-    Title = '  (Burst Duration Sec)',
+    Title = 'ระยะเวลา ยิงสวน (Burst Duration Sec)',
     Min = 0.5,
     Max = 10.0,
     Default = AutoShootOnDamage.Duration,
@@ -1016,7 +1016,7 @@ CombatTab:Slider({
 })
 
 CombatTab:Slider({
-    Title = ' (On Damage Delay Sec)',
+    Title = 'ความเร็วยิงสวน (On Damage Delay Sec)',
     Min = 0.01,
     Max = 0.5,
     Default = AutoShootOnDamage.Delay,
@@ -1026,21 +1026,21 @@ CombatTab:Slider({
 
 CombatTab:Toggle({
     Title = 'Show FOV',
-    Desc = ' FOV',
+    Desc = 'แสดงวงกลม FOV',
     Default = false,
     Callback = function(state) SilentAim.ShowFOV = state end,
 })
 
 CombatTab:Toggle({
-    Title = ' (Whitelist Friends)',
-    Desc = ' Roblox',
+    Title = 'ไม่ล็อกเพื่อน (Whitelist Friends)',
+    Desc = 'ไม่ล็อกเป้าใส่เพื่อนใน Roblox',
     Default = false,
     Callback = function(state) SilentAim.WhitelistFriends = state end,
 })
 
 CombatTab:Dropdown({
     Title = 'Target Mode',
-    Desc = ' (Random =  20% /  80%)',
+    Desc = 'เลือกจุดที่ต้องการล็อกเป้า (Random = ยิงหัว 20% / ตัว 80%)',
     Values = {'Head', 'Torso', 'Random'},
     Default = 'Random',
     Callback = function(value) SilentAim.TargetMode = value end,
@@ -1061,7 +1061,7 @@ CombatTab:Slider({
 })
 
 CombatTab:Slider({
-    Title = 'Prediction Multiplier ()',
+    Title = 'Prediction Multiplier (ตัวคูณทำนาย)',
     Min = 0.5,
     Max = 3.0,
     Default = SilentAim.Prediction,
@@ -1071,13 +1071,13 @@ CombatTab:Slider({
 
 CombatTab:Toggle({
     Title = 'Lift Underground',
-    Desc = '',
+    Desc = 'ดึงเป้าหมายที่มุดดิน',
     Default = false,
     Callback = function(state) LiftUndergroundEnabled = state end,
 })
 
 CombatTab:Slider({
-    Title = ' (Underground Range)',
+    Title = 'ระยะการยก (Underground Range)',
     Min = 10,
     Max = 500,
     Default = 100,
@@ -1146,8 +1146,8 @@ task.spawn(function()
 end)
 
 WeaponTab:Toggle({
-    Title = " Infinite Fire Rate ()",
-    Desc = "",
+    Title = "🔥 Infinite Fire Rate (ยิงรัวไร้ขีดจำกัด)",
+    Desc = "ยิงรัวแบบยิงทะลุขีดจำกัด",
     Default = false,
     Callback = function(state)
         getEnv().InfiniteFireRate = state
@@ -1312,7 +1312,7 @@ end)
 
 WeaponTab:Toggle({
     Title   = "Melee Aura (Wide Fists)",
-    Desc    = "/ 360 ",
+    Desc    = "ขยายระยะต่อย/อาวุธประชิด 360 องศา",
     Default = false,
     Callback = function(v)
         meleeAuraEnabled = v
@@ -1409,7 +1409,7 @@ end
 
 WeaponTab:Toggle({
     Title   = "Auto Attack",
-    Desc    = "",
+    Desc    = "โจมตีระยะประชิดใส่มนุษย์รอบข้างอัตโนมัติ",
     Default = false,
     Callback = function(v)
         autoAttackEnabled = v
@@ -1564,8 +1564,8 @@ PlayersTab:Toggle({
 local infiniteStaminaEnabled = false
 
 PlayersTab:Toggle({
-    Title = 'Infinite Stamina ()',
-    Desc = '',
+    Title = 'Infinite Stamina (วิ่งไม่จำกัด)',
+    Desc = 'วิ่งสตามิน่าไม่ลด',
     Default = false,
     Callback = function(v)
         infiniteStaminaEnabled = v
@@ -1691,8 +1691,8 @@ RunService.Heartbeat:Connect(function()
 end)
 
 PlayersTab:Toggle({
-    Title = 'Anti Lock ()',
-    Desc = '',
+    Title = 'Anti Lock (ส่ายหลบกระสุน)',
+    Desc = 'ส่ายสลัดเป้าล็อกอย่างหนักพร้อมท่าส่าย',
     Default = false,
     Callback = function(Value)
         AntiLockEnabled = Value
@@ -1773,7 +1773,7 @@ end)
 
 PlayersTab:Toggle({
     Title = 'Anti Kill',
-    Desc = '',
+    Desc = 'มุดดินซ่อนตัวและสลับตำแหน่งหนีทันทีเมื่อล้ม',
     Default = false,
     Callback = function(v)
         antiKillEnabled = v
@@ -1815,7 +1815,7 @@ RunService.Heartbeat:Connect(checkAndPickup)
 
 PlayersTab:Toggle({
     Title = 'Pickup Items',
-    Desc = '',
+    Desc = 'ดูดเก็บของตกพื้นใกล้เคียงอัตโนมัติ',
     Default = false,
     Callback = function(state)
         autoPickupEnabled = state
@@ -1835,7 +1835,7 @@ end)
 
 PlayersTab:Toggle({
     Title = 'Anti Ragdoll',
-    Desc = ' Ragdoll /  ',
+    Desc = 'ยกเลิกการติด Ragdoll / สลบ ลุกขึ้นทันที',
     Default = false,
     Callback = function(state)
         antiRagdollEnabled = state
@@ -1910,7 +1910,7 @@ end)
 
 PlayersTab:Toggle({
     Title = 'Hide Name',
-    Desc = '',
+    Desc = 'ซ่อนป้ายชื่อตัวเองป้องกันการส่อง',
     Default = false,
     Callback = function(v)
         pcall(function()
@@ -1932,7 +1932,7 @@ PlayersTab:Section({ Title = 'PC HOLD (Z) - Snap Under Map:' })
 
 PlayersTab:Toggle({
     Title = 'Snap Under Map',
-    Desc = ' ( Z )',
+    Desc = 'วาปลงดินและล็อคตำแหน่ง (กด Z เพื่อสลับ)',
     Default = false,
     Callback = function(state)
         SnapUnderMapEnabled = state
@@ -1949,7 +1949,7 @@ PlayersTab:Toggle({
 })
 
 PlayersTab:Slider({
-    Title = 'Snap Height ()',
+    Title = 'Snap Height (ความลึก)',
     Min = 1,
     Max = 300,
     Default = 10,
@@ -2259,8 +2259,8 @@ if LocalPlayer.Character then SetupCarCharacter(LocalPlayer.Character) end
 LocalPlayer.CharacterAdded:Connect(SetupCarCharacter)
 
 CarTab:Toggle({
-    Title = ' (Flying Car)',
-    Desc = ' 360� ( Joystick )',
+    Title = 'รถบิน (Flying Car)',
+    Desc = 'ควบคุมรถให้ลอยและขับเคลื่อน 360° (มี Joystick มือถือ)',
     Default = false,
     Callback = function(state)
         FlyingCarEnabled = state
@@ -2277,7 +2277,7 @@ CarTab:Toggle({
 })
 
 CarTab:Slider({
-    Title = ' (Car Speed)',
+    Title = 'ความเร็วรถบิน (Car Speed)',
     Min = 20,
     Max = 300,
     Default = 60,
@@ -2288,7 +2288,7 @@ CarTab:Slider({
 })
 
 CarTab:Slider({
-    Title = ' (Rotate Speed)',
+    Title = 'ความเร็วหมุน (Rotate Speed)',
     Min = 0.5,
     Max = 10,
     Default = 3,
@@ -2299,7 +2299,7 @@ CarTab:Slider({
 })
 
 CarTab:Slider({
-    Title = ' (Hover Height)',
+    Title = 'ความสูงลอย (Hover Height)',
     Min = 0,
     Max = 20,
     Default = 2,
@@ -2328,8 +2328,8 @@ task.spawn(function()
 end)
 
 CarTab:Toggle({
-    Title = "Auto Repair Vehicle ()",
-    Desc = "",
+    Title = "Auto Repair Vehicle (ซ่อมรถอัตโนมัติ)",
+    Desc = "ซ่อมรถให้อัตโนมัติขณะขับขี่",
     Default = false,
     Callback = function(state)
         autoRepairVehicleEnabled = state
@@ -2422,8 +2422,8 @@ CarTab:Toggle({
 
 local CarGuardEnabled = false
 CarTab:Toggle({
-    Title = 'CarGuard (/)',
-    Desc = ' crashed_car',
+    Title = 'CarGuard (กันรถบัค/รถระเบิด)',
+    Desc = 'กันการส่งแพ็กเกจ crashed_car',
     Default = false,
     Callback = function(state) CarGuardEnabled = state end,
 })
@@ -2441,7 +2441,7 @@ _G.InventoryPlayerVisual = false
 _G.ESP_HeightOffset = 4
 
 ESPTab:Toggle({
-    Title = 'Inventory Viewer ()',
+    Title = 'Inventory Viewer (ดูของในตัว)',
     Default = false,
     Callback = function(state)
         _G.InventoryPlayerVisual = state
@@ -2469,7 +2469,7 @@ ESPTab:Toggle({
 })
 
 ESPTab:Toggle({
-    Title = 'Health ESP ()',
+    Title = 'Health ESP (หลอดเลือดข้างตัว)',
     Default = false,
     Callback = function(v) healthESPEnabled = v end,
 })
@@ -2511,8 +2511,8 @@ local function getMercyItemColor(model)
 end
 
 ESPTab:Toggle({
-    Title = 'Dropped Items ESP ()',
-    Desc = '',
+    Title = 'Dropped Items ESP (ดูของตก)',
+    Desc = 'แสดงชื่อและไฮไลต์ของที่ตกบนพื้น',
     Default = false,
     Callback = function(state)
         droppedItemsESPEnabled = state
@@ -2752,7 +2752,7 @@ BuyTab:Section({ Title = "BUY & BALANCE:" })
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 local BalancePara = BuyTab:Paragraph({
-    Title = "  (Balance)",
+    Title = "🏦 สถานะการเงิน (Balance)",
     Content = "Bank: $0\nHand: $0"
 })
 
@@ -2780,7 +2780,7 @@ task.spawn(function()
             local bank = ATMMoney() or 0
             local hand = HandMoney() or 0
             if BalancePara and BalancePara.SetContent then
-                BalancePara:SetContent(string.format(" Bank Balance: $%d\n Hand Balance: $%d", bank, hand))
+                BalancePara:SetContent(string.format("🏦 Bank Balance: $%d\n💸 Hand Balance: $%d", bank, hand))
             end
         end)
     end
@@ -2806,7 +2806,7 @@ end)
 
 BuyTab:Toggle({
     Title   = "Skip Crate Spin",
-    Desc    = "",
+    Desc    = "ข้ามการหมุนกล่องอัตโนมัติ",
     Default = false,
     Callback = function(v) skipCrateEnabled = v end,
 })
@@ -2840,7 +2840,7 @@ end
 local selectedBulletType = "Pistol"
 
 BuyTab:Dropdown({
-    Title = "",
+    Title = "เลือกประเภทกระสุน",
     Values = {"Pistol", "Rifle", "Shotgun", "Random"},
     Default = "Pistol",
     Callback = function(selected)
@@ -2849,8 +2849,8 @@ BuyTab:Dropdown({
 })
 
 BuyTab:Button({
-    Title = " Ammo Crate",
-    Desc = " dropdown",
+    Title = "เปิด Ammo Crate",
+    Desc = "ใช้ประเภทกระสุนที่เลือกจาก dropdown",
     Callback = function()
         local useType = selectedBulletType
         if useType == "Random" then
@@ -2953,7 +2953,7 @@ MiscTab:Button({
 MiscTab:Section({ Title = "GRAPHICS & FPS:" })
 
 MiscTab:Button({
-    Title = "Boost FPS ()",
+    Title = "Boost FPS (ภาพกาก)",
     Callback = function()
         for _, v in ipairs(Lighting:GetChildren()) do
             if v:IsA("Sky") or v:IsA("Atmosphere") or v:IsA("BloomEffect") or v:IsA("SunRaysEffect") or v:IsA("ColorCorrectionEffect") or v:IsA("DepthOfFieldEffect") then
@@ -2979,7 +2979,7 @@ MiscTab:Button({
 })
 
 MiscTab:Button({
-    Title = "RTX ON ()",
+    Title = "RTX ON (ภาพสวย)",
     Callback = function()
         Lighting.Technology = Enum.Technology.Future
         Lighting.GlobalShadows = true
@@ -2994,7 +2994,7 @@ MiscTab:Button({
 
 local frustumCullingConnection = nil
 MiscTab:Toggle({
-    Title = "Frustum Culling ()",
+    Title = "Frustum Culling (ซ่อนวัตถุนอกจอ)",
     Default = false,
     Callback = function(state)
         if state then
@@ -3022,7 +3022,7 @@ MiscTab:Toggle({
                 end
             end)
             if WindUI and WindUI.Notify then
-                WindUI:Notify({ Title = "NYVEX HUB", Content = "  Frustum Culling !", Duration = 2 })
+                WindUI:Notify({ Title = "NYVEX HUB", Content = "✅ เปิดใช้งาน Frustum Culling เรียบร้อย!", Duration = 2 })
             end
         else
             if frustumCullingConnection then
@@ -3038,7 +3038,7 @@ MiscTab:Toggle({
                 end
             end
             if WindUI and WindUI.Notify then
-                WindUI:Notify({ Title = "NYVEX HUB", Content = "  Frustum Culling ", Duration = 2 })
+                WindUI:Notify({ Title = "NYVEX HUB", Content = "❌ ปิดใช้งาน Frustum Culling แล้ว", Duration = 2 })
             end
         end
     end
@@ -3052,9 +3052,9 @@ SettingsTab:Section({ Title = "CONFIG MANAGER:" })
 local selectedConfigName = "NyvexConfig"
 
 SettingsTab:Input({
-    Title = " Config",
+    Title = "ชื่อ Config",
     Default = "NyvexConfig",
-    Placeholder = "...",
+    Placeholder = "ใส่ชื่อการตั้งค่า...",
     Callback = function(text)
         if text and text ~= "" then
             selectedConfigName = text
@@ -3063,7 +3063,7 @@ SettingsTab:Input({
 })
 
 SettingsTab:Button({
-    Title = "  (Save Config)",
+    Title = "💾 บันทึกการตั้งค่า (Save Config)",
     Callback = function()
         pcall(function()
             if ConfigManager and ConfigManager.SaveConfig then
@@ -3074,7 +3074,7 @@ SettingsTab:Button({
             if WindUI and WindUI.Notify then
                 WindUI:Notify({
                     Title = "NYVEX HUB",
-                    Content = "!",
+                    Content = "บันทึกการตั้งค่าสำเร็จ!",
                     Duration = 3,
                 })
             end
@@ -3083,7 +3083,7 @@ SettingsTab:Button({
 })
 
 SettingsTab:Button({
-    Title = "  (Load Config)",
+    Title = "📂 โหลดการตั้งค่า (Load Config)",
     Callback = function()
         pcall(function()
             if ConfigManager and ConfigManager.LoadConfig then
@@ -3094,7 +3094,7 @@ SettingsTab:Button({
             if WindUI and WindUI.Notify then
                 WindUI:Notify({
                     Title = "NYVEX HUB",
-                    Content = "!",
+                    Content = "โหลดการตั้งค่าสำเร็จ!",
                     Duration = 3,
                 })
             end
