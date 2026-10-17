@@ -1,5 +1,5 @@
 --// ==========================================
---// NYVEX HUB | ULTIMATE EDITION (FINAL FIXED v4)
+--// NYVEX HUB | ULTIMATE EDITION (FINAL v5)
 --// ==========================================
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
@@ -151,6 +151,11 @@ local AutoShoot = {
     Running = false,
 }
 
+local AutoReload = {
+    Enabled = false,
+    LastReload = 0,
+}
+
 local AutoShootOnDamage = {
     Enabled = false,
     Duration = 2.0,
@@ -164,9 +169,10 @@ local _damageBurstRunning = false
 local LiftUndergroundEnabled = false
 local UndergroundRange = 100
 
--- ติดตามสถานะการยิงเข้าตัว (สถิติต่อเป้าหมาย: ยิงตัว 2 เม็ด แล้วสลับหัว)
+-- ติดตามสถานะการยิงเข้าตัว
 local targetHitData = {}
 local autoShootHitData = {}
+local activeCombatTarget = nil
 
 local IsMobile = false
 local FOVCircleSegments = {}
@@ -287,7 +293,7 @@ local function isWhitelisted(player)
     return isRobloxFriend
 end
 
--- ฟังก์ชันเช็กกำแพงเฉพาะ Auto Shoot
+-- ฟังก์ชันเช็กกำแพงที่แม่นยำ (รองรับการเช็กทั้งหัวและตัวว่าโผล่พ้นกำแพงหรือยัง)
 local function hasLineOfSight(targetPart, targetCharacter)
     local myHead = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head")
     local origin = myHead and myHead.Position or Camera.CFrame.Position
@@ -337,7 +343,6 @@ end
 
 local previousTargetPositions = {}
 
--- Silent Aim: ทะลุกำแพง เจาะทะลุระบบกันตาย/แอนตี้คิล ยิงได้ทุกเลือดและทุกรูปแบบ
 local function getClosestTarget()
     local best, bestDist = nil, SilentAim.FOV
     local center = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
@@ -470,7 +475,33 @@ local function isShotgun(tool)
     return false
 end
 
--- Silent Aim Hook: เจาะทะลวงระบบกันตาย/แอนตี้คิล ยิงตัว 2 เม็ด ที่เหลือหัว
+-- ฟังก์ชันจัดการ Auto Reload (สลับถือปืนเก็บแล้วถือใหม่เพื่อรีโหลดกระสุน)
+local function performAutoReload(tool)
+    if not AutoReload.Enabled or not tool or not tool:IsA("Tool") then return end
+    if tick() - AutoReload.LastReload < 1.0 then return end
+    
+    local backpack = LocalPlayer:FindFirstChild("Backpack")
+    if not backpack then return end
+    
+    AutoReload.LastReload = tick()
+    pcall(function()
+        tool.Parent = backpack
+        task.wait(0.05)
+        tool.Parent = LocalPlayer.Character
+    end)
+end
+
+local function checkGunAmmoAndReload(tool)
+    if not tool then return true end
+    local ammo = tool:GetAttribute("Ammo") or tool:GetAttribute("CurrentAmmo") or tool:GetAttribute("Magazine")
+    if ammo ~= nil and tonumber(ammo) <= 0 then
+        performAutoReload(tool)
+        return false
+    end
+    return true
+end
+
+-- Silent Aim Hook
 local oldFireServer
 if SendRemote and SendRemote.FireServer then
     pcall(function()
@@ -544,7 +575,7 @@ if SendRemote and SendRemote.FireServer then
                         }
                     end
 
-                    -- เส้นรุ้งสำหรับกระสุน Silent Aim
+                    -- เส้นรุ้ง Tracer
                     local rainbowColor = Color3.fromHSV((tick() % 5) / 5, 1, 1)
                     local line = Instance.new("Part")
                     line.Anchored = true
@@ -584,10 +615,15 @@ local function hasAmmo(tool)
     if not AutoShoot.CheckAmmo then return true end
     local ammo = tool:GetAttribute("Ammo") or tool:GetAttribute("CurrentAmmo") or tool:GetAttribute("Magazine")
     if ammo == nil then return true end
-    return tonumber(ammo) and tonumber(ammo) > 0
+    if tonumber(ammo) and tonumber(ammo) > 0 then
+        return true
+    else
+        performAutoReload(tool)
+        return false
+    end
 end
 
--- Auto Shoot: เช็กกำแพง + ยิงตัว 2 เม็ดสลับหัว + ไม่ยิงคนเลือดต่ำกว่า 30
+-- Auto Shoot: เช็กกำแพงอย่างแม่นยำ + ยิงตัว 2 เม็ดสลับหัว + ไม่ยิงคนเลือด<30
 local function fireShotAtTarget(target)
     if not SendRemote or not target or not target.Character then return end
     local hum = target.Character:FindFirstChildOfClass("Humanoid")
@@ -597,8 +633,10 @@ local function fireShotAtTarget(target)
     local torso = target.Character:FindFirstChild("HumanoidRootPart") or target.Character:FindFirstChild("UpperTorso")
     if not head or not torso then return end
 
-    -- ตรวจสอบกำแพงสำหรับ Auto Shoot
-    if not hasLineOfSight(head, target.Character) and not hasLineOfSight(torso, target.Character) then
+    -- เช็กกำแพงสำหรับ Auto Shoot (หัวหรือตัวโผล่พ้นกำแพงหรือไม่)
+    local headVisible = hasLineOfSight(head, target.Character)
+    local torsoVisible = hasLineOfSight(torso, target.Character)
+    if not headVisible and not torsoVisible then
         return
     end
 
@@ -695,6 +733,7 @@ end
 local function fireAutoShot()
     if not AutoShoot.Enabled then return end
     local target = getClosestTargetForAutoShoot()
+    activeCombatTarget = target
     if target then
         fireShotAtTarget(target)
     end
@@ -749,6 +788,7 @@ local function startDamageBurst()
         while _damageBurstRunning do
             if AutoShootOnDamage.Enabled and tick() < _damageBurstUntil then
                 local target = getClosestTargetForAutoShoot() or getClosestEnemyToMe(AutoShootOnDamage.Range)
+                activeCombatTarget = target
                 if target then
                     pcall(function() fireShotAtTarget(target) end)
                 end
@@ -761,12 +801,17 @@ local function startDamageBurst()
 end
 startDamageBurst()
 
--- RenderStepped สำหรับแสดงเส้นชี้เป้าหมายและเส้นรุ้ง Tracer
+-- RenderStepped สำหรับแสดงเส้นชี้เป้าหมายและเส้นรุ้ง Tracer (แสดงทั้ง Silent Aim และ Auto Shoot)
 RunService.RenderStepped:Connect(function()
     if SilentAim.Enabled then
         SilentAim.Target = getClosestTarget()
     else
         SilentAim.Target = nil
+    end
+
+    local displayTarget = SilentAim.Target or activeCombatTarget
+    if not SilentAim.Enabled and not AutoShoot.Enabled then
+        displayTarget = nil
     end
 
     local center = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
@@ -796,8 +841,8 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    if SilentAim.Enabled and SilentAim.Target and SilentAim.Target.Character then
-        local targetPart = getSmartAimPart(SilentAim.Target.Character)
+    if displayTarget and displayTarget.Character then
+        local targetPart = getSmartAimPart(displayTarget.Character)
         if targetPart then
             local targetScreenPos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
             if onScreen then
@@ -877,6 +922,16 @@ CombatTab:Toggle({
     Type = 'Checkbox',
     Default = false,
     Callback = function(state) AutoShoot.Enabled = state end,
+})
+
+CombatTab:Toggle({
+    Title = 'Auto Reload (รีโหลดกระสุนออโต้)',
+    Flag = 'auto_reload',
+    Desc = 'สลับเก็บและถือปืนใหม่เพื่อรีโหลดกระสุนอัตโนมัติเมื่อกระสุนหมด',
+    Icon = 'refresh-cw',
+    Type = 'Checkbox',
+    Default = false,
+    Callback = function(state) AutoReload.Enabled = state end,
 })
 
 CombatTab:Slider({
@@ -3151,4 +3206,4 @@ pcall(function()
     end)
 end)
 
-print("[NYVEX HUB] Ultimate Edition v4 Loaded Successfully with Anti-Kill Bypass & WallCheck AutoShoot!")
+print("[NYVEX HUB] Ultimate Edition v5 Loaded Successfully with WallCheck Tracers & Auto Reload!")
