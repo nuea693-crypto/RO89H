@@ -1,5 +1,5 @@
 --// ==========================================
---// NYVEX HUB | ULTIMATE EDITION (FINAL v7.2 CLEAN)
+--// NYVEX HUB | ULTIMATE EDITION (FINAL v7.2 FULL CLEAN)
 --// ==========================================
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
@@ -121,7 +121,7 @@ local SettingsTab = Window:Tab({ Title = 'Settings', Icon = 'settings' })
 local CreditsTab = Window:Tab({ Title = 'เครดิตผู้สร้าง', Icon = 'award' })
 
 -- ==========================================
--- DAMAGE POPUP GUI SYSTEM (ระบบโชว์ดาเมจมุมขวาบน เลื่อนลงและขึ้น)
+-- DAMAGE POPUP GUI SYSTEM
 -- ==========================================
 local DamageGui = Instance.new("ScreenGui")
 DamageGui.Name = "NYVEX_DamagePopupGui"
@@ -2480,7 +2480,7 @@ CarTab:Toggle({
 })
 
 -- ==========================================
--- ESP TAB (รวมหลอดเลือดข้างตัวผู้เล่นขนาดพอดี)
+-- ESP TAB
 -- ==========================================
 ESPTab:Section({ Title = 'Player ESP & Visuals:' })
 
@@ -2818,17 +2818,18 @@ local HandBalance = BuyTab:Button({
 })
 
 local function HandMoney()
-    pcall(function()
+    local ok, res = pcall(function()
         local label = PlayerGui.TopRightHud.Holder.Frame.MoneyTextLabel.Text
         return tonumber(label:match("%$(%d+)"))
     end)
-    return 0
+    return ok and res or 0
 end
 
 local function ATMMoney()
     for _, v in ipairs(PlayerGui:GetDescendants()) do
         if v:IsA("TextLabel") and string.find(v.Text, "Bank Balance") then
-            return tonumber(v.Text:match("%$(%d+)"))
+            local val = tonumber(v.Text:match("%$(%d+)"))
+            if val then return val end
         end
     end
     return 0
@@ -2952,13 +2953,17 @@ MiscTab:Button({
     Title = 'Hop Server (Ascending)',
     Icon = 'shuffle',
     Callback = function()
-        local req = game:HttpGet(string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=100", placeId))
-        local data = HttpService:JSONDecode(req)
-        if data and data.data then
-            for _, v in pairs(data.data) do
-                if v.playing < v.maxPlayers then
-                    TeleportService:TeleportToPlaceInstance(placeId, v.id, LocalPlayer)
-                    break
+        local ok, req = pcall(function()
+            return game:HttpGet(string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=100", placeId))
+        end)
+        if ok and req then
+            local sOk, data = pcall(function() return HttpService:JSONDecode(req) end)
+            if sOk and data and data.data then
+                for _, v in pairs(data.data) do
+                    if v.playing < v.maxPlayers then
+                        TeleportService:TeleportToPlaceInstance(placeId, v.id, LocalPlayer)
+                        break
+                    end
                 end
             end
         end
@@ -2969,13 +2974,17 @@ MiscTab:Button({
     Title = 'Hop Server (Balanced)',
     Icon = 'shuffle',
     Callback = function()
-        local req = game:HttpGet(string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Desc&limit=100", placeId))
-        local data = HttpService:JSONDecode(req)
-        if data and data.data then
-            for _, v in pairs(data.data) do
-                if v.playing >= math.floor(v.maxPlayers * 0.4) and v.playing <= math.floor(v.maxPlayers * 0.8) then
-                    TeleportService:TeleportToPlaceInstance(placeId, v.id, LocalPlayer)
-                    break
+        local ok, req = pcall(function()
+            return game:HttpGet(string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Desc&limit=100", placeId))
+        end)
+        if ok and req then
+            local sOk, data = pcall(function() return HttpService:JSONDecode(req) end)
+            if sOk and data and data.data then
+                for _, v in pairs(data.data) do
+                    if v.playing >= math.floor(v.maxPlayers * 0.4) and v.playing <= math.floor(v.maxPlayers * 0.8) then
+                        TeleportService:TeleportToPlaceInstance(placeId, v.id, LocalPlayer)
+                        break
+                    end
                 end
             end
         end
@@ -3190,4 +3199,4 @@ pcall(function()
     end)
 end)
 
-print("[NYVEX HUB] Ultimate Edition v7.2 Clean Loaded Successfully!")
+print("[NYVEX HUB] Ultimate Edition v7.2 Full Clean Loaded Successfully!")
