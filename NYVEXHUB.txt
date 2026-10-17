@@ -1,5 +1,5 @@
 --// ==========================================
---// NYVEX HUB | ULTIMATE EDITION (FINAL v7.5 STABLE UI)
+--// NYVEX HUB | ULTIMATE EDITION (FINAL v7.6 STABLE UI)
 --// ==========================================
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
@@ -42,6 +42,10 @@ local function getEnv()
     return (type(getgenv) == "function" and getgenv()) or _G
 end
 
+-- Safe Executor Environment Wrappers
+local _getgc = getgc or function() return {} end
+local _getupvalue = getupvalue or (debug and debug.getupvalue) or function() return nil end
+
 -- Network & Remote Handler
 local SendRemote
 pcall(function()
@@ -50,7 +54,7 @@ end)
 
 local Counter = nil
 pcall(function()
-    for _, v in ipairs(getgc(true)) do
+    for _, v in ipairs(_getgc(true)) do
         if typeof(v) == "table" and rawget(v, "event") and rawget(v, "func") then
             Counter = v
             break
@@ -1572,7 +1576,7 @@ PlayersTab:Toggle({
         if v then
             local ok, SprintModule = pcall(function() return require(ReplicatedStorage.Modules.Game.Sprint) end)
             if ok and SprintModule then
-                local okBar, sprintBar = pcall(function() return getupvalue(SprintModule.consume_stamina, 2).sprint_bar end)
+                local okBar, sprintBar = pcall(function() return _getupvalue(SprintModule.consume_stamina, 2).sprint_bar end)
                 if okBar and sprintBar then
                     local origUpdate = sprintBar.update
                     sprintBar.update = function(...) return origUpdate(function() return 1 end) end
@@ -1598,7 +1602,7 @@ PlayersTab:Toggle({
             pcall(function() Send_Send("set_sprinting_1", false) end)
             local ok, SprintModule = pcall(function() return require(ReplicatedStorage.Modules.Game.Sprint) end)
             if ok and SprintModule then
-                local okBar, sprintBar = pcall(function() return getupvalue(SprintModule.consume_stamina, 2).sprint_bar end)
+                local okBar, sprintBar = pcall(function() return _getupvalue(SprintModule.consume_stamina, 2).sprint_bar end)
                 if okBar and sprintBar and getEnv().OriginalSprintUpdate then
                     sprintBar.update = getEnv().OriginalSprintUpdate
                     getEnv().OriginalSprintUpdate = nil
@@ -3110,4 +3114,4 @@ SettingsTab:Toggle({
     end,
 })
 
-print("[NYVEX HUB] Ultimate Edition v7.5 Loaded Successfully!")
+print("[NYVEX HUB] Ultimate Edition v7.6 Loaded Successfully!")
