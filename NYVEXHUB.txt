@@ -1,5 +1,5 @@
 --// ==========================================
---// NYVEX HUB | ULTIMATE EDITION (FINAL v7.1 FIXED)
+--// NYVEX HUB | ULTIMATE EDITION (FINAL v7.2 CLEAN)
 --// ==========================================
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
@@ -3190,7 +3190,7 @@ pcall(function()
     end)
 end)
 
-print("[NYVEX HUB] Ultimate Edition v7.1 Fixed Loaded Successfully!")
+print("[NYVEX HUB] Ultimate Edition v7.2 Clean Loaded Successfully!")
        Title = "NYVEX HUB",
                     Content = "บันทึกการตั้งค่า '" .. selectedConfigName .. "' สำเร็จ!",
                     Duration = 3,
