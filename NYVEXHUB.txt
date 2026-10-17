@@ -1,5 +1,5 @@
 --// ==========================================
---// NYVEX HUB | ULTIMATE EDITION (FIXED)
+--// NYVEX HUB | ULTIMATE EDITION (FIXED v7.9)
 --// ==========================================
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
@@ -154,7 +154,7 @@ local _damageBurstRunning = false
 local LiftUndergroundEnabled = false
 local UndergroundRange = 100
 
--- ตารางติดตามสถานะการยิงตัว/หัวของผู้เล่น (สำหรับกฎเลือดต่ำกว่า 30 และการเกิดใหม่)
+-- ตารางติดตามสถานะการยิงผู้เล่น (รองรับกฎเลือดต่ำกว่า 30 และการเกิดใหม่)
 local playerShotTracking = {}
 
 local IsMobile = false
@@ -276,24 +276,22 @@ local function isWhitelisted(player)
     return isRobloxFriend
 end
 
--- ฟังก์ชันเลือกจุดเล็งอัจฉริยะ (รองรับกฎเลือดต่ำกว่า 30, Random 20/80 และระบบเช็กยิงตัว 1 เม็ด)
+-- ฟังก์ชันเลือกจุดเล็งอัจฉริยะ (รองรับเลือดต่ำกว่า 30, Random 80% ตัว / 20% หัว และระบบเช็กยิงตัว 1 เม็ด)
 local function getSmartAimPart(character)
     if not character then return nil end
     local head = character:FindFirstChild('Head')
     local hrp = character:FindFirstChild('HumanoidRootPart') or character:FindFirstChild('UpperTorso')
     local hum = character:FindFirstChildOfClass('Humanoid')
 
-    -- ตรวจสอบหากเลือดต่ำกว่า 30 ให้บังคับเล็งตัวทันที
+    -- หากเลือดต่ำกว่า 30 ให้บังคับเล็งตัวทันทีเพื่อป้องกันการยิงไม่เข้า/กันตาย
     if hum and hum.Health > 0 and hum.Health < 30 then
         return hrp or head
     end
 
-    -- ตรวจสอบสถานะผู้เล่นสำหรับโหมด Head (บังคับยิงตัว 1 เม็ดแรก ถ้าเคยยิงแล้วหรือเกิดใหม่)
     if SilentAim.TargetMode == 'Head' then
         local playerKey = character
         local trackData = playerShotTracking[playerKey]
         
-        -- ตรวจสอบการเกิดใหม่ (ถ้าเลือดเต็มหรือเปลี่ยนตัวละคร)
         if not trackData or (hum and trackData.maxHealth ~= hum.MaxHealth) then
             playerShotTracking[playerKey] = { shotBodyCount = 0, maxHealth = hum and hum.MaxHealth or 100 }
             trackData = playerShotTracking[playerKey]
@@ -308,7 +306,7 @@ local function getSmartAimPart(character)
     elseif SilentAim.TargetMode == 'Torso' then
         return hrp or head
     elseif SilentAim.TargetMode == 'Random' then
-        -- โหมด Random: โอกาสโดนหัว 20% และโดนตัว 80%
+        -- โหมด Random: สุ่มทุกนัด ยิงเข้าตัว (Torso) 80% และยิงเข้าหัว (Head) 20%
         if math.random() <= 0.2 and head then
             return head
         else
@@ -367,7 +365,8 @@ local function getClosestTarget()
                     local hum = targetChar:FindFirstChildOfClass("Humanoid")
                     local targetPart = getSmartAimPart(targetChar)
 
-                    if hum and hum.Health > 0 and targetPart then
+                    -- รองรับเป้าหมายทั่วไปและเป้าหมายที่เปิดระบบกันตาย (Anti-Kill / Downed)
+                    if hum and hum.Health >= 0 and targetPart then
                         local screenPos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
                         if onScreen then
                             local dist = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
@@ -386,7 +385,7 @@ local function getClosestTarget()
                 local hum = player.Character:FindFirstChildOfClass("Humanoid")
                 local targetPart = getSmartAimPart(player.Character)
 
-                if hum and hum.Health > 0 and targetPart then
+                if hum and hum.Health >= 0 and targetPart then
                     local screenPos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
                     if onScreen then
                         local dist = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
@@ -410,7 +409,7 @@ local function getClosestEnemyToMe(maxRange)
         if player ~= LocalPlayer and not isWhitelisted(player) and player.Character then
             local hum  = player.Character:FindFirstChildOfClass("Humanoid")
             local root = player.Character:FindFirstChild("HumanoidRootPart")
-            if hum and hum.Health > 0 and root then
+            if hum and hum.Health >= 0 and root then
                 local d = (root.Position - myRoot.Position).Magnitude
                 if d < bestDist then bestDist = d; best = player end
             end
@@ -485,7 +484,7 @@ if SendRemote and SendRemote.FireServer then
                 local targetPart = getSmartAimPart(SilentAim.Target.Character)
                 local hum = SilentAim.Target.Character:FindFirstChildOfClass("Humanoid")
 
-                if targetPart and hum and hum.Health > 0 then
+                if targetPart and hum and hum.Health >= 0 then
                     local predicted = predictPosition(targetPart)
                     local myHead = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head")
                     local origin = myHead and myHead.Position or Camera.CFrame.Position
@@ -568,7 +567,7 @@ local function fireShotAtTarget(target)
     local targetChar = target.Character
     local targetPart = getSmartAimPart(targetChar)
     local hum = targetChar:FindFirstChildOfClass("Humanoid")
-    if not (targetPart and hum and hum.Health > 0) then return end
+    if not (targetPart and hum and hum.Health >= 0) then return end
 
     local myHead = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head")
     local originPos = myHead and myHead.Position or Camera.CFrame.Position
@@ -779,7 +778,7 @@ RunService.Heartbeat:Connect(function()
             if player ~= LocalPlayer and player.Character then
                 local hrp = player.Character:FindFirstChild("HumanoidRootPart")
                 local humanoid = player.Character:FindFirstChild("Humanoid")
-                if hrp and humanoid and humanoid.Health > 0 then
+                if hrp and humanoid and humanoid.Health >= 0 then
                     if hrp.Position.Y < -5 then
                         local depth = math.abs(hrp.Position.Y)
                         if depth <= UndergroundRange then
@@ -799,7 +798,7 @@ end)
 CombatTab:Toggle({
     Title = 'Silent Aim',
     Flag = 'silent_aim',
-    Desc = 'Auto aim lock (+กันตาย/เลือดต่ำกว่า 30 ยิงตัวทันที, Headshot 1st Body Shot)',
+    Desc = 'Auto aim lock (+กันตาย/เลือดต่ำกว่า 30 ยิงตัวทันที, Random 80%ตัว/20%หัว)',
     Icon = 'crosshair',
     Type = 'Checkbox',
     Default = false,
@@ -876,7 +875,7 @@ CombatTab:Toggle({
 CombatTab:Dropdown({
     Title = 'Target Mode',
     Flag = 'target_mode',
-    Desc = 'เลือกจุดล็อกเป้า (Head=ยิงตัวนัดแรกก่อน, Random=สุ่มหัว20/ตัว80)',
+    Desc = 'เลือกจุดล็อกเป้า (Head=ยิงตัวนัดแรก, Random=สุ่มตัว80%/หัว20%)',
     Icon = 'target',
     Values = {'Head', 'Torso', 'Random', 'Smart'},
     Default = 'Head',
@@ -1495,22 +1494,7 @@ local function RandomRange(min, max)
     return math.random(min * 10, max * 10) / 10
 end
 
--- แก้ไข Anti-Lock ให้ไม่กระทบมุมกล้องของผู้เล่น (กล้องนิ่งปกติ ตัวอื่นเห็นส่าย)
-local oldIndex
-oldIndex = hookmetamethod(game, '__index', newcclosure(function(self, key)
-    if AntiLockEnabled and not checkcaller() then
-        if self:IsA('BasePart') and key == 'CFrame' then
-            if LocalPlayer.Character and self == LocalPlayer.Character:FindFirstChild('HumanoidRootPart') then
-                local callingScript = getcallingscript()
-                if not callingScript or not tostring(callingScript):lower():find("camera") then
-                    return RealCFrame
-                end
-            end
-        end
-    end
-    return oldIndex(self, key)
-end))
-
+-- แก้ไข Anti-Lock ให้ฝั่งเรา (กล้องของเรา) เห็นปกติไม่ส่าย แต่คนอื่นเห็นตัวเราส่ายแรงมาก
 RunService.Heartbeat:Connect(function()
     if AntiLockEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild('HumanoidRootPart') then
         local Root = LocalPlayer.Character.HumanoidRootPart
@@ -1528,6 +1512,7 @@ RunService.Heartbeat:Connect(function()
                 RandomRange(-JitterIntensity, JitterIntensity)
             )
 
+            -- บังคับส่ายเฉพาะ RootPart ให้คนอื่นเห็น
             Root.CFrame = RealCFrame * CFrame.Angles(0, math.rad(randomAngle), 0) * CFrame.new(Offset)
             Root.AssemblyLinearVelocity = Vector3.new(
                 math.random(-1200, 1200), 
@@ -1537,6 +1522,7 @@ RunService.Heartbeat:Connect(function()
 
             RunService.RenderStepped:Wait()
 
+            -- คืนค่า CFrame ให้กล้องและเราเห็นปกติ
             Root.CFrame = RealCFrame
             Root.AssemblyLinearVelocity = RealVelocity
         end
@@ -1546,7 +1532,7 @@ end)
 PlayersTab:Toggle({
     Title = 'Anti Lock (ส่ายหลบกระสุน)',
     Flag = 'antilock_hardcore',
-    Desc = 'ส่ายสลัดเป้าล็อกอย่างหนักพร้อมท่าส่าย (กล้องไม่ส่ายตาม)',
+    Desc = 'ตัวเราส่ายหลบแรงมาก (ฝั่งเรามองเห็นปกติ กล้องไม่ส่าย)',
     Icon = 'shield-alert',
     Type = 'Checkbox',
     Default = false,
@@ -1684,7 +1670,7 @@ PlayersTab:Toggle({
     end,
 })
 
--- แก้ไข Anti Ragdoll ให้ทำงานเสถียร ไม่บล็อกการลุกขึ้นหรือมุดดิน
+-- แก้ไข Anti Ragdoll ให้ทำงานเสถียร ไม่ติดบั๊กขยับไม่ได้
 local antiRagdollEnabled = false
 
 RunService.Heartbeat:Connect(function()
@@ -2978,7 +2964,7 @@ MiscTab:Toggle({
                             if obj:GetAttribute("OriginalTransparency") == nil then
                                 obj:SetAttribute("OriginalTransparency", obj.Transparency)
                             end
-                            obj.Transparency = obj:GetAttribute("OriginalTransparency") or 0
+                            obj.Transparency = obj:GetAttribute("OriginalTransparency"] or 0
                         else
                             if obj:GetAttribute("OriginalTransparency") == nil then
                                 obj:SetAttribute("OriginalTransparency", obj.Transparency)
@@ -3091,6 +3077,19 @@ SettingsTab:Toggle({
 
 pcall(function()
     task.spawn(function()
+        task.wait(1)
+        if getEnv().AutoLoadConfig then
+            if ConfigManager and ConfigManager.LoadConfig then
+                ConfigManager:LoadConfig(selectedConfigName)
+            elseif Config and Config.Load then
+                Config:Load()
+            end
+        end
+    end)
+end)
+
+print("[NYVEX HUB] Ultimate Edition v7.9 Loaded Successfully with Fixed Random Mode (80/20), Anti-Kill Target Fix, and Anti-Lock Camera Fix!")
+awn(function()
         task.wait(1)
         if getEnv().AutoLoadConfig then
             if ConfigManager and ConfigManager.LoadConfig then
