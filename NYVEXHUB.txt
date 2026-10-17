@@ -1,5 +1,5 @@
 --// ==========================================
---// NYVEX HUB | ULTIMATE EDITION (FINAL v5)
+--// NYVEX HUB | ULTIMATE EDITION (FINAL v6)
 --// ==========================================
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
@@ -180,8 +180,13 @@ local FOVCircleGui, FOVCircleFrame
 local Tracer, TargetHeadCircle
 local TracerGui, TracerFrame, TargetCircleGui, TargetCircleFrame
 
+-- ฟังก์ชันคำนวณจุดวงกลม FOV (แก้ไขปัญหา FOV หาย)
+local function GetCirclePoint(center, radius, angle)
+    return Vector2.new(center.X + math.cos(angle) * radius, center.Y + math.sin(angle) * radius)
+end
+
 if not IsMobile then
-    for i = 1, 6 do
+    for i = 1, 32 do
         local line = Drawing.new('Line')
         line.Thickness = 2
         line.Visible = false
@@ -293,7 +298,23 @@ local function isWhitelisted(player)
     return isRobloxFriend
 end
 
--- ฟังก์ชันเช็กกำแพงที่แม่นยำ (รองรับการเช็กทั้งหัวและตัวว่าโผล่พ้นกำแพงหรือยัง)
+-- ฟังก์ชันเช็กเกราะ Safe Zone หรือสถานะอมตะ/เพิ่งเกิด
+local function hasSafeZoneOrImmunity(character)
+    if not character then return false end
+    local hum = character:FindFirstChildOfClass("Humanoid")
+    if hum then
+        if hum:GetAttribute("SafeZone") or hum:GetAttribute("Immune") or hum:GetAttribute("SpawnProtected") or hum:GetAttribute("Invincible") then
+            return true
+        end
+    end
+    -- เช็ก ForceField (เกราะอมตะทั่วไปใน Roblox)
+    if character:FindFirstChildOfClass("ForceField") then
+        return true
+    end
+    return false
+end
+
+-- ฟังก์ชันเช็กกำแพง
 local function hasLineOfSight(targetPart, targetCharacter)
     local myHead = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head")
     local origin = myHead and myHead.Position or Camera.CFrame.Position
@@ -357,19 +378,21 @@ local function getClosestTarget()
             if targetChar and targetChar ~= LocalPlayer.Character then
                 local player = Players:GetPlayerFromCharacter(targetChar)
                 if not player or not isWhitelisted(player) then
-                    local hum = targetChar:FindFirstChildOfClass("Humanoid")
-                    local targetPart = getSmartAimPart(targetChar)
+                    if not hasSafeZoneOrImmunity(targetChar) then
+                        local hum = targetChar:FindFirstChildOfClass("Humanoid")
+                        local targetPart = getSmartAimPart(targetChar)
 
-                    if hum and hum.Health > 0 and targetPart then
-                        local screenPos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
-                        if onScreen then
-                            local dist2D = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
-                            local dist3D = myRoot and (myRoot.Position - targetPart.Position).Magnitude or 0
-                            table.insert(candidates, {
-                                target = player or { Character = targetChar },
-                                dist2D = dist2D,
-                                dist3D = dist3D
-                            })
+                        if hum and hum.Health > 0 and targetPart then
+                            local screenPos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
+                            if onScreen then
+                                local dist2D = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
+                                local dist3D = myRoot and (myRoot.Position - targetPart.Position).Magnitude or 0
+                                table.insert(candidates, {
+                                    target = player or { Character = targetChar },
+                                    dist2D = dist2D,
+                                    dist3D = dist3D
+                                })
+                            end
                         end
                     end
                 end
@@ -378,19 +401,21 @@ local function getClosestTarget()
     else
         for _, player in ipairs(Players:GetPlayers()) do
             if player ~= LocalPlayer and not isWhitelisted(player) and player.Character then
-                local hum = player.Character:FindFirstChildOfClass("Humanoid")
-                local targetPart = getSmartAimPart(player.Character)
+                if not hasSafeZoneOrImmunity(player.Character) then
+                    local hum = player.Character:FindFirstChildOfClass("Humanoid")
+                    local targetPart = getSmartAimPart(player.Character)
 
-                if hum and hum.Health > 0 and targetPart then
-                    local screenPos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
-                    if onScreen then
-                        local dist2D = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
-                        local dist3D = myRoot and (myRoot.Position - player.Character.HumanoidRootPart.Position).Magnitude or 0
-                        table.insert(candidates, {
-                            target = player,
-                            dist2D = dist2D,
-                            dist3D = dist3D
-                        })
+                    if hum and hum.Health > 0 and targetPart then
+                        local screenPos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
+                        if onScreen then
+                            local dist2D = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
+                            local dist3D = myRoot and (myRoot.Position - player.Character.HumanoidRootPart.Position).Magnitude or 0
+                            table.insert(candidates, {
+                                target = player,
+                                dist2D = dist2D,
+                                dist3D = dist3D
+                            })
+                        end
                     end
                 end
             end
@@ -413,11 +438,13 @@ local function getClosestEnemyToMe(maxRange)
     local best, bestDist = nil, maxRange or math.huge
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and not isWhitelisted(player) and player.Character then
-            local hum  = player.Character:FindFirstChildOfClass("Humanoid")
-            local root = player.Character:FindFirstChild("HumanoidRootPart")
-            if hum and hum.Health > 0 and root then
-                local d = (root.Position - myRoot.Position).Magnitude
-                if d < bestDist then bestDist = d; best = player end
+            if not hasSafeZoneOrImmunity(player.Character) then
+                local hum  = player.Character:FindFirstChildOfClass("Humanoid")
+                local root = player.Character:FindFirstChild("HumanoidRootPart")
+                if hum and hum.Health > 0 and root then
+                    local d = (root.Position - myRoot.Position).Magnitude
+                    if d < bestDist then bestDist = d; best = player end
+                end
             end
         end
     end
@@ -475,19 +502,20 @@ local function isShotgun(tool)
     return false
 end
 
--- ฟังก์ชันจัดการ Auto Reload (สลับถือปืนเก็บแล้วถือใหม่เพื่อรีโหลดกระสุน)
+-- ฟังก์ชันจัดการ Auto Reload ที่แก้ไขให้ทำงานสมบูรณ์
 local function performAutoReload(tool)
     if not AutoReload.Enabled or not tool or not tool:IsA("Tool") then return end
-    if tick() - AutoReload.LastReload < 1.0 then return end
+    if tick() - AutoReload.LastReload < 0.8 then return end
     
     local backpack = LocalPlayer:FindFirstChild("Backpack")
-    if not backpack then return end
+    local char = LocalPlayer.Character
+    if not backpack or not char then return end
     
     AutoReload.LastReload = tick()
     pcall(function()
         tool.Parent = backpack
-        task.wait(0.05)
-        tool.Parent = LocalPlayer.Character
+        task.wait(0.03)
+        tool.Parent = char
     end)
 end
 
@@ -514,79 +542,92 @@ if SendRemote and SendRemote.FireServer then
 
             if SilentAim.Enabled and args[2] == "shoot_gun" and SilentAim.Target and SilentAim.Target.Character then
                 local char = SilentAim.Target.Character
-                local hum = char:FindFirstChildOfClass("Humanoid")
-                local head = char:FindFirstChild("Head")
-                local torso = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("UpperTorso")
+                if not hasSafeZoneOrImmunity(char) then
+                    local hum = char:FindFirstChildOfClass("Humanoid")
+                    local head = char:FindFirstChild("Head")
+                    local torso = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("UpperTorso")
 
-                if hum and hum.Health > 0 and head and torso then
-                    local targetKey = SilentAim.Target
-                    if not targetHitData[targetKey] then
-                        targetHitData[targetKey] = { hitsToBody = 0 }
-                    end
+                    if hum and hum.Health > 0 and head and torso then
+                        local targetKey = SilentAim.Target
+                        if not targetHitData[targetKey] then
+                            targetHitData[targetKey] = { hitsToBody = 0 }
+                        end
 
-                    local dataRecord = targetHitData[targetKey]
-                    local predictedHead = predictPosition(head)
-                    local predictedTorso = predictPosition(torso)
-                    local myHead = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head")
-                    local origin = myHead and myHead.Position or Camera.CFrame.Position
+                        local dataRecord = targetHitData[targetKey]
+                        local predictedHead = predictPosition(head)
+                        local predictedTorso = predictPosition(torso)
+                        local myHead = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head")
+                        local origin = myHead and myHead.Position or Camera.CFrame.Position
 
-                    if isShotgun(args[3]) then
-                        args[4] = CFrame.new(origin, predictedHead)
-                        local spread = {}
-                        for i = 1, 6 do
-                            local useTorso = (dataRecord.hitsToBody < 2)
+                        -- ตรวจสอบการมองเห็นหัวและตัวเพื่อความฉลาดในการเล็ง
+                        local headVis = hasLineOfSight(head, char)
+                        local torsoVis = hasLineOfSight(torso, char)
+
+                        local useTorso = false
+                        if headVis and torsoVis then
+                            -- เห็นทั้งตัวและหัว: ยิงตัว 2 เม็ด แล้วยิงหัว วนไปเรื่อยๆ
+                            useTorso = (dataRecord.hitsToBody < 2)
                             if useTorso then
                                 dataRecord.hitsToBody = dataRecord.hitsToBody + 1
+                            else
+                                dataRecord.hitsToBody = 0 -- รีเซ็ตวนกลับมายิงตัว 2 เม็ดใหม่
                             end
-                            local targetPartInst = useTorso and torso or head
-                            local targetPosInst = useTorso and predictedTorso or predictedHead
-                            
-                            local offset = Vector3.new(
-                                math.random(-2, 2) * 0.03,
-                                math.random(-2, 2) * 0.03,
-                                math.random(-2, 2) * 0.03
-                            )
-                            table.insert(spread, {
-                                [1] = {
-                                    Instance = targetPartInst,
-                                    Normal = Vector3.new(0, 1, 0),
-                                    Position = targetPosInst + offset
-                                }
-                            })
+                        elseif torsoVis and not headVis then
+                            useTorso = true
+                        else
+                            useTorso = false
                         end
-                        args[5] = spread
-                    else
-                        local useTorso = (dataRecord.hitsToBody < 2)
-                        if useTorso then
-                            dataRecord.hitsToBody = dataRecord.hitsToBody + 1
-                        end
-                        local chosenPart = useTorso and torso or head
-                        local chosenPos = useTorso and predictedTorso or predictedHead
 
-                        args[4] = CFrame.new(origin, chosenPos)
-                        args[5] = {
-                            [1] = {
+                        if isShotgun(args[3]) then
+                            args[4] = CFrame.new(origin, predictedHead)
+                            local spread = {}
+                            for i = 1, 6 do
+                                local targetPartInst = useTorso and torso or head
+                                local targetPosInst = useTorso and predictedTorso or predictedHead
+                                
+                                local offset = Vector3.new(
+                                    math.random(-2, 2) * 0.03,
+                                    math.random(-2, 2) * 0.03,
+                                    math.random(-2, 2) * 0.03
+                                )
+                                table.insert(spread, {
+                                    [1] = {
+                                        Instance = targetPartInst,
+                                        Normal = Vector3.new(0, 1, 0),
+                                        Position = targetPosInst + offset
+                                    }
+                                })
+                            end
+                            args[5] = spread
+                        else
+                            local chosenPart = useTorso and torso or head
+                            local chosenPos = useTorso and predictedTorso or predictedHead
+
+                            args[4] = CFrame.new(origin, chosenPos)
+                            args[5] = {
                                 [1] = {
-                                    Instance = chosenPart,
-                                    Normal = Vector3.new(0, 1, 0),
-                                    Position = chosenPos
+                                    [1] = {
+                                        Instance = chosenPart,
+                                        Normal = Vector3.new(0, 1, 0),
+                                        Position = chosenPos
+                                    }
                                 }
                             }
-                        }
-                    end
+                        end
 
-                    -- เส้นรุ้ง Tracer
-                    local rainbowColor = Color3.fromHSV((tick() % 5) / 5, 1, 1)
-                    local line = Instance.new("Part")
-                    line.Anchored = true
-                    line.CanCollide = false
-                    line.Size = Vector3.new(0.08, 0.08, (predictedHead - origin).Magnitude)
-                    line.CFrame = CFrame.new(origin, predictedHead) * CFrame.new(0, 0, -line.Size.Z / 2)
-                    line.Material = Enum.Material.Neon
-                    line.Transparency = 0.35
-                    line.Color = rainbowColor
-                    line.Parent = Workspace
-                    Debris:AddItem(line, 1.5)
+                        -- เส้นรุ้ง Tracer
+                        local rainbowColor = Color3.fromHSV((tick() % 5) / 5, 1, 1)
+                        local line = Instance.new("Part")
+                        line.Anchored = true
+                        line.CanCollide = false
+                        line.Size = Vector3.new(0.08, 0.08, (predictedHead - origin).Magnitude)
+                        line.CFrame = CFrame.new(origin, predictedHead) * CFrame.new(0, 0, -line.Size.Z / 2)
+                        line.Material = Enum.Material.Neon
+                        line.Transparency = 0.35
+                        line.Color = rainbowColor
+                        line.Parent = Workspace
+                        Debris:AddItem(line, 1.5)
+                    end
                 end
             end
 
@@ -623,24 +664,24 @@ local function hasAmmo(tool)
     end
 end
 
--- Auto Shoot: เช็กกำแพงอย่างแม่นยำ + ยิงตัว 2 เม็ดสลับหัว + ไม่ยิงคนเลือด<30
+-- Auto Shoot: ฉลาดขึ้นตามเงื่อนไข (เห็นตัวยิงตัว, เห็นหัวยิงหัว, เห็นทั้งคู่ยิงตัว 2 เม็ดสลับหัว) + เช็กเกราะอมตะ
 local function fireShotAtTarget(target)
     if not SendRemote or not target or not target.Character then return end
-    local hum = target.Character:FindFirstChildOfClass("Humanoid")
+    local char = target.Character
+    if hasSafeZoneOrImmunity(char) then return end
+
+    local hum = char:FindFirstChildOfClass("Humanoid")
     if not hum or hum.Health <= 30 then return end
 
-    local head = target.Character:FindFirstChild("Head")
-    local torso = target.Character:FindFirstChild("HumanoidRootPart") or target.Character:FindFirstChild("UpperTorso")
+    local head = char:FindFirstChild("Head")
+    local torso = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("UpperTorso")
     if not head or not torso then return end
 
-    -- เช็กกำแพงสำหรับ Auto Shoot (หัวหรือตัวโผล่พ้นกำแพงหรือไม่)
-    local headVisible = hasLineOfSight(head, target.Character)
-    local torsoVisible = hasLineOfSight(torso, target.Character)
-    if not headVisible and not torsoVisible then
-        return
-    end
+    local headVis = hasLineOfSight(head, char)
+    local torsoVis = hasLineOfSight(torso, char)
+    if not headVis and not torsoVis then return end
 
-    local tool = getEquippedGun()
+    local tool = getEquippedGradeGun or getEquippedGun()
     if not tool or not hasAmmo(tool) then return end
 
     if not autoShootHitData[target] then
@@ -651,15 +692,22 @@ local function fireShotAtTarget(target)
     local myHead = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head")
     local originPos = myHead and myHead.Position or Camera.CFrame.Position
 
-    local targetPartInst, targetPosInst
-    if hitRecord.bodyHits < 2 then
-        targetPartInst = torso
-        targetPosInst = predictPosition(torso)
-        hitRecord.bodyHits = hitRecord.bodyHits + 1
+    local useTorso = false
+    if headVis and torsoVis then
+        useTorso = (hitRecord.bodyHits < 2)
+        if useTorso then
+            hitRecord.bodyHits = hitRecord.bodyHits + 1
+        else
+            hitRecord.bodyHits = 0 -- รีเซ็ตวนกลับมายิงตัว 2 เม็ด
+        end
+    elseif torsoVis and not headVis then
+        useTorso = true
     else
-        targetPartInst = head
-        targetPosInst = predictPosition(head)
+        useTorso = false
     end
+
+    local targetPartInst = useTorso and torso or head
+    local targetPosInst = predictPosition(targetPartInst)
 
     local lookCF = CFrame.new(originPos, targetPosInst)
     local rayResult
@@ -709,18 +757,19 @@ local function getClosestTargetForAutoShoot()
 
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and not isWhitelisted(player) and player.Character then
-            local hum = player.Character:FindFirstChildOfClass("Humanoid")
-            local targetPart = getSmartAimPart(player.Character)
+            if not hasSafeZoneOrImmunity(player.Character) then
+                local hum = player.Character:FindFirstChildOfClass("Humanoid")
+                local targetPart = getSmartAimPart(player.Character)
 
-            if hum and hum.Health > 30 and targetPart then
-                -- เช็กกำแพงสำหรับ Auto Shoot
-                if hasLineOfSight(targetPart, player.Character) then
-                    local screenPos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
-                    if onScreen then
-                        local dist = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
-                        if dist < bestDist then
-                            bestDist = dist
-                            best = player
+                if hum and hum.Health > 30 and targetPart then
+                    if hasLineOfSight(targetPart, player.Character) then
+                        local screenPos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
+                        if onScreen then
+                            local dist = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
+                            if dist < bestDist then
+                                bestDist = dist
+                                best = player
+                            end
                         end
                     end
                 end
@@ -801,7 +850,7 @@ local function startDamageBurst()
 end
 startDamageBurst()
 
--- RenderStepped สำหรับแสดงเส้นชี้เป้าหมายและเส้นรุ้ง Tracer (แสดงทั้ง Silent Aim และ Auto Shoot)
+-- RenderStepped สำหรับแสดงเส้นชี้เป้าหมายและวงกลม FOV (กู้คืนครบถ้วน)
 RunService.RenderStepped:Connect(function()
     if SilentAim.Enabled then
         SilentAim.Target = getClosestTarget()
@@ -907,7 +956,7 @@ end)
 CombatTab:Toggle({
     Title = 'Silent Aim',
     Flag = 'silent_aim',
-    Desc = 'Auto aim lock (ทะลุกำแพง/กันตาย, ยิงตัว 2 เม็ด ที่เหลือหัว)',
+    Desc = 'Auto aim lock (กันตาย, ยิงตัว 2 เม็ด ที่เหลือหัว)',
     Icon = 'crosshair',
     Type = 'Checkbox',
     Default = false,
@@ -917,7 +966,7 @@ CombatTab:Toggle({
 CombatTab:Toggle({
     Title = 'Auto Shoot (ยิงอัตโนมัติ)',
     Flag = 'auto_shoot',
-    Desc = 'เช็กหลังกำแพง, ยิงตัว 2 เม็ดแล้วสลับหัว (ไม่ยิงคนเลือด<30)',
+    Desc = 'เช็กหลังกำแพง, ฉลาดเลือกจุดยิง และเช็กเกราะปลอดภัย',
     Icon = 'zap',
     Type = 'Checkbox',
     Default = false,
@@ -1575,8 +1624,8 @@ PlayersTab:Section({ Title = 'Anti-Aim / Utility:' })
 local ANIM_ID = "rbxassetid://33796059"
 local AntiAimAnimTrack = nil
 local RealCFrame, RealVelocity
-local JitterIntensity = 6.5
-local VerticalIntensity = 8
+local JitterIntensity = 8.0
+local VerticalIntensity = 10
 local AntiLockEnabled = false
 
 local function playDanceAntiAim()
@@ -1594,7 +1643,7 @@ local function playDanceAntiAim()
         AntiAimAnimTrack = humanoid:LoadAnimation(anim)
         AntiAimAnimTrack.Looped = true
         AntiAimAnimTrack:Play()
-        AntiAimAnimTrack:AdjustSpeed(15)
+        AntiAimAnimTrack:AdjustSpeed(20)
     end)
 end
 
@@ -1622,28 +1671,27 @@ oldIndex = hookmetamethod(game, '__index', newcclosure(function(self, key)
     return oldIndex(self, key)
 end))
 
+-- ปรับแต่ง Anti Lock แก้ไขมุมกล้องหลุดลอยตอนกระโดด และเพิ่มความเร็ว/แรงขึ้น
 RunService.Heartbeat:Connect(function()
     if AntiLockEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild('HumanoidRootPart') then
         local Root = LocalPlayer.Character.HumanoidRootPart
         local Humanoid = LocalPlayer.Character:FindFirstChild('Humanoid')
-        local isMoving = Humanoid and Humanoid.MoveDirection.Magnitude > 0
-
-        if isMoving then
+        if Humanoid then
             RealCFrame = Root.CFrame
             RealVelocity = Root.AssemblyLinearVelocity
 
             local randomAngle = math.random(0, 360)
             local Offset = Vector3.new(
                 RandomRange(-JitterIntensity, JitterIntensity), 
-                RandomRange(-3, VerticalIntensity), 
+                RandomRange(-4, VerticalIntensity), 
                 RandomRange(-JitterIntensity, JitterIntensity)
             )
 
             Root.CFrame = RealCFrame * CFrame.Angles(0, math.rad(randomAngle), 0) * CFrame.new(Offset)
             Root.AssemblyLinearVelocity = Vector3.new(
-                math.random(-1200, 1200), 
-                math.random(-500, 800), 
-                math.random(-1200, 1200)
+                math.random(-1500, 1500), 
+                math.random(-600, 1000), 
+                math.random(-1500, 1500)
             )
 
             RunService.RenderStepped:Wait()
@@ -1657,7 +1705,7 @@ end)
 PlayersTab:Toggle({
     Title = 'Anti Lock (ส่ายหลบกระสุน)',
     Flag = 'antilock_hardcore',
-    Desc = 'ส่ายสลัดเป้าล็อกอย่างหนักพร้อมท่าส่าย',
+    Desc = 'ส่ายสลัดเป้าล็อกอย่างหนักพร้อมท่าส่าย (แก้กล้องตามตัวขณะกระโดด)',
     Icon = 'shield-alert',
     Type = 'Checkbox',
     Default = false,
@@ -2366,17 +2414,19 @@ local function BumpAuraLoop()
                     if not _G.BumpAura then break end
                     local targetChar = (raw:IsA("Player") and raw.Character) or (raw:IsA("Model") and raw)
                     if targetChar and targetChar ~= LocalPlayer.Character and IsAliveChar(targetChar) then
-                        local hrp = targetChar:FindFirstChild("HumanoidRootPart")
-                        local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                        if hrp and myRoot then
-                            local dist = (myRoot.Position - hrp.Position).Magnitude
-                            if dist <= BUMP_RADIUS then
-                                local now = os.clock()
-                                if now - (BumpLastHit[targetChar] or 0) >= BUMP_COOLDOWN then
-                                    BumpLastHit[targetChar] = now
-                                    local vel = chassis.AssemblyLinearVelocity
-                                    local force = (vel.Magnitude < 5) and ((hrp.Position - chassis.Position).Unit * BUMP_FORCE) or (vel + Vector3.new(0, BUMP_FORCE * 0.1, 0))
-                                    Send_Send("run_over", car, targetChar, force)
+                        if not hasSafeZoneOrImmunity(targetChar) then
+                            local hrp = targetChar:FindFirstChild("HumanoidRootPart")
+                            local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                            if hrp and myRoot then
+                                local dist = (myRoot.Position - hrp.Position).Magnitude
+                                if dist <= BUMP_RADIUS then
+                                    local now = os.clock()
+                                    if now - (BumpLastHit[targetChar] or 0) >= BUMP_COOLDOWN then
+                                        BumpLastHit[targetChar] = now
+                                        local vel = chassis.AssemblyLinearVelocity
+                                        local force = (vel.Magnitude < 5) and ((hrp.Position - chassis.Position).Unit * BUMP_FORCE) or (vel + Vector3.new(0, BUMP_FORCE * 0.1, 0))
+                                        Send_Send("run_over", car, targetChar, force)
+                                    end
                                 end
                             end
                         end
@@ -3206,4 +3256,4 @@ pcall(function()
     end)
 end)
 
-print("[NYVEX HUB] Ultimate Edition v5 Loaded Successfully with WallCheck Tracers & Auto Reload!")
+print("[NYVEX HUB] Ultimate Edition v6 Loaded Successfully with Smart AutoShoot & Fixed AntiLock Cam!")
