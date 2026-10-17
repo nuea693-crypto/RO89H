@@ -1,5 +1,5 @@
 --// ==========================================
---// NYVEX HUB | ULTIMATE EDITION (FINAL v7)
+--// NYVEX HUB | ULTIMATE EDITION (FINAL v7.1 FIXED)
 --// ==========================================
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
@@ -193,7 +193,7 @@ local SilentAim = {
     ShowFOV = false,
     Smoothness = 1.0,
     Prediction = 1.45,
-    TargetMode = "Head",
+    TargetMode = "Random",
     WhitelistFriends = false,
     Target = nil,
 }
@@ -224,9 +224,6 @@ local _damageBurstRunning = false
 local LiftUndergroundEnabled = false
 local UndergroundRange = 100
 
--- ติดตามสถานะการยิงเข้าตัว
-local targetHitData = {}
-local autoShootHitData = {}
 local activeCombatTarget = nil
 
 local IsMobile = false
@@ -235,7 +232,6 @@ local FOVCircleGui, FOVCircleFrame
 local Tracer, TargetHeadCircle
 local TracerGui, TracerFrame, TargetCircleGui, TargetCircleFrame
 
--- ฟังก์ชันคำนวณจุดวงกลม FOV
 local function GetCirclePoint(center, radius, angle)
     return Vector2.new(center.X + math.cos(angle) * radius, center.Y + math.sin(angle) * radius)
 end
@@ -353,7 +349,6 @@ local function isWhitelisted(player)
     return isRobloxFriend
 end
 
--- ฟังก์ชันเช็กเกราะ Safe Zone หรือสถานะอมตะ
 local function hasSafeZoneOrImmunity(character)
     if not character then return false end
     local hum = character:FindFirstChildOfClass("Humanoid")
@@ -368,7 +363,6 @@ local function hasSafeZoneOrImmunity(character)
     return false
 end
 
--- ฟังก์ชันเช็กตัวละครที่นั่งอยู่บนรถ (VehicleSeat / Seat)
 local function getValidTargetCharacter(rawObj)
     if not rawObj then return nil end
     local char = nil
@@ -378,16 +372,9 @@ local function getValidTargetCharacter(rawObj)
         char = rawObj
     end
     if not char then return nil end
-
-    -- เช็กว่านั่งอยู่บนรถหรือเบาะหรือไม่
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    if hum and hum.SeatPart then
-        return char
-    end
     return char
 end
 
--- ฟังก์ชันเช็กกำแพง
 local function hasLineOfSight(targetPart, targetCharacter)
     local myHead = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head")
     local origin = myHead and myHead.Position or Camera.CFrame.Position
@@ -418,7 +405,6 @@ local function hasLineOfSight(targetPart, targetCharacter)
     return false
 end
 
--- ฟังก์ชันเลือกจุดเล็งตามโหมด (ปรับปรุง Random เป็น ยิงหัว 20% / ยิงตัว 80%)
 local function getSmartAimPart(character)
     if not character then return nil end
     local head = character:FindFirstChild('Head')
@@ -427,7 +413,6 @@ local function getSmartAimPart(character)
     if SilentAim.TargetMode == 'Torso' then
         return hrp or head
     elseif SilentAim.TargetMode == 'Random' then
-        -- สุ่ม: หัว 20% (0.2), ตัว 80% (0.8)
         if math.random() <= 0.2 and head then
             return head
         else
@@ -580,7 +565,6 @@ local function isShotgun(tool)
     return false
 end
 
--- ฟังก์ชันจัดการ Auto Reload
 local function performAutoReload(tool)
     if not AutoReload.Enabled or not tool or not tool:IsA("Tool") then return end
     if tick() - AutoReload.LastReload < 0.8 then return end
@@ -607,7 +591,6 @@ local function checkGunAmmoAndReload(tool)
     return true
 end
 
--- Silent Aim Hook (พร้อมเรียกแสดงโชว์ดาเมจ)
 local oldFireServer
 if SendRemote and SendRemote.FireServer then
     pcall(function()
@@ -627,7 +610,6 @@ if SendRemote and SendRemote.FireServer then
 
                     if hum and hum.Health > 0 and head and torso then
                         local predictedHead = predictPosition(head)
-                        local predictedTorso = predictPosition(torso)
                         local myHead = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head")
                         local origin = myHead and myHead.Position or Camera.CFrame.Position
 
@@ -665,11 +647,9 @@ if SendRemote and SendRemote.FireServer then
                             }
                         end
 
-                        -- แสดงป้ายดาเมจสีแดงมุมขวาบน
                         local dmgVal = math.random(15, 45)
                         ShowDamagePopup(dmgVal)
 
-                        -- เส้นรุ้ง Tracer
                         local rainbowColor = Color3.fromHSV((tick() % 5) / 5, 1, 1)
                         local line = Instance.new("Part")
                         line.Anchored = true
@@ -718,7 +698,6 @@ local function hasAmmo(tool)
     end
 end
 
--- Auto Shoot (รองรับเช็คนั่งรถและ Random เป้าหมาย)
 local function fireShotAtTarget(target)
     if not SendRemote or not target or not target.Character then return end
     local char = getValidTargetCharacter(target.Character)
@@ -779,7 +758,6 @@ local function fireShotAtTarget(target)
         local ctr = (Counter and Counter.event) or sendEventCounter
         SendRemote:FireServer(ctr, "shoot_gun", tool, lookCF, rayResult)
 
-        -- แสดงป้ายดาเมจสีแดงมุมขวาบน
         local dmgVal = math.random(15, 45)
         ShowDamagePopup(dmgVal)
     end)
@@ -885,7 +863,6 @@ local function startDamageBurst()
 end
 startDamageBurst()
 
--- RenderStepped สำหรับแสดงเส้นชี้เป้าหมายและวงกลม FOV
 RunService.RenderStepped:Connect(function()
     if SilentAim.Enabled then
         SilentAim.Target = getClosestTarget()
@@ -2684,15 +2661,6 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-local function IsAlive(model)
-    if not model then return false end
-    local Humanoids = model:FindFirstChildOfClass('Humanoid')
-    local RootParts = model:FindFirstChild('HumanoidRootPart')
-    if not Humanoids or not RootParts then return false end
-    return Humanoids.Health > 0
-end
-
--- สร้าง BillboardGui แสดงหลอดเลือดข้างตัวผู้เล่นแบบพอดี
 local HealthBarDrawings = {}
 local function createHealthBar(player)
     if player == LocalPlayer then return end
@@ -3167,6 +3135,63 @@ SettingsTab:Button({
             if WindUI and WindUI.Notify then
                 WindUI:Notify({
                     Title = "NYVEX HUB",
+                    Content = "บันทึกการตั้งค่า '" .. selectedConfigName .. "' สำเร็จ!",
+                    Duration = 3,
+                })
+            end
+        end)
+    end,
+})
+
+SettingsTab:Button({
+    Title = "📂 โหลดการตั้งค่า (Load Config)",
+    Desc = "โหลดการตั้งค่าที่เคยบันทึกไว้กลับมาใช้งาน",
+    Icon = "folder-open",
+    Callback = function()
+        pcall(function()
+            if ConfigManager then
+                if ConfigManager.LoadConfig then
+                    ConfigManager:LoadConfig(selectedConfigName)
+                elseif Config and Config.Load then
+                    Config:Load()
+                end
+            end
+            if WindUI and WindUI.Notify then
+                WindUI:Notify({
+                    Title = "NYVEX HUB",
+                    Content = "โหลดการตั้งค่า '" .. selectedConfigName .. "' สำเร็จ!",
+                    Duration = 3,
+                })
+            end
+        end)
+    end,
+})
+
+SettingsTab:Toggle({
+    Title = "Auto Load Config (โหลดอัตโนมัติเมื่อเปิดสคริปต์)",
+    Flag = "auto_load_config",
+    Desc = "โหลดการตั้งค่าล่าสุดอัตโนมัติเมื่อรันสคริปต์ครั้งถัดไป",
+    Default = false,
+    Callback = function(state)
+        getEnv().AutoLoadConfig = state
+    end,
+})
+
+pcall(function()
+    task.spawn(function()
+        task.wait(1)
+        if getEnv().AutoLoadConfig then
+            if ConfigManager and ConfigManager.LoadConfig then
+                ConfigManager:LoadConfig(selectedConfigName)
+            elseif Config and Config.Load then
+                Config:Load()
+            end
+        end
+    end)
+end)
+
+print("[NYVEX HUB] Ultimate Edition v7.1 Fixed Loaded Successfully!")
+       Title = "NYVEX HUB",
                     Content = "บันทึกการตั้งค่า '" .. selectedConfigName .. "' สำเร็จ!",
                     Duration = 3,
                 })
