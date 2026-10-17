@@ -1,5 +1,5 @@
 --// ==========================================
---// NYVEX HUB | ULTIMATE EDITION (FINAL v7.2 FULL CLEAN)
+--// NYVEX HUB | ULTIMATE EDITION (FINAL v7.3 FIXED UI)
 --// ==========================================
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
@@ -178,11 +178,13 @@ end
 -- ==========================================
 -- CREDITS TAB
 -- ==========================================
-CreditsTab:Paragraph({
-    Title = "ข้อมูลผู้สร้างและระบบ",
-    Desc = "เครดิตผู้สร้าง:bigbike_452\nลูกน้อง:NYVEX HUB🔫💸",
-    Icon = "info"
-})
+pcall(function()
+    CreditsTab:Paragraph({
+        Title = "ข้อมูลผู้สร้างและระบบ",
+        Content = "เครดิตผู้สร้าง: bigbike_452\nลูกน้อง: NYVEX HUB 🔫💸",
+        Icon = "info"
+    })
+end)
 
 -- ==========================================
 -- COMBAT TAB
@@ -2808,13 +2810,10 @@ BuyTab:Section({ Title = "BUY & BALANCE:" })
 
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
-local BankBalance = BuyTab:Button({
-    Title = "🏦 Bank Balance",
-    Desc = "N/A"
-})
-local HandBalance = BuyTab:Button({
-    Title = "💸 Hand Balance",
-    Desc = "N/A"
+-- ใช้ Paragraph แสดงยอดเงินแทนการใช้ปุ่มเพื่อความเสถียรและไม่พัง
+local BalancePara = BuyTab:Paragraph({
+    Title = "🏦 สถานะการเงิน (Balance)",
+    Content = "Bank: $0\nHand: $0"
 })
 
 local function HandMoney()
@@ -2837,8 +2836,11 @@ end
 
 task.spawn(function()
     while task.wait(0.3) do
-        BankBalance:SetDesc('<b><font color="#FFFFFF">$' .. (ATMMoney() or 0) .. "</font></b>")
-        HandBalance:SetDesc('<b><font color="#FFFFFF">$' .. (HandMoney() or 0) .. "</font></b>")
+        pcall(function()
+            local bank = ATMMoney() or 0
+            local hand = HandMoney() or 0
+            BalancePara:SetContent(string.format("🏦 Bank Balance: $%d\n💸 Hand Balance: $%d", bank, hand))
+        end)
     end
 end)
 
@@ -2900,8 +2902,7 @@ local selectedBulletType = "Pistol"
 BuyTab:Dropdown({
     Title = "เลือกประเภทกระสุน",
     Values = {"Pistol", "Rifle", "Shotgun", "Random"},
-    Value = "Pistol",
-    Multi = false,
+    Default = "Pistol",
     Callback = function(selected)
         selectedBulletType = selected
     end
@@ -2929,9 +2930,7 @@ local placeId = game.PlaceId
 
 MiscTab:Input({
     Title       = "Server Hop by ID",
-    Value       = "",
-    InputIcon   = "send",
-    Type        = "Input",
+    Default     = "",
     Placeholder = "id sever here!",
     Callback = function(v)
         if not v or v == "" then return end
@@ -3119,7 +3118,7 @@ local selectedConfigName = "NyvexConfig"
 
 SettingsTab:Input({
     Title = "ชื่อ Config",
-    Value = "NyvexConfig",
+    Default = "NyvexConfig",
     Placeholder = "ใส่ชื่อการตั้งค่า...",
     Callback = function(text)
         if text and text ~= "" then
@@ -3199,4 +3198,4 @@ pcall(function()
     end)
 end)
 
-print("[NYVEX HUB] Ultimate Edition v7.2 Full Clean Loaded Successfully!")
+print("[NYVEX HUB] Ultimate Edition v7.3 Fixed UI Loaded Successfully!")
