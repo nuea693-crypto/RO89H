@@ -1,5 +1,5 @@
 --// ==========================================
---// NYVEX HUB | ULTIMATE EDITION (UPDATED v3)
+--// NYVEX HUB | ULTIMATE EDITION (FINAL FIXED v4)
 --// ==========================================
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
@@ -164,8 +164,9 @@ local _damageBurstRunning = false
 local LiftUndergroundEnabled = false
 local UndergroundRange = 100
 
--- ติดตามสถานะการยิงเข้าตัว (สถิติต่อเป้าหมาย: ยิงตัวครบ 2 เม็ดหรือยัง)
+-- ติดตามสถานะการยิงเข้าตัว (สถิติต่อเป้าหมาย: ยิงตัว 2 เม็ด แล้วสลับหัว)
 local targetHitData = {}
+local autoShootHitData = {}
 
 local IsMobile = false
 local FOVCircleSegments = {}
@@ -286,6 +287,7 @@ local function isWhitelisted(player)
     return isRobloxFriend
 end
 
+-- ฟังก์ชันเช็กกำแพงเฉพาะ Auto Shoot
 local function hasLineOfSight(targetPart, targetCharacter)
     local myHead = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head")
     local origin = myHead and myHead.Position or Camera.CFrame.Position
@@ -335,7 +337,7 @@ end
 
 local previousTargetPositions = {}
 
--- Silent Aim: ยิงได้ทุกรูปแบบ ทุกเลือด (รวมถึงเลือดต่ำกว่า 30) ทะลุกำแพง/รถ และตัวส่ายแค่ไหนก็เอาอยู่
+-- Silent Aim: ทะลุกำแพง เจาะทะลุระบบกันตาย/แอนตี้คิล ยิงได้ทุกเลือดและทุกรูปแบบ
 local function getClosestTarget()
     local best, bestDist = nil, SilentAim.FOV
     local center = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
@@ -468,7 +470,7 @@ local function isShotgun(tool)
     return false
 end
 
--- Silent Aim Hook: ตรวจจับยิงตัว 1 เม็ด ที่เหลือยิงหัว (พร้อมเช็กสถานะการโดนตัวครบตามรอบ)
+-- Silent Aim Hook: เจาะทะลวงระบบกันตาย/แอนตี้คิล ยิงตัว 2 เม็ด ที่เหลือหัว
 local oldFireServer
 if SendRemote and SendRemote.FireServer then
     pcall(function()
@@ -501,7 +503,7 @@ if SendRemote and SendRemote.FireServer then
                         args[4] = CFrame.new(origin, predictedHead)
                         local spread = {}
                         for i = 1, 6 do
-                            local useTorso = (dataRecord.hitsToBody < 1)
+                            local useTorso = (dataRecord.hitsToBody < 2)
                             if useTorso then
                                 dataRecord.hitsToBody = dataRecord.hitsToBody + 1
                             end
@@ -523,7 +525,7 @@ if SendRemote and SendRemote.FireServer then
                         end
                         args[5] = spread
                     else
-                        local useTorso = (dataRecord.hitsToBody < 1)
+                        local useTorso = (dataRecord.hitsToBody < 2)
                         if useTorso then
                             dataRecord.hitsToBody = dataRecord.hitsToBody + 1
                         end
@@ -585,9 +587,7 @@ local function hasAmmo(tool)
     return tonumber(ammo) and tonumber(ammo) > 0
 end
 
--- Auto Shoot: ยิงตัว 2 เม็ด ตรวจจับการโดนตัวครบแล้วสลับไปยิงหัวทันที | ไม่ยิงคนเลือดน้อยกว่า 30
-local autoShootHitData = {}
-
+-- Auto Shoot: เช็กกำแพง + ยิงตัว 2 เม็ดสลับหัว + ไม่ยิงคนเลือดต่ำกว่า 30
 local function fireShotAtTarget(target)
     if not SendRemote or not target or not target.Character then return end
     local hum = target.Character:FindFirstChildOfClass("Humanoid")
@@ -596,6 +596,11 @@ local function fireShotAtTarget(target)
     local head = target.Character:FindFirstChild("Head")
     local torso = target.Character:FindFirstChild("HumanoidRootPart") or target.Character:FindFirstChild("UpperTorso")
     if not head or not torso then return end
+
+    -- ตรวจสอบกำแพงสำหรับ Auto Shoot
+    if not hasLineOfSight(head, target.Character) and not hasLineOfSight(torso, target.Character) then
+        return
+    end
 
     local tool = getEquippedGun()
     if not tool or not hasAmmo(tool) then return end
@@ -670,12 +675,15 @@ local function getClosestTargetForAutoShoot()
             local targetPart = getSmartAimPart(player.Character)
 
             if hum and hum.Health > 30 and targetPart then
-                local screenPos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
-                if onScreen then
-                    local dist = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
-                    if dist < bestDist then
-                        bestDist = dist
-                        best = player
+                -- เช็กกำแพงสำหรับ Auto Shoot
+                if hasLineOfSight(targetPart, player.Character) then
+                    local screenPos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
+                    if onScreen then
+                        local dist = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
+                        if dist < bestDist then
+                            bestDist = dist
+                            best = player
+                        end
                     end
                 end
             end
@@ -795,7 +803,7 @@ RunService.RenderStepped:Connect(function()
             if onScreen then
                 if not IsMobile then
                     Tracer.Visible = true
-                    Tracer.Color = rainbowColor -- เส้นรุ้งชี้เป้า
+                    Tracer.Color = rainbowColor
                     Tracer.From = center
                     Tracer.To = Vector2.new(targetScreenPos.X, targetScreenPos.Y)
                     TargetHeadCircle.Visible = true
@@ -854,7 +862,7 @@ end)
 CombatTab:Toggle({
     Title = 'Silent Aim',
     Flag = 'silent_aim',
-    Desc = 'Auto aim lock (ยิงได้ทุกรูปแบบ ทุกเลือด, ยิงตัว 1 เม็ด ที่เหลือหัว)',
+    Desc = 'Auto aim lock (ทะลุกำแพง/กันตาย, ยิงตัว 2 เม็ด ที่เหลือหัว)',
     Icon = 'crosshair',
     Type = 'Checkbox',
     Default = false,
@@ -864,7 +872,7 @@ CombatTab:Toggle({
 CombatTab:Toggle({
     Title = 'Auto Shoot (ยิงอัตโนมัติ)',
     Flag = 'auto_shoot',
-    Desc = 'ยิงตัว 2 เม็ดแล้วสลับหัวทันที (ไม่ยิงคนเลือดต่ำกว่า 30)',
+    Desc = 'เช็กหลังกำแพง, ยิงตัว 2 เม็ดแล้วสลับหัว (ไม่ยิงคนเลือด<30)',
     Icon = 'zap',
     Type = 'Checkbox',
     Default = false,
@@ -3143,4 +3151,4 @@ pcall(function()
     end)
 end)
 
-print("[NYVEX HUB] Ultimate Edition v3 Loaded Successfully with Rainbow Tracers & 2-Body/Head AutoShoot!")
+print("[NYVEX HUB] Ultimate Edition v4 Loaded Successfully with Anti-Kill Bypass & WallCheck AutoShoot!")
