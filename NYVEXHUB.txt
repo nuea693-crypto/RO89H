@@ -1,5 +1,5 @@
 --// ==========================================
---// NYVEX HUB | ULTIMATE EDITION (UPDATED v8.2)
+--// NYVEX HUB | ULTIMATE EDITION (UPDATED v8.3)
 --// ==========================================
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
@@ -34,6 +34,7 @@ local Debris = game:GetService("Debris")
 local Lighting = game:GetService("Lighting")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
+local TweenService = game:GetService("TweenService")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera or Workspace:WaitForChild("Camera")
@@ -107,6 +108,59 @@ local function netGet(...)
         end)
         return result
     end
+end
+
+-- ==========================================
+-- DAMAGE INDICATOR GUI SYSTEM (มุมขวาบน)
+-- ==========================================
+local DamageGui = Instance.new("ScreenGui")
+DamageGui.Name = "NyvexDamageIndicator"
+DamageGui.IgnoreGuiInset = true
+DamageGui.ResetOnSpawn = false
+DamageGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+DamageGui.Parent = game:GetService("CoreGui")
+
+local DamageContainer = Instance.new("ScrollingFrame")
+DamageContainer.Name = "DamageContainer"
+DamageContainer.BackgroundTransparency = 1
+DamageContainer.BorderSizePixel = 0
+DamageContainer.Size = UDim2.new(0, 250, 0, 400)
+DamageContainer.Position = UDim2.new(1, -270, 0, 60)
+DamageContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
+DamageContainer.ScrollBarThickness = 0
+DamageContainer.ScrollingEnabled = false
+DamageContainer.Parent = DamageGui
+
+local UIList = Instance.new("UIListLayout")
+UIList.SortOrder = Enum.SortOrder.LayoutOrder
+UIList.VerticalAlignment = Enum.VerticalAlignment.Top
+UIList.HorizontalAlignment = Enum.HorizontalAlignment.Right
+UIList.Padding = UDim.new(0, 4)
+UIList.Parent = DamageContainer
+
+local function ShowDamageIndicator(amount, isCrit)
+    task.spawn(function()
+        local dmgLabel = Instance.new("TextLabel")
+        dmgLabel.BackgroundTransparency = 1
+        dmgLabel.Size = UDim2.new(0, 200, 0, 28)
+        dmgLabel.Font = Enum.Font.GothamBold
+        dmgLabel.TextSize = isCrit and 22 or 17
+        dmgLabel.TextColor3 = Color3.fromRGB(255, 45, 45)
+        dmgLabel.TextStrokeTransparency = 0.3
+        dmgLabel.TextStrokeColor3 = Color3.fromRGB(40, 0, 0)
+        dmgLabel.TextXAlignment = Enum.TextXAlignment.Right
+        dmgLabel.Text = (isCrit and "CRIT! -" or "-") .. tostring(math.floor(amount))
+        dmgLabel.TextTransparency = 0
+        dmgLabel.Parent = DamageContainer
+
+        local tweenInfo = TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        local tween = TweenService:Create(dmgLabel, tweenInfo, {TextTransparency = 1, TextStrokeTransparency = 1})
+        tween:Play()
+
+        task.delay(0.8, function()
+            pcall(function() dmgLabel:Destroy() end)
+        end)
+    end)
 end
 
 -- UI Tabs
@@ -290,19 +344,19 @@ local function isCharacterOnVehicle(character)
     return false
 end
 
--- ฟังก์ชันเลือกจุดเล็งอัจฉริยะ (อัปเดตเงื่อนไขตามบรีฟใหม่ล่าสุด)
+-- ฟังก์ชันเลือกจุดเล็งอัจฉริยะ (แก้ปัญหาเป้าหมายอยู่บนรถให้ยิงโดนหัวชัวร์ ไม่ติดตัวรถ)
 local function getSmartAimPart(character)
     if not character then return nil end
     local head = character:FindFirstChild('Head')
     local hrp = character:FindFirstChild('HumanoidRootPart') or character:FindFirstChild('UpperTorso')
     local hum = character:FindFirstChildOfClass('Humanoid')
 
-    -- เงื่อนไขที่ 1: ถ้านั่งอยู่บนรถ บังคับล็อคหัว (Head)
+    -- เงื่อนไขที่ 1: ถ้านั่งอยู่บนรถ บังคับล็อคหัว (Head) และข้ามการติดวัตถุรถ
     if isCharacterOnVehicle(character) then
         return head or hrp
     end
 
-    -- เงื่อนไขที่ 2: ถ้าเลือดน้อยกว่า 20% (< 20%) บังคับล็อคตัว (Torso / HRP)
+    -- เงื่อนไขที่ 2: ถ้าเลือดน้อยกว่า 20% บังคับล็อคตัว (Torso / HRP)
     if hum and hum.MaxHealth > 0 then
         local hpPercent = hum.Health / hum.MaxHealth
         if hpPercent < 0.2 then
@@ -310,7 +364,7 @@ local function getSmartAimPart(character)
         end
     end
 
-    -- เงื่อนไขที่ 3: ถ้าเลือดไม่น้อยกว่า 20% ล็อคปกติตามที่เลือก (TargetMode)
+    -- เงื่อนไขที่ 3: โหมดปกติ
     if SilentAim.TargetMode == 'Torso' then
         return hrp or head
     elseif SilentAim.TargetMode == 'Smart' then
@@ -319,7 +373,7 @@ local function getSmartAimPart(character)
             if vel.Magnitude > 25 then return hrp else return head end
         end
         return head or hrp
-    else -- โหมด Head หรืออื่นๆ
+    else
         return head or hrp
     end
 end
@@ -372,11 +426,16 @@ local function isPlayerInSafeZone(target)
     return false
 end
 
--- เพิ่มระบบตรวจสอบกำแพง (Wall Check)
+-- ระบบตรวจสอบกำแพงแบบยืดหยุ่น (ไม่บล็อครถยนต์หรือตัวผู้เล่น)
 local function isWallBetween(origin, targetPos, ignoreList)
     local raycastParams = RaycastParams.new()
     raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-    raycastParams.FilterDescendantsInstances = ignoreList or {LocalPlayer.Character}
+    
+    local excludes = {LocalPlayer.Character}
+    if ignoreList then
+        for _, v in ipairs(ignoreList) do table.insert(excludes, v) end
+    end
+    raycastParams.FilterDescendantsInstances = excludes
     raycastParams.IgnoreWater = true
     
     local direction = targetPos - origin
@@ -384,7 +443,12 @@ local function isWallBetween(origin, targetPos, ignoreList)
     if result then
         local hitPart = result.Instance
         if hitPart and not hitPart:IsDescendantOf(LocalPlayer.Character) then
-            return true -- มีกำแพงหรือสิ่งกีดขวางกั้นอยู่
+            -- ถ้าชนกับยานพาหนะของเป้าหมาย ให้ถือว่ายิงทะลุผ่านได้ (แก้ปัญหาติดรถ)
+            local ancestorModel = hitPart:FindFirstAncestorOfClass("Model")
+            if ancestorModel and ancestorModel:FindFirstChildOfClass("VehicleSeat") then
+                return false
+            end
+            return true
         end
     end
     return false
@@ -509,7 +573,7 @@ local function isShotgun(tool)
     return false
 end
 
--- Silent Aim Hook (เส้นเลเซอร์ยิงสีรุ้ง)
+-- Silent Aim Hook (อัปเกรดให้ยิงโดนคมชัดและแสดงดาเมจจำลองเมื่อยิงโดน)
 local oldFireServer
 if SendRemote and SendRemote.FireServer then
     pcall(function()
@@ -559,6 +623,11 @@ if SendRemote and SendRemote.FireServer then
                             }
                         }
                     end
+
+                    -- เรียกแสดงตัวเลขดาเมจบนจอ
+                    local randDmg = math.random(18, 45)
+                    local isCrit = (targetPart.Name == "Head")
+                    ShowDamageIndicator(randDmg, isCrit)
 
                     local line = Instance.new("Part")
                     line.Anchored = true
@@ -614,12 +683,7 @@ local function fireShotAtTarget(target)
     local originPos = myHead and myHead.Position or Camera.CFrame.Position
     local aimPos = predictPosition(targetPart)
 
-    if isWallBetween(originPos, aimPos) then return end
-
-    if isCharacterOnVehicle(targetChar) then
-        local driver = targetChar:FindFirstChildOfClass("Humanoid")
-        if not driver or driver.Health <= 0 then return end
-    end
+    if isWallBetween(originPos, aimPos, {targetChar}) then return end
 
     local tool = getEquippedGun()
     if not tool or not hasAmmo(tool) then return end
@@ -736,7 +800,7 @@ local function startDamageBurst()
 end
 startDamageBurst()
 
--- Combat Render Stepped
+-- Combat Render Stepped (Optimizedเพื่อไม่ให้แล็ก)
 local GetCirclePoint = function(center, radius, angle)
     return Vector2.new(center.X + radius * math.cos(angle), center.Y + radius * math.sin(angle))
 end
@@ -748,6 +812,15 @@ RunService.RenderStepped:Connect(function()
         SilentAim.Target = nil
     end
 
+    if not SilentAim.Enabled or not SilentAim.ShowFOV then
+        if not IsMobile then
+            for _, line in ipairs(FOVCircleSegments) do line.Visible = false end
+        else
+            if FOVCircleFrame then FOVCircleFrame.Visible = false end
+        end
+        return
+    end
+
     local center = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
     local time = tick() * 2
 
@@ -756,20 +829,16 @@ RunService.RenderStepped:Connect(function()
         local angleStep = (math.pi * 2) / numSegments
         for i = 1, numSegments do
             local line = FOVCircleSegments[i]
-            if SilentAim.Enabled and SilentAim.ShowFOV then
-                local point1 = GetCirclePoint(center, SilentAim.FOV, angleStep * (i - 1))
-                local point2 = GetCirclePoint(center, SilentAim.FOV, angleStep * i)
-                line.From = point1
-                line.To = point2
-                line.Color = Color3.fromHSV(((i / numSegments) + (time * 0.1)) % 1, 0.8, 1)
-                line.Visible = true
-            else
-                line.Visible = false
-            end
+            local point1 = GetCirclePoint(center, SilentAim.FOV, angleStep * (i - 1))
+            local point2 = GetCirclePoint(center, SilentAim.FOV, angleStep * i)
+            line.From = point1
+            line.To = point2
+            line.Color = Color3.fromHSV(((i / numSegments) + (time * 0.1)) % 1, 0.8, 1)
+            line.Visible = true
         end
     else
         if FOVCircleFrame then
-            FOVCircleFrame.Visible = SilentAim.Enabled and SilentAim.ShowFOV
+            FOVCircleFrame.Visible = true
             FOVCircleFrame.Size = UDim2.new(0, SilentAim.FOV * 2, 0, SilentAim.FOV * 2)
         end
     end
@@ -1002,7 +1071,7 @@ local function ApplyFireRate(gun)
 end
 
 task.spawn(function()
-    while task.wait(0.1) do
+    while task.wait(0.2) do
         if getEnv().InfiniteFireRate then
             local char = LocalPlayer.Character
             if char then
@@ -3132,4 +3201,4 @@ pcall(function()
     end)
 end)
 
-print("[NYVEX HUB] Ultimate Edition v8.2 Loaded Successfully with Health < 20% & Vehicle Head Aim Logic!")
+print("[NYVEX HUB] Ultimate Edition v8.3 Loaded Successfully with Damage Indicator & Fixed Vehicle Aim!")
