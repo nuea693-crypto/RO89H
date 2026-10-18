@@ -1,5 +1,5 @@
 --// ==========================================
---// NYVEX HUB | ULTIMATE EDITION (UPDATED)
+--// NYVEX HUB | ULTIMATE EDITION (UPDATED v8.2)
 --// ==========================================
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
@@ -290,27 +290,27 @@ local function isCharacterOnVehicle(character)
     return false
 end
 
--- อัปเดตฟังก์ชัน getSmartAimPart ตามเงื่อนไขที่กำหนด
+-- ฟังก์ชันเลือกจุดเล็งอัจฉริยะ (อัปเดตเงื่อนไขตามบรีฟใหม่ล่าสุด)
 local function getSmartAimPart(character)
     if not character then return nil end
     local head = character:FindFirstChild('Head')
     local hrp = character:FindFirstChild('HumanoidRootPart') or character:FindFirstChild('UpperTorso')
     local hum = character:FindFirstChildOfClass('Humanoid')
 
-    -- 1. ถ้าคนนั่งอยู่บนรถ ให้ล็อคหัว
+    -- เงื่อนไขที่ 1: ถ้านั่งอยู่บนรถ บังคับล็อคหัว (Head)
     if isCharacterOnVehicle(character) then
         return head or hrp
     end
 
-    -- 2. ถ้าเลือดน้อยกว่า 20% ให้ล็อคตัว
-    if hum then
-        local maxHp = hum.MaxHealth > 0 and hum.MaxHealth or 100
-        if (hum.Health / maxHp) < 0.2 then
+    -- เงื่อนไขที่ 2: ถ้าเลือดน้อยกว่า 20% (< 20%) บังคับล็อคตัว (Torso / HRP)
+    if hum and hum.MaxHealth > 0 then
+        local hpPercent = hum.Health / hum.MaxHealth
+        if hpPercent < 0.2 then
             return hrp or head
         end
     end
 
-    -- 3. ถ้าเลือดไม่น้อยกว่า 20% ให้ล็อคปกติตามที่เลือก (TargetMode)
+    -- เงื่อนไขที่ 3: ถ้าเลือดไม่น้อยกว่า 20% ล็อคปกติตามที่เลือก (TargetMode)
     if SilentAim.TargetMode == 'Torso' then
         return hrp or head
     elseif SilentAim.TargetMode == 'Smart' then
@@ -319,7 +319,7 @@ local function getSmartAimPart(character)
             if vel.Magnitude > 25 then return hrp else return head end
         end
         return head or hrp
-    else
+    else -- โหมด Head หรืออื่นๆ
         return head or hrp
     end
 end
@@ -384,7 +384,7 @@ local function isWallBetween(origin, targetPos, ignoreList)
     if result then
         local hitPart = result.Instance
         if hitPart and not hitPart:IsDescendantOf(LocalPlayer.Character) then
-            return true
+            return true -- มีกำแพงหรือสิ่งกีดขวางกั้นอยู่
         end
     end
     return false
@@ -509,7 +509,7 @@ local function isShotgun(tool)
     return false
 end
 
--- Silent Aim Hook (เส้นรุ้ง)
+-- Silent Aim Hook (เส้นเลเซอร์ยิงสีรุ้ง)
 local oldFireServer
 if SendRemote and SendRemote.FireServer then
     pcall(function()
@@ -840,7 +840,7 @@ end)
 CombatTab:Toggle({
     Title = 'Silent Aim',
     Flag = 'silent_aim',
-    Desc = 'Auto aim lock on target (+Anti-Lock, Ghost Walk & Frame Prediction)',
+    Desc = 'Auto aim lock (<20% เลือดล็อคตัว, นั่งรถล็อคหัว)',
     Icon = 'crosshair',
     Type = 'Checkbox',
     Default = false,
@@ -917,7 +917,7 @@ CombatTab:Toggle({
 CombatTab:Dropdown({
     Title = 'Target Mode',
     Flag = 'target_mode',
-    Desc = 'เลือกจุดที่ต้องการล็อกเป้า',
+    Desc = 'เลือกจุดที่ต้องการล็อกเป้า (ทำงานเมื่อเลือด >= 20% และไม่ได้นั่งรถ)',
     Icon = 'target',
     Values = {'Head', 'Torso', 'Smart'},
     Default = 'Head',
@@ -3132,20 +3132,8 @@ pcall(function()
     end)
 end)
 
-print("[NYVEX HUB] Ultimate Edition Loaded Successfully with Vehicle Head-Aim and <20% HP Torso-Aim Check!")
-��รตั้งค่า (Save Config)",
-    Desc = "บันทึกค่า Toggle, Slider, Dropdown ทั้งหมดลงไฟล์",
-    Icon = "save",
-    Callback = function()
-        pcall(function()
-            if ConfigManager then
-                if ConfigManager.SaveConfig then
-                    ConfigManager:SaveConfig(selectedConfigName)
-                elseif Config and Config.Save then
-                    Config:Save()
-                end
-            end
-            if WindUI and WindUI.Notify then
+print("[NYVEX HUB] Ultimate Edition v8.2 Loaded Successfully with Health < 20% & Vehicle Head Aim Logic!")
+  if WindUI and WindUI.Notify then
                 WindUI:Notify({
                     Title = "NYVEX HUB",
                     Content = "บันทึกการตั้งค่า '" .. selectedConfigName .. "' สำเร็จ!",
