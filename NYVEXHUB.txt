@@ -1,5 +1,5 @@
 --// ==========================================
---// NYVEX HUB | ULTIMATE EDITION (UPDATED v8.3)
+--// NYVEX HUB | ULTIMATE EDITION (FIXED & OPTIMIZED v8.4)
 --// ==========================================
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
@@ -174,7 +174,7 @@ local MiscTab = Window:Tab({ Title = 'Misc', Icon = 'warehouse' })
 local SettingsTab = Window:Tab({ Title = 'Settings', Icon = 'settings' })
 
 -- ==========================================
--- COMBAT TAB
+-- COMBAT TAB (OPTIMIZED)
 -- ==========================================
 local SilentAim = {
     Enabled = false,
@@ -344,19 +344,16 @@ local function isCharacterOnVehicle(character)
     return false
 end
 
--- ฟังก์ชันเลือกจุดเล็งอัจฉริยะ (แก้ปัญหาเป้าหมายอยู่บนรถให้ยิงโดนหัวชัวร์ ไม่ติดตัวรถ)
 local function getSmartAimPart(character)
     if not character then return nil end
     local head = character:FindFirstChild('Head')
     local hrp = character:FindFirstChild('HumanoidRootPart') or character:FindFirstChild('UpperTorso')
     local hum = character:FindFirstChildOfClass('Humanoid')
 
-    -- เงื่อนไขที่ 1: ถ้านั่งอยู่บนรถ บังคับล็อคหัว (Head) และข้ามการติดวัตถุรถ
     if isCharacterOnVehicle(character) then
         return head or hrp
     end
 
-    -- เงื่อนไขที่ 2: ถ้าเลือดน้อยกว่า 20% บังคับล็อคตัว (Torso / HRP)
     if hum and hum.MaxHealth > 0 then
         local hpPercent = hum.Health / hum.MaxHealth
         if hpPercent < 0.2 then
@@ -364,7 +361,6 @@ local function getSmartAimPart(character)
         end
     end
 
-    -- เงื่อนไขที่ 3: โหมดปกติ
     if SilentAim.TargetMode == 'Torso' then
         return hrp or head
     elseif SilentAim.TargetMode == 'Smart' then
@@ -426,7 +422,6 @@ local function isPlayerInSafeZone(target)
     return false
 end
 
--- ระบบตรวจสอบกำแพงแบบยืดหยุ่น (ไม่บล็อครถยนต์หรือตัวผู้เล่น)
 local function isWallBetween(origin, targetPos, ignoreList)
     local raycastParams = RaycastParams.new()
     raycastParams.FilterType = Enum.RaycastFilterType.Exclude
@@ -443,7 +438,6 @@ local function isWallBetween(origin, targetPos, ignoreList)
     if result then
         local hitPart = result.Instance
         if hitPart and not hitPart:IsDescendantOf(LocalPlayer.Character) then
-            -- ถ้าชนกับยานพาหนะของเป้าหมาย ให้ถือว่ายิงทะลุผ่านได้ (แก้ปัญหาติดรถ)
             local ancestorModel = hitPart:FindFirstAncestorOfClass("Model")
             if ancestorModel and ancestorModel:FindFirstChildOfClass("VehicleSeat") then
                 return false
@@ -455,6 +449,19 @@ local function isWallBetween(origin, targetPos, ignoreList)
 end
 
 local previousTargetPositions = {}
+
+-- Cleanup memory leak table periodically
+task.spawn(function()
+    while true do
+        task.wait(5)
+        local now = tick()
+        for k, v in pairs(previousTargetPositions) do
+            if not k or not k.Parent or (now - v.time > 3) then
+                previousTargetPositions[k] = nil
+            end
+        end
+    end
+end)
 
 local function getClosestTarget()
     local best, bestDist = nil, SilentAim.FOV
@@ -503,6 +510,19 @@ local function getClosestTarget()
         end
     end
     return best
+end
+
+-- Throttled Target Search to prevent lag/freezing
+local lastTargetCheck = 0
+local cachedTarget = nil
+local function getClosestTargetThrottled()
+    local now = tick()
+    if now - lastTargetCheck < 0.08 then
+        return cachedTarget
+    end
+    lastTargetCheck = now
+    cachedTarget = getClosestTarget()
+    return cachedTarget
 end
 
 local function getClosestEnemyToMe(maxRange)
@@ -573,7 +593,7 @@ local function isShotgun(tool)
     return false
 end
 
--- Silent Aim Hook (อัปเกรดให้ยิงโดนคมชัดและแสดงดาเมจจำลองเมื่อยิงโดน)
+-- Silent Aim Hook
 local oldFireServer
 if SendRemote and SendRemote.FireServer then
     pcall(function()
@@ -624,7 +644,6 @@ if SendRemote and SendRemote.FireServer then
                         }
                     end
 
-                    -- เรียกแสดงตัวเลขดาเมจบนจอ
                     local randDmg = math.random(18, 45)
                     local isCrit = (targetPart.Name == "Head")
                     ShowDamageIndicator(randDmg, isCrit)
@@ -732,7 +751,7 @@ end
 
 local function fireAutoShot()
     if not AutoShoot.Enabled then return end
-    local target = getClosestTarget()
+    local target = getClosestTargetThrottled()
     if target then
         fireShotAtTarget(target)
     end
@@ -787,7 +806,7 @@ local function startDamageBurst()
     task.spawn(function()
         while _damageBurstRunning do
             if AutoShootOnDamage.Enabled and tick() < _damageBurstUntil then
-                local target = getClosestTarget() or getClosestEnemyToMe(AutoShootOnDamage.Range)
+                local target = getClosestTargetThrottled() or getClosestEnemyToMe(AutoShootOnDamage.Range)
                 if target then
                     pcall(function() fireShotAtTarget(target) end)
                 end
@@ -800,14 +819,14 @@ local function startDamageBurst()
 end
 startDamageBurst()
 
--- Combat Render Stepped (Optimizedเพื่อไม่ให้แล็ก)
+-- Combat Render Stepped (Optimized with Throttling)
 local GetCirclePoint = function(center, radius, angle)
     return Vector2.new(center.X + radius * math.cos(angle), center.Y + radius * math.sin(angle))
 end
 
 RunService.RenderStepped:Connect(function()
     if SilentAim.Enabled then
-        SilentAim.Target = getClosestTarget()
+        SilentAim.Target = getClosestTargetThrottled()
     else
         SilentAim.Target = nil
     end
@@ -909,7 +928,7 @@ end)
 CombatTab:Toggle({
     Title = 'Silent Aim',
     Flag = 'silent_aim',
-    Desc = 'Auto aim lock (<20% เลือดล็อคตัว, นั่งรถล็อคหัว)',
+    Desc = 'Auto aim lock (<20% เลือดล็อคตัว, นั่งรถล็อคหัว) [Optimized]',
     Icon = 'crosshair',
     Type = 'Checkbox',
     Default = false,
@@ -3201,4 +3220,4 @@ pcall(function()
     end)
 end)
 
-print("[NYVEX HUB] Ultimate Edition v8.3 Loaded Successfully with Damage Indicator & Fixed Vehicle Aim!")
+print("[NYVEX HUB] Ultimate Edition v8.4 Optimized Loaded Successfully!")
