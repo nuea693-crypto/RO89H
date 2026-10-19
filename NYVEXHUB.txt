@@ -1,11 +1,11 @@
 --// ==========================================
---// NYVEX HUB | ULTIMATE EDITION (ALPHABAY & ANTI-LOCK MASTER BYPASS)
+--// NYVEX HUB | ULTIMATE EDITION (UPDATED)
 --// ==========================================
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
 local Window = WindUI:CreateWindow({
-    Title = "NYVEX HUB | Block Spin 💸",
+    Title = "NYVEX HUB | Block Spin ",
     Icon = "rbxassetid://75135192681243",
     Author = "NYVEX",
     Folder = "NYVEXHUB!",
@@ -124,10 +124,10 @@ local SettingsTab = Window:Tab({ Title = 'Settings', Icon = 'settings' })
 -- ==========================================
 local SilentAim = {
     Enabled = false,
-    FOV = 180,
+    FOV = 150,
     ShowFOV = false,
     Smoothness = 1.0,
-    Prediction = 1.15,
+    Prediction = 1.45,
     TargetMode = "Head",
     WhitelistFriends = false,
     Target = nil,
@@ -135,8 +135,8 @@ local SilentAim = {
 
 local AutoShoot = {
     Enabled = false,
-    Delay = 0.05,
-    Range = 600,
+    Delay = 0.08,
+    Range = 500,
     CheckAmmo = true,
     Running = false,
 }
@@ -144,8 +144,8 @@ local AutoShoot = {
 local AutoShootOnDamage = {
     Enabled = false,
     Duration = 2.0,
-    Delay = 0.04,
-    Range = 600,
+    Delay = 0.05,
+    Range = 500,
 }
 local _lastHealth = nil
 local _damageBurstUntil = 0
@@ -273,28 +273,6 @@ local function isWhitelisted(player)
     return isRobloxFriend
 end
 
-local function getSmartAimPart(character)
-    if not character then return nil end
-    local head = character:FindFirstChild('Head')
-    local hrp = character:FindFirstChild('HumanoidRootPart')
-    
-    if character:GetAttribute("AntiLockActive") or character:GetAttribute("IsAntiLock") then
-        return hrp or head
-    end
-
-    if SilentAim.TargetMode == 'Torso' then
-        return hrp or character:FindFirstChild('UpperTorso')
-    elseif SilentAim.TargetMode == 'Smart' then
-        if head and hrp then
-            local vel = hrp.AssemblyLinearVelocity or hrp.Velocity or Vector3.zero
-            if vel.Magnitude > 30 then return hrp else return head end
-        end
-        return head or hrp
-    else
-        return head or hrp
-    end
-end
-
 local function isPlayerInSafeZone(target)
     if not target then return false end
     local player = nil
@@ -343,6 +321,7 @@ local function isPlayerInSafeZone(target)
     return false
 end
 
+--  (Wall Check)
 local function isWallBetween(origin, targetPos, ignoreList)
     local raycastParams = RaycastParams.new()
     raycastParams.FilterType = Enum.RaycastFilterType.Exclude
@@ -360,21 +339,46 @@ local function isWallBetween(origin, targetPos, ignoreList)
     return false
 end
 
+-- 
 local function isCharacterOnVehicle(character)
     if not character then return false end
     local hum = character:FindFirstChildOfClass("Humanoid")
     if hum and hum.SeatPart then
         return true
     end
-    local root = character:FindFirstChild("HumanoidRootPart")
-    if root then
-        for _, obj in ipairs(Workspace:GetDescendants()) do
-            if obj:IsA("VehicleSeat") and obj.Occupant and obj.Occupant.Parent == character then
-                return true
-            end
+    return false
+end
+
+--  ( <= 20% )
+local function getSmartAimPart(character)
+    if not character then return nil end
+    local hum = character:FindFirstChildOfClass("Humanoid")
+    
+    -- :  <= 20 (20  0)
+    if hum and hum.Health <= 20 then
+        if isCharacterOnVehicle(character) then
+            --  <= 20%  -> 
+            return character:FindFirstChild('Head') or character:FindFirstChild('HumanoidRootPart')
+        else
+            --  <= 20%  -> 
+            return character:FindFirstChild('HumanoidRootPart') or character:FindFirstChild('UpperTorso') or character:FindFirstChild('Head')
         end
     end
-    return false
+
+    --  20%
+    if SilentAim.TargetMode == 'Torso' then
+        return character:FindFirstChild('HumanoidRootPart') or character:FindFirstChild('UpperTorso')
+    elseif SilentAim.TargetMode == 'Smart' then
+        local head = character:FindFirstChild('Head')
+        local hrp = character:FindFirstChild('HumanoidRootPart')
+        if head and hrp then
+            local vel = hrp.AssemblyLinearVelocity or hrp.Velocity or Vector3.zero
+            if vel.Magnitude > 25 then return hrp else return head end
+        end
+        return head or hrp
+    else
+        return character:FindFirstChild('Head') or character:FindFirstChild('HumanoidRootPart')
+    end
 end
 
 local previousTargetPositions = {}
@@ -445,44 +449,34 @@ local function getClosestEnemyToMe(maxRange)
     return best
 end
 
--- ⚡ ระบบคำนวณทำนายพิกัดสลัด Anti-Lock AlphaBay
 local function predictPosition(targetPart)
     if not targetPart then return Vector3.zero end
-    local char = targetPart.Parent
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    
-    local basePos = targetPart.Position
-    if char and char.PrimaryPart then
-        local okPivot, pivotCF = pcall(function() return char:GetPivot() end)
-        if okPivot and pivotCF then
-            basePos = pivotCF.Position
-        end
-    end
-
     local ping = getPing()
-    local targetKey = char
+    local hrp = targetPart.Parent:FindFirstChild("HumanoidRootPart") or targetPart
+    local currentPos = targetPart.Position
+    
+    local targetKey = targetPart.Parent
     local lastData = previousTargetPositions[targetKey]
     local frameVelocity = Vector3.zero
     
     if lastData then
         local timePassed = tick() - lastData.time
         if timePassed > 0 then
-            local rawVel = (basePos - lastData.pos) / timePassed
-            if rawVel.Magnitude < 1200 then
-                frameVelocity = rawVel
-            else
-                frameVelocity = lastData.vel or Vector3.zero
-            end
+            frameVelocity = (currentPos - lastData.pos) / timePassed
         end
     end
-    previousTargetPositions[targetKey] = { pos = basePos, time = tick(), vel = frameVelocity }
+    previousTargetPositions[targetKey] = { pos = currentPos, time = tick() }
     
-    local realVel = hrp and (hrp.AssemblyLinearVelocity or hrp.Velocity) or Vector3.zero
-    if realVel.Magnitude > 200 then realVel = Vector3.new(0, 0, 0) end
+    local vel = hrp.AssemblyLinearVelocity or hrp.Velocity or Vector3.zero
+    local blendedVel = (vel * 0.5) + (frameVelocity * 0.5)
     
-    local blendedVel = (realVel * 0.2) + (frameVelocity * 0.8)
-    local finalPredicted = basePos + (Vector3.new(blendedVel.X, 0, blendedVel.Z) * ping * math.clamp(SilentAim.Prediction, 0.5, 2.0))
-    return finalPredicted
+    if blendedVel.Magnitude > 350 then
+        blendedVel = vel.Unit * 50
+    end
+    
+    local adjustedVel = Vector3.new(blendedVel.X, 0, blendedVel.Z)
+    local predicted = currentPos + (adjustedVel * ping * SilentAim.Prediction)
+    return predicted
 end
 
 local function isShotgun(tool)
@@ -506,7 +500,7 @@ local function isShotgun(tool)
     return false
 end
 
--- 🎯 Silent Aim Hook ตัวดักการยิงทะลุฮิตบ็อกซ์
+-- Silent Aim Hook ()
 local oldFireServer
 if SendRemote and SendRemote.FireServer then
     pcall(function()
@@ -518,9 +512,8 @@ if SendRemote and SendRemote.FireServer then
             local args = {...}
 
             if SilentAim.Enabled and args[2] == "shoot_gun" and SilentAim.Target and SilentAim.Target.Character then
-                local targetChar = SilentAim.Target.Character
-                local targetPart = getSmartAimPart(targetChar)
-                local hum = targetChar:FindFirstChildOfClass("Humanoid")
+                local targetPart = getSmartAimPart(SilentAim.Target.Character)
+                local hum = SilentAim.Target.Character:FindFirstChildOfClass("Humanoid")
 
                 if targetPart and hum and hum.Health > 0 then
                     local predicted = predictPosition(targetPart)
@@ -531,11 +524,16 @@ if SendRemote and SendRemote.FireServer then
                         args[4] = CFrame.new(origin, predicted)
                         local spread = {}
                         for i = 1, 6 do
+                            local offset = Vector3.new(
+                                math.random(-2, 2) * 0.03,
+                                math.random(-2, 2) * 0.03,
+                                math.random(-2, 2) * 0.03
+                            )
                             table.insert(spread, {
                                 [1] = {
                                     Instance = targetPart,
                                     Normal = Vector3.new(0, 1, 0),
-                                    Position = predicted + Vector3.new(math.random(-1,1)*0.005, math.random(-1,1)*0.005, math.random(-1,1)*0.005)
+                                    Position = predicted + offset
                                 }
                             })
                         end
@@ -624,9 +622,9 @@ local function fireShotAtTarget(target)
         rayResult = {}
         for i = 1, 6 do
             local spread = Vector3.new(
-                (math.random() - 0.5) * 0.02,
-                (math.random() - 0.5) * 0.02,
-                (math.random() - 0.5) * 0.02
+                (math.random() - 0.5) * 0.1,
+                (math.random() - 0.5) * 0.1,
+                (math.random() - 0.5) * 0.1
             )
             table.insert(rayResult, {
                 [1] = {
@@ -833,7 +831,7 @@ end)
 CombatTab:Toggle({
     Title = 'Silent Aim',
     Flag = 'silent_aim',
-    Desc = 'Auto aim lock on target (+AlphaBay)',
+    Desc = 'Auto aim lock on target (+Anti-Lock, Ghost Walk & Frame Prediction)',
     Icon = 'crosshair',
     Type = 'Checkbox',
     Default = false,
@@ -841,9 +839,9 @@ CombatTab:Toggle({
 })
 
 CombatTab:Toggle({
-    Title = 'Auto Shoot (ยิงอัตโนมัติ)',
+    Title = 'Auto Shoot ()',
     Flag = 'auto_shoot',
-    Desc = 'ยิงเป้าหมายในระยะ/FOV อัตโนมัติ (เช็คกำแพง+คนบนรถ)',
+    Desc = '/FOV  (+)',
     Icon = 'zap',
     Type = 'Checkbox',
     Default = false,
@@ -851,17 +849,17 @@ CombatTab:Toggle({
 })
 
 CombatTab:Slider({
-    Title = 'ความเร็วยิง Auto Shoot (Delay Sec)',
+    Title = ' Auto Shoot (Delay Sec)',
     Flag = 'auto_shoot_delay',
     Step = 0.01,
     Value = {Min = 0.01, Max = 0.5, Default = AutoShoot.Delay},
-    Callback = function(value) AutoShoot.Delay = tonumber(value) or 0.05 end,
+    Callback = function(value) AutoShoot.Delay = tonumber(value) or 0.08 end,
 })
 
 CombatTab:Toggle({
-    Title = 'Auto Shoot on Damage (ยิงสวนอัตโนมัติ)',
+    Title = 'Auto Shoot on Damage ()',
     Flag = 'auto_shoot_on_damage',
-    Desc = 'ยิงตอบโต้อัตโนมัติเมื่อโดนโจมตี / HP ลดลง',
+    Desc = ' / HP ',
     Icon = 'shield-alert',
     Type = 'Checkbox',
     Default = false,
@@ -872,7 +870,7 @@ CombatTab:Toggle({
 })
 
 CombatTab:Slider({
-    Title = 'ระยะเวลา ยิงสวน (Burst Duration Sec)',
+    Title = '  (Burst Duration Sec)',
     Flag = 'auto_damage_duration',
     Step = 0.5,
     Value = {Min = 0.5, Max = 10.0, Default = AutoShootOnDamage.Duration},
@@ -880,17 +878,17 @@ CombatTab:Slider({
 })
 
 CombatTab:Slider({
-    Title = 'ความเร็วยิงสวน (On Damage Delay Sec)',
+    Title = ' (On Damage Delay Sec)',
     Flag = 'auto_damage_delay',
     Step = 0.01,
     Value = {Min = 0.01, Max = 0.5, Default = AutoShootOnDamage.Delay},
-    Callback = function(value) AutoShootOnDamage.Delay = tonumber(value) or 0.04 end,
+    Callback = function(value) AutoShootOnDamage.Delay = tonumber(value) or 0.05 end,
 })
 
 CombatTab:Toggle({
     Title = 'Show FOV',
     Flag = 'show_fov',
-    Desc = 'แสดงวงกลม FOV',
+    Desc = ' FOV',
     Icon = 'eye',
     Type = 'Checkbox',
     Default = false,
@@ -898,9 +896,9 @@ CombatTab:Toggle({
 })
 
 CombatTab:Toggle({
-    Title = 'ไม่ล็อกเพื่อน (Whitelist Friends)',
+    Title = ' (Whitelist Friends)',
     Flag = 'whitelist_friends',
-    Desc = 'ไม่ล็อกเป้าใส่เพื่อนใน Roblox',
+    Desc = ' Roblox',
     Icon = 'user-check',
     Type = 'Checkbox',
     Default = false,
@@ -910,7 +908,7 @@ CombatTab:Toggle({
 CombatTab:Dropdown({
     Title = 'Target Mode',
     Flag = 'target_mode',
-    Desc = 'เลือกจุดที่ต้องการล็อกเป้า',
+    Desc = '',
     Icon = 'target',
     Values = {'Head', 'Torso', 'Smart'},
     Default = 'Head',
@@ -923,7 +921,7 @@ CombatTab:Slider({
     Step = 1,
     Value = {Min = 20, Max = 1000, Default = SilentAim.FOV},
     Callback = function(value)
-        SilentAim.FOV = tonumber(value) or 180
+        SilentAim.FOV = tonumber(value) or 150
         if IsMobile and FOVCircleFrame then
             FOVCircleFrame.Size = UDim2.new(0, SilentAim.FOV * 2, 0, SilentAim.FOV * 2)
         end
@@ -931,17 +929,17 @@ CombatTab:Slider({
 })
 
 CombatTab:Slider({
-    Title = 'Prediction Multiplier (ตัวคูณทำนาย)',
+    Title = 'Prediction Multiplier ()',
     Flag = 'pred_multiplier',
     Step = 0.05,
     Value = {Min = 0.5, Max = 3.0, Default = SilentAim.Prediction},
-    Callback = function(value) SilentAim.Prediction = tonumber(value) or 1.15 end,
+    Callback = function(value) SilentAim.Prediction = tonumber(value) or 1.45 end,
 })
 
 CombatTab:Toggle({
     Title = 'Lift Underground',
     Flag = 'lift_underground',
-    Desc = 'ดึงเป้าหมายที่มุดดิน',
+    Desc = '',
     Icon = 'arrow-up',
     Type = 'Checkbox',
     Default = false,
@@ -949,7 +947,7 @@ CombatTab:Toggle({
 })
 
 CombatTab:Slider({
-    Title = 'ระยะการยก (Underground Range)',
+    Title = ' (Underground Range)',
     Flag = 'underground_range',
     Step = 10,
     Value = {Min = 10, Max = 500, Default = 100},
@@ -1017,9 +1015,9 @@ task.spawn(function()
 end)
 
 WeaponTab:Toggle({
-    Title = "🔥 Infinite Fire Rate (ยิงรัวไร้ขีดจำกัด)",
+    Title = " Infinite Fire Rate ()",
     Flag = "infinite_fire_rate",
-    Desc = "ยิงรัวแบบยิงทะลุขีดจำกัด",
+    Desc = "",
     Icon = "zap",
     Type = "Checkbox",
     Default = false,
@@ -1042,7 +1040,7 @@ WeaponTab:Toggle({
                 end
             end
             if WindUI and WindUI.Notify then
-                WindUI:Notify({ Title = "NYVEX HUB", Content = "🔥 เปิดใช้งาน Infinite Fire Rate แล้ว!", Duration = 2 })
+                WindUI:Notify({ Title = "NYVEX HUB", Content = "  Infinite Fire Rate !", Duration = 2 })
             end
         end
     end,
@@ -1185,7 +1183,7 @@ end)
 
 WeaponTab:Toggle({
     Title   = "Melee Aura (Wide Fists)",
-    Desc    = "ขยายระยะต่อย/อาวุธประชิด 360 องศา",
+    Desc    = "/ 360 ",
     Default = false,
     Callback = function(v)
         meleeAuraEnabled = v
@@ -1282,7 +1280,7 @@ end
 
 WeaponTab:Toggle({
     Title   = "Auto Attack",
-    Desc    = "โจมตีระยะประชิดใส่มนุษย์รอบข้างอัตโนมัติ",
+    Desc    = "",
     Default = false,
     Callback = function(v)
         autoAttackEnabled = v
@@ -1442,9 +1440,9 @@ PlayersTab:Toggle({
 local infiniteStaminaEnabled = false
 
 PlayersTab:Toggle({
-    Title = 'Infinite Stamina (วิ่งไม่จำกัด)',
+    Title = 'Infinite Stamina ()',
     Flag = 'infinite_stamina',
-    Desc = 'วิ่งสตามิน่าไม่ลด',
+    Desc = '',
     Icon = 'zap',
     Type = 'Checkbox',
     Default = false,
@@ -1574,9 +1572,9 @@ RunService.Heartbeat:Connect(function()
 end)
 
 PlayersTab:Toggle({
-    Title = 'Anti Lock (ส่ายหลบกระสุน)',
+    Title = 'Anti Lock ()',
     Flag = 'antilock_hardcore',
-    Desc = 'ส่ายสลัดเป้าล็อกอย่างหนักพร้อมท่าส่าย',
+    Desc = '',
     Icon = 'shield-alert',
     Type = 'Checkbox',
     Default = false,
@@ -1660,7 +1658,7 @@ end)
 PlayersTab:Toggle({
     Title = 'Anti Kill',
     Flag = 'anti_kill',
-    Desc = 'มุดดินซ่อนตัวและสลับตำแหน่งหนีทันทีเมื่อล้ม',
+    Desc = '',
     Icon = 'shield-check',
     Type = 'Checkbox',
     Default = false,
@@ -1705,7 +1703,7 @@ RunService.Heartbeat:Connect(checkAndPickup)
 PlayersTab:Toggle({
     Title = 'Pickup Items',
     Flag = 'pickup_items',
-    Desc = 'ดูดเก็บของตกพื้นใกล้เคียงอัตโนมัติ',
+    Desc = '',
     Icon = 'package',
     Type = 'Checkbox',
     Default = false,
@@ -1728,7 +1726,7 @@ end)
 PlayersTab:Toggle({
     Title = 'Anti Ragdoll',
     Flag = 'anti_ragdoll',
-    Desc = 'ยกเลิกการติด Ragdoll / สลบ ลุกขึ้นทันที',
+    Desc = ' Ragdoll /  ',
     Icon = 'user-check',
     Type = 'Checkbox',
     Default = false,
@@ -1806,7 +1804,7 @@ end)
 PlayersTab:Toggle({
     Title = 'Hide Name',
     Flag = 'hide_name',
-    Desc = 'ซ่อนป้ายชื่อตัวเองป้องการส่อง',
+    Desc = '',
     Icon = 'eye-off',
     Type = 'Checkbox',
     Default = false,
@@ -1831,7 +1829,7 @@ PlayersTab:Section({ Title = 'PC HOLD (Z) - Snap Under Map:' })
 PlayersTab:Toggle({
     Title = 'Snap Under Map',
     Flag = 'snap_under_map',
-    Desc = 'วาปลงดินและล็อคตำแหน่ง (กด Z เพื่อสลับ)',
+    Desc = ' ( Z )',
     Icon = 'arrow-down',
     Type = 'Checkbox',
     Default = false,
@@ -1850,7 +1848,7 @@ PlayersTab:Toggle({
 })
 
 PlayersTab:Slider({
-    Title = 'Snap Height (ความลึก)',
+    Title = 'Snap Height ()',
     Flag = 'snap_height',
     Step = 1,
     Value = {Min = 1, Max = 300, Default = 10},
@@ -2159,9 +2157,9 @@ if LocalPlayer.Character then SetupCarCharacter(LocalPlayer.Character) end
 LocalPlayer.CharacterAdded:Connect(SetupCarCharacter)
 
 CarTab:Toggle({
-    Title = 'รถบิน (Flying Car)',
+    Title = ' (Flying Car)',
     Flag = 'flying_car',
-    Desc = 'ควบคุมรถให้ลอยและขับเคลื่อน 360° (มี Joystick มือถือ)',
+    Desc = ' 360� ( Joystick )',
     Icon = 'plane',
     Type = 'Checkbox',
     Default = false,
@@ -2180,7 +2178,7 @@ CarTab:Toggle({
 })
 
 CarTab:Slider({
-    Title = 'ความเร็วรถบิน (Car Speed)',
+    Title = ' (Car Speed)',
     Flag = 'car_speed',
     Step = 5,
     Value = {Min = 20, Max = 300, Default = 60},
@@ -2190,7 +2188,7 @@ CarTab:Slider({
 })
 
 CarTab:Slider({
-    Title = 'ความเร็วหมุน (Rotate Speed)',
+    Title = ' (Rotate Speed)',
     Flag = 'car_rotate_speed',
     Step = 0.5,
     Value = {Min = 0.5, Max = 10, Default = 3},
@@ -2200,9 +2198,9 @@ CarTab:Slider({
 })
 
 CarTab:Slider({
-    Title = 'ความสูงลอย (Hover Height)',
+    Title = ' (Hover Height)',
     Flag = 'hover_height',
-    Desc = 'ความสูงเหนือพื้น (สตัด) — ค่าเริ่มต้น 2',
+    Desc = ' () �  2',
     Step = 0.5,
     Value = {Min = 0, Max = 20, Default = 2},
     Callback = function(val)
@@ -2229,9 +2227,9 @@ task.spawn(function()
 end)
 
 CarTab:Toggle({
-    Title = "Auto Repair Vehicle (ซ่อมรถอัตโนมัติ)",
+    Title = "Auto Repair Vehicle ()",
     Flag = "auto_repair_vehicle",
-    Desc = "ซ่อมรถให้อัตโนมัติขณะขับขี่",
+    Desc = "",
     Icon = "wrench",
     Type = "Checkbox",
     Default = false,
@@ -2327,9 +2325,9 @@ CarTab:Toggle({
 
 local CarGuardEnabled = false
 CarTab:Toggle({
-    Title = 'CarGuard (กันรถบัค/รถระเบิด)',
+    Title = 'CarGuard (/)',
     Flag = 'car_guard',
-    Desc = 'กันการส่งแพ็กเกจ crashed_car',
+    Desc = ' crashed_car',
     Icon = 'shield',
     Type = 'Checkbox',
     Default = false,
@@ -2349,7 +2347,7 @@ _G.InventoryPlayerVisual = false
 _G.ESP_HeightOffset = 4
 
 ESPTab:Toggle({
-    Title = 'Inventory Viewer (ดูของในตัว)',
+    Title = 'Inventory Viewer ()',
     Flag = 'inventory_viewer',
     Default = false,
     Callback = function(state)
@@ -2424,9 +2422,9 @@ local function getMercyItemColor(model)
 end
 
 ESPTab:Toggle({
-    Title = 'Dropped Items ESP (ดูของตก)',
+    Title = 'Dropped Items ESP ()',
     Flag = 'dropped_items_esp',
-    Desc = 'แสดงชื่อและไฮไลต์ของที่ตกบนพื้น',
+    Desc = '',
     Default = false,
     Callback = function(state)
         droppedItemsESPEnabled = state
@@ -2744,11 +2742,11 @@ BuyTab:Section({ Title = "BUY & BALANCE:" })
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 local BankBalance = BuyTab:Button({
-    Title = "🏦 Bank Balance",
+    Title = " Bank Balance",
     Desc = "N/A"
 })
 local HandBalance = BuyTab:Button({
-    Title = "💸 Hand Balance",
+    Title = " Hand Balance",
     Desc = "N/A"
 })
 
@@ -2796,7 +2794,7 @@ end)
 
 BuyTab:Toggle({
     Title   = "Skip Crate Spin",
-    Desc    = "ข้ามการหมุนกล่องอัตโนมัติ",
+    Desc    = "",
     Icon    = "check",
     Type    = "Checkbox",
     Default = false,
@@ -2832,7 +2830,7 @@ end
 local selectedBulletType = "Pistol"
 
 BuyTab:Dropdown({
-    Title = "เลือกประเภทกระสุน",
+    Title = "",
     Values = {"Pistol", "Rifle", "Shotgun", "Random"},
     Value = "Pistol",
     Multi = false,
@@ -2842,8 +2840,8 @@ BuyTab:Dropdown({
 })
 
 BuyTab:Button({
-    Title = "เปิด Ammo Crate",
-    Desc = "ใช้ประเภทกระสุนที่เลือกจาก dropdown",
+    Title = " Ammo Crate",
+    Desc = " dropdown",
     Callback = function()
         local useType = selectedBulletType
         if useType == "Random" then
@@ -2942,7 +2940,7 @@ MiscTab:Button({
 MiscTab:Section({ Title = "GRAPHICS & FPS:" })
 
 MiscTab:Button({
-    Title = "Boost FPS (ภาพกาก)",
+    Title = "Boost FPS ()",
     Icon = "zap",
     Callback = function()
         for _, v in ipairs(Lighting:GetChildren()) do
@@ -2969,7 +2967,7 @@ MiscTab:Button({
 })
 
 MiscTab:Button({
-    Title = "RTX ON (ภาพสวย)",
+    Title = "RTX ON ()",
     Icon = "sparkles",
     Callback = function()
         Lighting.Technology = Enum.Technology.Future
@@ -2985,7 +2983,7 @@ MiscTab:Button({
 
 local frustumCullingConnection = nil
 MiscTab:Toggle({
-    Title = "Frustum Culling (แก้กล้องไม่ตาม Object / ซ่อนวัตถุนอกจอ)",
+    Title = "Frustum Culling ( Object / )",
     Icon = "eye",
     Default = false,
     Callback = function(state)
@@ -2993,7 +2991,7 @@ MiscTab:Toggle({
             if frustumCullingConnection then frustumCullingConnection:Disconnect() end
             frustumCullingConnection = RunService.RenderStepped:Connect(function()
                 local cam = Workspace.CurrentCamera
-                if not cam me then return end
+                if not cam then return end
                 for _, obj in ipairs(Workspace:GetDescendants()) do
                     if obj:IsA("BasePart") and not obj:IsDescendantOf(LocalPlayer.Character or workspace) then
                         local _, onScreen = cam:WorldToViewportPoint(obj.Position)
@@ -3014,7 +3012,7 @@ MiscTab:Toggle({
                 end
             end)
             if WindUI and WindUI.Notify then
-                WindUI:Notify({ Title = "NYVEX HUB", Content = "✅ เปิดใช้งาน Frustum Culling เรียบร้อย!", Duration = 2 })
+                WindUI:Notify({ Title = "NYVEX HUB", Content = "  Frustum Culling !", Duration = 2 })
             end
         else
             if frustumCullingConnection then
@@ -3030,7 +3028,7 @@ MiscTab:Toggle({
                 end
             end
             if WindUI and WindUI.Notify then
-                WindUI:Notify({ Title = "NYVEX HUB", Content = "❌ ปิดใช้งาน Frustum Culling แล้ว", Duration = 2 })
+                WindUI:Notify({ Title = "NYVEX HUB", Content = "  Frustum Culling ", Duration = 2 })
             end
         end
     end
@@ -3039,14 +3037,14 @@ MiscTab:Toggle({
 -- ==========================================
 -- SETTINGS / CONFIG TAB
 -- ==========================================
-SettingsTab:Section({ Title = "CONFIG MANAGER (บันทึก / โหลด ตั้งค่า):" })
+SettingsTab:Section({ Title = "CONFIG MANAGER ( /  ):" })
 
 local selectedConfigName = "NyvexConfig"
 
 SettingsTab:Input({
-    Title = "ชื่อ Config",
+    Title = " Config",
     Value = "NyvexConfig",
-    Placeholder = "ใส่ชื่อการตั้งค่า...",
+    Placeholder = "...",
     Callback = function(text)
         if text and text ~= "" then
             selectedConfigName = text
@@ -3055,8 +3053,8 @@ SettingsTab:Input({
 })
 
 SettingsTab:Button({
-    Title = "💾 บันทึกการตั้งค่า (Save Config)",
-    Desc = "บันทึกค่า Toggle, Slider, Dropdown ทั้งหมดลงไฟล์",
+    Title = "  (Save Config)",
+    Desc = " Toggle, Slider, Dropdown ",
     Icon = "save",
     Callback = function()
         pcall(function()
@@ -3070,7 +3068,7 @@ SettingsTab:Button({
             if WindUI and WindUI.Notify then
                 WindUI:Notify({
                     Title = "NYVEX HUB",
-                    Content = "บันทึกการตั้งค่า '" .. selectedConfigName .. "' สำเร็จ!",
+                    Content = " '" .. selectedConfigName .. "' !",
                     Duration = 3,
                 })
             end
@@ -3079,8 +3077,8 @@ SettingsTab:Button({
 })
 
 SettingsTab:Button({
-    Title = "📂 โหลดการตั้งค่า (Load Config)",
-    Desc = "โหลดการตั้งค่าที่เคยบันทึกไว้กลับมาใช้งาน",
+    Title = "  (Load Config)",
+    Desc = "",
     Icon = "folder-open",
     Callback = function()
         pcall(function()
@@ -3094,7 +3092,7 @@ SettingsTab:Button({
             if WindUI and WindUI.Notify then
                 WindUI:Notify({
                     Title = "NYVEX HUB",
-                    Content = "โหลดการตั้งค่า '" .. selectedConfigName .. "' สำเร็จ!",
+                    Content = " '" .. selectedConfigName .. "' !",
                     Duration = 3,
                 })
             end
@@ -3103,9 +3101,9 @@ SettingsTab:Button({
 })
 
 SettingsTab:Toggle({
-    Title = "Auto Load Config (โหลดอัตโนมัติเมื่อเปิดสคริปต์)",
+    Title = "Auto Load Config ()",
     Flag = "auto_load_config",
-    Desc = "โหลดการตั้งค่าล่าสุดอัตโนมัติเมื่อรันสคริปต์ครั้งถัดไป",
+    Desc = "",
     Default = false,
     Callback = function(state)
         getEnv().AutoLoadConfig = state
@@ -3125,28 +3123,4 @@ pcall(function()
     end)
 end)
 
-print("[NYVEX HUB] Loaded Successfully with Ultra Master Bypass for Anti-Lock & AlphaBay!")
-ded Successfully with Ultra Master Bypass for Anti-Lock & AlphaBay!")
-ล่าสุดอัตโนมัติเมื่อรันสคริปต์ครั้งถัดไป",
-    Default = false,
-    Callback = function(state)
-        getEnv().AutoLoadConfig = state
-    end,
-})
-
-pcall(function()
-    task.spawn(function()
-        task.wait(1)
-        if getEnv().AutoLoadConfig then
-            if ConfigManager and ConfigManager.LoadConfig then
-                ConfigManager:LoadConfig(selectedConfigName)
-            elseif Config and Config.Load then
-                Config:Load()
-            end
-        end
-    end)
-end)
-
-print("[NYVEX HUB] Loaded Successfully with Ultra Master Bypass for Anti-Lock & AlphaBay!")
-ded Successfully with Ultra Master Bypass for Anti-Lock & AlphaBay!")
-ster Bypass for Anti-Lock & Alpha Bay!")
+print("[NYVEX HUB] Loaded Successfully with Health-Based Smart Locking & Optimized Performance!")
