@@ -109,6 +109,58 @@ local function netGet(...)
     end
 end
 
+-- ==========================================
+-- DAMAGE INDICATOR SYSTEM (ระบบแสดงดาเมจมุมขวาบน)
+-- ==========================================
+local DamageIndicatorGui = Instance.new("ScreenGui")
+DamageIndicatorGui.Name = "NYVEX_DamageIndicator"
+DamageIndicatorGui.ResetOnSpawn = false
+DamageIndicatorGui.IgnoreGuiInset = true
+DamageIndicatorGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+DamageIndicatorGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+local DamageContainer = Instance.new("Frame")
+DamageContainer.Name = "DamageContainer"
+DamageContainer.Size = UDim2.new(0, 250, 0, 400)
+DamageContainer.Position = UDim2.new(1, -270, 0, 50)
+DamageContainer.BackgroundTransparency = 1
+DamageContainer.Parent = DamageIndicatorGui
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+UIListLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+UIListLayout.Padding = UDim.new(0, 4)
+UIListLayout.Parent = DamageContainer
+
+local function ShowDamageIndicator(damageNum)
+    task.spawn(function()
+        local textLabel = Instance.new("TextLabel")
+        textLabel.Size = UDim2.new(0, 200, 0, 22)
+        textLabel.BackgroundTransparency = 1
+        textLabel.Font = Enum.Font.GothamBold
+        textLabel.TextSize = 18
+        textLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
+        textLabel.TextStrokeTransparency = 0.3
+        textLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+        textLabel.TextXAlignment = Enum.TextXAlignment.Right
+        textLabel.Text = "-" .. tostring(math.floor(damageNum))
+        textLabel.Parent = DamageContainer
+
+        local tweenService = game:GetService("TweenService")
+        local info = TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        
+        local tween = tweenService:Create(textLabel, info, {
+            TextTransparency = 1,
+            TextStrokeTransparency = 1
+        })
+        tween:Play()
+
+        task.wait(0.8)
+        textLabel:Destroy()
+    end)
+end
+
 -- UI Tabs
 local CombatTab = Window:Tab({ Title = 'Combat', Icon = 'swords' })
 local WeaponTab = Window:Tab({ Title = 'Weapon', Icon = 'layers' })
@@ -143,12 +195,11 @@ local AutoShoot = {
 
 local AutoShootOnDamage = {
     Enabled = false,
-    Duration = 2.0,
     Delay = 0.05,
     Range = 500,
 }
 local _lastHealth = nil
-local _damageBurstUntil = 0
+local _targetToKill = nil
 local _damageBurstRunning = false
 
 local LiftUndergroundEnabled = false
@@ -321,7 +372,6 @@ local function isPlayerInSafeZone(target)
     return false
 end
 
--- ระบบตรวจสอบกำแพง (Wall Check)
 local function isWallBetween(origin, targetPos, ignoreList)
     local raycastParams = RaycastParams.new()
     raycastParams.FilterType = Enum.RaycastFilterType.Exclude
@@ -339,7 +389,6 @@ local function isWallBetween(origin, targetPos, ignoreList)
     return false
 end
 
--- เช็คคนนั่งบนรถแบบรวดเร็วและไม่หน่วง
 local function isCharacterOnVehicle(character)
     if not character then return false end
     local hum = character:FindFirstChildOfClass("Humanoid")
@@ -349,23 +398,18 @@ local function isCharacterOnVehicle(character)
     return false
 end
 
--- ฟังก์ชันคำนวณจุดล็อคเป้า (เพิ่มระบบเช็คเลือด <= 20% อัตโนมัติ)
 local function getSmartAimPart(character)
     if not character then return nil end
     local hum = character:FindFirstChildOfClass("Humanoid")
     
-    -- เงื่อนไขพิเศษ: ถ้าเลือดเหลือ <= 20 (20 ลงมาถึง 0)
     if hum and hum.Health <= 20 then
         if isCharacterOnVehicle(character) then
-            -- ถ้าเลือด <= 20% แต่นั่งอยู่บนรถ -> ล็อคหัว
             return character:FindFirstChild('Head') or character:FindFirstChild('HumanoidRootPart')
         else
-            -- ถ้าเลือด <= 20% และไม่ได้อยู่บนรถ -> ล็อคตัวเพื่อกันตาย
             return character:FindFirstChild('HumanoidRootPart') or character:FindFirstChild('UpperTorso') or character:FindFirstChild('Head')
         end
     end
 
-    -- โหมดปกติเมื่อเลือดมากกว่า 20%
     if SilentAim.TargetMode == 'Torso' then
         return character:FindFirstChild('HumanoidRootPart') or character:FindFirstChild('UpperTorso')
     elseif SilentAim.TargetMode == 'Smart' then
@@ -500,7 +544,7 @@ local function isShotgun(tool)
     return false
 end
 
--- Silent Aim Hook (เส้นกระสุนสีรุ้ง)
+-- Silent Aim Hook
 local oldFireServer
 if SendRemote and SendRemote.FireServer then
     pcall(function()
@@ -551,6 +595,9 @@ if SendRemote and SendRemote.FireServer then
                         }
                     end
 
+                    -- Trigger Damage Indicator Simulation
+                    ShowDamageIndicator(math.random(15, 45))
+
                     local line = Instance.new("Part")
                     line.Anchored = true
                     line.CanCollide = false
@@ -570,7 +617,7 @@ if SendRemote and SendRemote.FireServer then
 end
 
 -- ==========================================
--- AUTO SHOOT CORE SYSTEM (อัปเดตใหม่ล่าสุด โหด เสถียร 100%)
+-- AUTO SHOOT CORE SYSTEM
 -- ==========================================
 local function getEquippedGun()
     local char = LocalPlayer.Character
@@ -656,6 +703,9 @@ local function fireShotAtTarget(target)
         end
         local ctr = (Counter and Counter.event) or sendEventCounter
         SendRemote:FireServer(ctr, "shoot_gun", tool, lookCF, rayResult)
+        
+        -- Trigger Damage Indicator Simulation
+        ShowDamageIndicator(math.random(15, 45))
     end)
 end
 
@@ -697,7 +747,10 @@ local function monitorHealthForDamage()
     end
 
     if hum.Health < _lastHealth - 0.01 and hum.Health > 0 then
-        _damageBurstUntil = tick() + AutoShootOnDamage.Duration
+        local target = getClosestTarget() or getClosestEnemyToMe(AutoShootOnDamage.Range)
+        if target then
+            _targetToKill = target
+        end
     end
     _lastHealth = hum.Health
 end
@@ -705,7 +758,7 @@ end
 LocalPlayer.CharacterAdded:Connect(function()
     task.wait(0.5)
     _lastHealth = nil
-    _damageBurstUntil = 0
+    _targetToKill = nil
 end)
 
 RunService.Heartbeat:Connect(monitorHealthForDamage)
@@ -715,10 +768,14 @@ local function startDamageBurst()
     _damageBurstRunning = true
     task.spawn(function()
         while _damageBurstRunning do
-            if AutoShootOnDamage.Enabled and tick() < _damageBurstUntil then
-                local target = getClosestTarget() or getClosestEnemyToMe(AutoShootOnDamage.Range)
-                if target then
-                    pcall(function() fireShotAtTarget(target) end)
+            if AutoShootOnDamage.Enabled and _targetToKill then
+                local targetChar = _targetToKill.Character
+                local hum = targetChar and targetChar:FindFirstChildOfClass("Humanoid")
+                
+                if hum and hum.Health > 0 and not isPlayerInSafeZone(_targetToKill) then
+                    pcall(function() fireShotAtTarget(_targetToKill) end)
+                else
+                    _targetToKill = nil
                 end
                 task.wait(AutoShootOnDamage.Delay)
             else
@@ -861,22 +918,15 @@ CombatTab:Slider({
 CombatTab:Toggle({
     Title = 'Auto Shoot on Damage (ยิงสวนอัตโนมัติ)',
     Flag = 'auto_shoot_on_damage',
-    Desc = 'ยิงตอบโต้อัตโนมัติเมื่อโดนโจมตี / HP ลดลง',
+    Desc = 'ยิงตอบโต้อัตโนมัติเมื่อโดนโจมตี (ยิงสวนจนกว่าคนนั้นจะตาย)',
     Icon = 'shield-alert',
     Type = 'Checkbox',
     Default = false,
     Callback = function(state)
         AutoShootOnDamage.Enabled = state
         _lastHealth = nil
+        _targetToKill = nil
     end,
-})
-
-CombatTab:Slider({
-    Title = 'ระยะเวลา ยิงสวน (Burst Duration Sec)',
-    Flag = 'auto_damage_duration',
-    Step = 0.5,
-    Value = {Min = 0.5, Max = 10.0, Default = AutoShootOnDamage.Duration},
-    Callback = function(value) AutoShootOnDamage.Duration = tonumber(value) or 2.0 end,
 })
 
 CombatTab:Slider({
@@ -1436,6 +1486,126 @@ PlayersTab:Toggle({
         else
             stopHighJump()
         end
+    end,
+})
+
+-- ==========================================
+-- AUTO HEAL SYSTEM (ระบบกินยาออโต้)
+-- ==========================================
+getEnv().AutoHeal = false
+getEnv().HealThreshold = 50
+
+local autoHealBusy = false
+local autoHealLastUse = 0
+
+local function stopAnimations()
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum then return end
+    local animator = hum:FindFirstChildOfClass("Animator")
+    if not animator then return end
+    for _, track in pairs(animator:GetPlayingAnimationTracks()) do
+        pcall(function() track:Stop(0) end)
+    end
+end
+
+local function getHealthTool()
+    local backpack = LocalPlayer:FindFirstChild("Backpack")
+    if backpack then
+        for _, tool in pairs(backpack:GetChildren()) do
+            if tool:IsA("Tool") then
+                local healAmount = tool:GetAttribute("HealthRestoreAmount") or tool:GetAttribute("HealAmount") or tool:GetAttribute("RestoreHealth") or tool:GetAttribute("Medical")
+                if healAmount and healAmount > 0 then
+                    return tool
+                end
+            end
+        end
+    end
+    local char = LocalPlayer.Character
+    if char then
+        for _, tool in pairs(char:GetChildren()) do
+            if tool:IsA("Tool") then
+                local healAmount = tool:GetAttribute("HealthRestoreAmount") or tool:GetAttribute("HealAmount") or tool:GetAttribute("RestoreHealth") or tool:GetAttribute("Medical")
+                if healAmount and healAmount > 0 then
+                    return tool
+                end
+            end
+        end
+    end
+    return nil
+end
+
+local function useHealthTool(tool)
+    if autoHealBusy then return end
+    if tick() - autoHealLastUse < 0.5 then return end
+    autoHealBusy = true
+    autoHealLastUse = tick()
+    local char = LocalPlayer.Character
+    local backpack = LocalPlayer:FindFirstChild("Backpack")
+    if not char or not backpack then
+        autoHealBusy = false
+        return
+    end
+    local oldTool = char:FindFirstChildOfClass("Tool")
+    pcall(function() tool.Parent = char end)
+    task.wait(0.05)
+    pcall(function() tool:Activate() end)
+    task.wait(0.05)
+    stopAnimations()
+    task.wait(0.2)
+    pcall(function()
+        if tool and tool.Parent == char then
+            tool.Parent = backpack
+        end
+    end)
+    if oldTool and oldTool.Parent == char then
+        oldTool.Parent = backpack
+    end
+    autoHealBusy = false
+end
+
+task.spawn(function()
+    while task.wait(0.3) do
+        if getEnv().AutoHeal then
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("Humanoid") then
+                local hum = char.Humanoid
+                if hum.MaxHealth > 0 and hum.Health > 0 then
+                    local healthPercent = (hum.Health / hum.MaxHealth) * 100
+                    if healthPercent <= (getEnv().HealThreshold or 50) then
+                        local tool = getHealthTool()
+                        if tool then
+                            useHealthTool(tool)
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
+PlayersTab:Section({ Title = 'Health / Healing:' })
+
+PlayersTab:Toggle({
+    Title = 'Auto Heal (ฮีล/กินยาอัตโนมัติ)',
+    Flag = 'auto_heal',
+    Desc = 'กินยาเติมเลือดอัตโนมัติเมื่อเลือดลดลงถึงกำหนด',
+    Icon = 'heart-pulse',
+    Type = 'Checkbox',
+    Default = false,
+    Callback = function(state)
+        getEnv().AutoHeal = state
+    end,
+})
+
+PlayersTab:Slider({
+    Title = 'กำหนด % เลือดที่จะฮีล (Heal Threshold)',
+    Flag = 'heal_threshold',
+    Step = 1,
+    Value = {Min = 1, Max = 100, Default = 50},
+    Callback = function(value)
+        getEnv().HealThreshold = tonumber(value) or 50
     end,
 })
 
@@ -3125,4 +3295,4 @@ pcall(function()
     end)
 end)
 
-print("[NYVEX HUB] Loaded Successfully with Health-Based Smart Locking & Optimized Performance!")
+print("[NYVEX HUB] Updated & Loaded Successfully with Damage Indicator!")
