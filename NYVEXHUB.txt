@@ -569,7 +569,9 @@ if SendRemote and SendRemote.FireServer then
     end)
 end
 
--- Auto Shoot Logic
+-- ==========================================
+-- AUTO SHOOT CORE SYSTEM (อัปเดตใหม่ล่าสุด โหด เสถียร 100%)
+-- ==========================================
 local function getEquippedGun()
     local char = LocalPlayer.Character
     if not char then return nil end
