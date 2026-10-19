@@ -110,7 +110,7 @@ local function netGet(...)
 end
 
 -- ==========================================
--- DAMAGE INDICATOR SYSTEM (ระบบแสดงดาเมจมุมขวาบน)
+-- DAMAGE INDICATOR SYSTEM (ปรับตำแหน่งตรงกลางด้านบน + ตัวเลขใหญ่ขึ้น)
 -- ==========================================
 local DamageIndicatorGui = Instance.new("ScreenGui")
 DamageIndicatorGui.Name = "NYVEX_DamageIndicator"
@@ -121,14 +121,15 @@ DamageIndicatorGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local DamageContainer = Instance.new("Frame")
 DamageContainer.Name = "DamageContainer"
-DamageContainer.Size = UDim2.new(0, 250, 0, 400)
-DamageContainer.Position = UDim2.new(1, -270, 0, 50)
+DamageContainer.AnchorPoint = Vector2.new(0.5, 0)
+DamageContainer.Size = UDim2.new(0, 300, 0, 400)
+DamageContainer.Position = UDim2.new(0.5, 0, 0, 100)
 DamageContainer.BackgroundTransparency = 1
 DamageContainer.Parent = DamageIndicatorGui
 
 local UIListLayout = Instance.new("UIListLayout")
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 UIListLayout.VerticalAlignment = Enum.VerticalAlignment.Top
 UIListLayout.Padding = UDim.new(0, 4)
 UIListLayout.Parent = DamageContainer
@@ -136,14 +137,14 @@ UIListLayout.Parent = DamageContainer
 local function ShowDamageIndicator(damageNum)
     task.spawn(function()
         local textLabel = Instance.new("TextLabel")
-        textLabel.Size = UDim2.new(0, 200, 0, 22)
+        textLabel.Size = UDim2.new(0, 250, 0, 32)
         textLabel.BackgroundTransparency = 1
         textLabel.Font = Enum.Font.GothamBold
-        textLabel.TextSize = 18
+        textLabel.TextSize = 24
         textLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
         textLabel.TextStrokeTransparency = 0.3
         textLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-        textLabel.TextXAlignment = Enum.TextXAlignment.Right
+        textLabel.TextXAlignment = Enum.TextXAlignment.Center
         textLabel.Text = "-" .. tostring(math.floor(damageNum))
         textLabel.Parent = DamageContainer
 
@@ -3228,7 +3229,7 @@ SettingsTab:Button({
     Title = "💾 บันทึกการตั้งค่า (Save Config)",
     Desc = "บันทึกค่า Toggle, Slider, Dropdown ทั้งหมดลงไฟล์",
     Icon = "save",
-    Callback = function()
+    Callback = function(state)
         pcall(function()
             if ConfigManager then
                 if ConfigManager.SaveConfig then
@@ -3252,7 +3253,7 @@ SettingsTab:Button({
     Title = "📂 โหลดการตั้งค่า (Load Config)",
     Desc = "โหลดการตั้งค่าที่เคยบันทึกไว้กลับมาใช้งาน",
     Icon = "folder-open",
-    Callback = function()
+    Callback = function(state)
         pcall(function()
             if ConfigManager then
                 if ConfigManager.LoadConfig then
@@ -3295,4 +3296,4 @@ pcall(function()
     end)
 end)
 
-print("[NYVEX HUB] Updated & Loaded Successfully with Damage Indicator!")
+print("[NYVEX HUB] Updated & Loaded Successfully with Center-Top Damage Indicator!")
