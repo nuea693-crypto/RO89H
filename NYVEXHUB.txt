@@ -1,5 +1,5 @@
 --// ==========================================
---// NYVEX HUB | ULTIMATE EDITION (ALPHA BAY & ANTI-LOCK MASTER BYPASS)
+--// NYVEX HUB | ULTIMATE EDITION (ALPHABAY & ANTI-LOCK MASTER BYPASS)
 --// ==========================================
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
@@ -278,7 +278,6 @@ local function getSmartAimPart(character)
     local head = character:FindFirstChild('Head')
     local hrp = character:FindFirstChild('HumanoidRootPart')
     
-    -- ระบบแก้ทาง Anti-Lock ค่าย Alpha Bay ที่ชอบส่ายหัวหรือบิดฮิตบ็อกซ์
     if character:GetAttribute("AntiLockActive") or character:GetAttribute("IsAntiLock") then
         return hrp or head
     end
@@ -446,14 +445,12 @@ local function getClosestEnemyToMe(maxRange)
     return best
 end
 
--- ⚡ ระบบทำนายพิกัดระดับมาสเตอร์ (Alpha Bay & Hardcore Anti-Lock Bypass v2)
--- ล้างค่าส่ายหลอกและดึงพิกัดกลางโมเดลจริง (Model Pivot / Stabilized Position) มาใช้งาน
+-- ⚡ ระบบคำนวณทำนายพิกัดสลัด Anti-Lock AlphaBay
 local function predictPosition(targetPart)
     if not targetPart then return Vector3.zero end
     local char = targetPart.Parent
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     
-    -- ถ้าเป้าหมายเปิด Anti-Lock รุนแรง ให้ดึงพิกัดแกนกลางโมเดล (Pivot Position) ทันทีเพื่อป้องกันกระสุนออกข้าง
     local basePos = targetPart.Position
     if char and char.PrimaryPart then
         local okPivot, pivotCF = pcall(function() return char:GetPivot() end)
@@ -481,7 +478,7 @@ local function predictPosition(targetPart)
     previousTargetPositions[targetKey] = { pos = basePos, time = tick(), vel = frameVelocity }
     
     local realVel = hrp and (hrp.AssemblyLinearVelocity or hrp.Velocity) or Vector3.zero
-    if realVel.Magnitude > 200 then realVel = Vector3.new(0, 0, 0) end -- ตัดความเร็วลวงตาของสคริปต์ส่ายหลบ
+    if realVel.Magnitude > 200 then realVel = Vector3.new(0, 0, 0) end
     
     local blendedVel = (realVel * 0.2) + (frameVelocity * 0.8)
     local finalPredicted = basePos + (Vector3.new(blendedVel.X, 0, blendedVel.Z) * ping * math.clamp(SilentAim.Prediction, 0.5, 2.0))
@@ -509,7 +506,7 @@ local function isShotgun(tool)
     return false
 end
 
--- 🎯 Silent Aim Hook ตัวโหด: บังคับยิงทะลุฮิตบ็อกซ์ที่ถูกบิดเบือนด้วย Anti-Lock
+-- 🎯 Silent Aim Hook ตัวดักการยิงทะลุฮิตบ็อกซ์
 local oldFireServer
 if SendRemote and SendRemote.FireServer then
     pcall(function()
@@ -836,7 +833,7 @@ end)
 CombatTab:Toggle({
     Title = 'Silent Aim',
     Flag = 'silent_aim',
-    Desc = 'Auto aim lock on target (+Alpha Bay Anti-Antilock Ultra Master Bypass)',
+    Desc = 'Auto aim lock on target (+AlphaBay)',
     Icon = 'crosshair',
     Type = 'Checkbox',
     Default = false,
@@ -2996,7 +2993,7 @@ MiscTab:Toggle({
             if frustumCullingConnection then frustumCullingConnection:Disconnect() end
             frustumCullingConnection = RunService.RenderStepped:Connect(function()
                 local cam = Workspace.CurrentCamera
-                if not cam then return end
+                if not cam me then return end
                 for _, obj in ipairs(Workspace:GetDescendants()) do
                     if obj:IsA("BasePart") and not obj:IsDescendantOf(LocalPlayer.Character or workspace) then
                         local _, onScreen = cam:WorldToViewportPoint(obj.Position)
@@ -3004,7 +3001,7 @@ MiscTab:Toggle({
                             if obj:GetAttribute("OriginalTransparency") == nil then
                                 obj:SetAttribute("OriginalTransparency", obj.Transparency)
                             end
-                            obj.Transparency = obj:GetAttribute("OriginalTransparency"] or 0
+                            obj.Transparency = obj:GetAttribute("OriginalTransparency") or 0
                         else
                             if obj:GetAttribute("OriginalTransparency") == nil then
                                 obj:SetAttribute("OriginalTransparency", obj.Transparency)
@@ -3128,4 +3125,28 @@ pcall(function()
     end)
 end)
 
-print("[NYVEX HUB] Loaded Successfully with Ultra Master Bypass for Anti-Lock & Alpha Bay!")
+print("[NYVEX HUB] Loaded Successfully with Ultra Master Bypass for Anti-Lock & AlphaBay!")
+ded Successfully with Ultra Master Bypass for Anti-Lock & AlphaBay!")
+ล่าสุดอัตโนมัติเมื่อรันสคริปต์ครั้งถัดไป",
+    Default = false,
+    Callback = function(state)
+        getEnv().AutoLoadConfig = state
+    end,
+})
+
+pcall(function()
+    task.spawn(function()
+        task.wait(1)
+        if getEnv().AutoLoadConfig then
+            if ConfigManager and ConfigManager.LoadConfig then
+                ConfigManager:LoadConfig(selectedConfigName)
+            elseif Config and Config.Load then
+                Config:Load()
+            end
+        end
+    end)
+end)
+
+print("[NYVEX HUB] Loaded Successfully with Ultra Master Bypass for Anti-Lock & AlphaBay!")
+ded Successfully with Ultra Master Bypass for Anti-Lock & AlphaBay!")
+ster Bypass for Anti-Lock & Alpha Bay!")
