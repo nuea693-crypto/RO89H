@@ -1,5 +1,5 @@
 --// ==========================================
---// NYVEX HUB | ULTIMATE EDITION (ALPHABAY ANTI-ANTILOCK BYPASS)
+--// NYVEX HUB | ULTIMATE EDITION (ALPHA BAY & ANTI-LOCK MASTER BYPASS)
 --// ==========================================
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
@@ -124,10 +124,10 @@ local SettingsTab = Window:Tab({ Title = 'Settings', Icon = 'settings' })
 -- ==========================================
 local SilentAim = {
     Enabled = false,
-    FOV = 150,
+    FOV = 180,
     ShowFOV = false,
     Smoothness = 1.0,
-    Prediction = 1.25, -- ปรับค่า Prediction ให้เหมาะสมกับการดักเป้าหลบ
+    Prediction = 1.15,
     TargetMode = "Head",
     WhitelistFriends = false,
     Target = nil,
@@ -135,8 +135,8 @@ local SilentAim = {
 
 local AutoShoot = {
     Enabled = false,
-    Delay = 0.08,
-    Range = 500,
+    Delay = 0.05,
+    Range = 600,
     CheckAmmo = true,
     Running = false,
 }
@@ -144,8 +144,8 @@ local AutoShoot = {
 local AutoShootOnDamage = {
     Enabled = false,
     Duration = 2.0,
-    Delay = 0.05,
-    Range = 500,
+    Delay = 0.04,
+    Range = 600,
 }
 local _lastHealth = nil
 local _damageBurstUntil = 0
@@ -275,18 +275,24 @@ end
 
 local function getSmartAimPart(character)
     if not character then return nil end
+    local head = character:FindFirstChild('Head')
+    local hrp = character:FindFirstChild('HumanoidRootPart')
+    
+    -- ระบบแก้ทาง Anti-Lock ค่าย Alpha Bay ที่ชอบส่ายหัวหรือบิดฮิตบ็อกซ์
+    if character:GetAttribute("AntiLockActive") or character:GetAttribute("IsAntiLock") then
+        return hrp or head
+    end
+
     if SilentAim.TargetMode == 'Torso' then
-        return character:FindFirstChild('HumanoidRootPart') or character:FindFirstChild('UpperTorso')
+        return hrp or character:FindFirstChild('UpperTorso')
     elseif SilentAim.TargetMode == 'Smart' then
-        local head = character:FindFirstChild('Head')
-        local hrp = character:FindFirstChild('HumanoidRootPart')
         if head and hrp then
             local vel = hrp.AssemblyLinearVelocity or hrp.Velocity or Vector3.zero
-            if vel.Magnitude > 25 then return hrp else return head end
+            if vel.Magnitude > 30 then return hrp else return head end
         end
         return head or hrp
     else
-        return character:FindFirstChild('Head') or character:FindFirstChild('HumanoidRootPart')
+        return head or hrp
     end
 end
 
@@ -338,7 +344,6 @@ local function isPlayerInSafeZone(target)
     return false
 end
 
--- เพิ่มระบบตรวจสอบกำแพง (Wall Check) และการเช็คคนนั่งบนรถ
 local function isWallBetween(origin, targetPos, ignoreList)
     local raycastParams = RaycastParams.new()
     raycastParams.FilterType = Enum.RaycastFilterType.Exclude
@@ -350,7 +355,7 @@ local function isWallBetween(origin, targetPos, ignoreList)
     if result then
         local hitPart = result.Instance
         if hitPart and not hitPart:IsDescendantOf(LocalPlayer.Character) then
-            return true -- มีกำแพงหรือสิ่งกีดขวางกั้นอยู่
+            return true
         end
     end
     return false
@@ -441,40 +446,46 @@ local function getClosestEnemyToMe(maxRange)
     return best
 end
 
--- 🛠️ ปรับปรุงระบบทำนายตำแหน่งใหม่: กรองค่าความเร็วหลอก (Anti-Antilock & Alpha Bay Bypass) ไม่ให้กระสุนออกข้างหรือดีดไปข้างหลัง
+-- ⚡ ระบบทำนายพิกัดระดับมาสเตอร์ (Alpha Bay & Hardcore Anti-Lock Bypass v2)
+-- ล้างค่าส่ายหลอกและดึงพิกัดกลางโมเดลจริง (Model Pivot / Stabilized Position) มาใช้งาน
 local function predictPosition(targetPart)
     if not targetPart then return Vector3.zero end
-    local ping = getPing()
-    local hrp = targetPart.Parent:FindFirstChild("HumanoidRootPart") or targetPart
-    local currentPos = targetPart.Position
+    local char = targetPart.Parent
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
     
-    local targetKey = targetPart.Parent
+    -- ถ้าเป้าหมายเปิด Anti-Lock รุนแรง ให้ดึงพิกัดแกนกลางโมเดล (Pivot Position) ทันทีเพื่อป้องกันกระสุนออกข้าง
+    local basePos = targetPart.Position
+    if char and char.PrimaryPart then
+        local okPivot, pivotCF = pcall(function() return char:GetPivot() end)
+        if okPivot and pivotCF then
+            basePos = pivotCF.Position
+        end
+    end
+
+    local ping = getPing()
+    local targetKey = char
     local lastData = previousTargetPositions[targetKey]
     local frameVelocity = Vector3.zero
     
     if lastData then
         local timePassed = tick() - lastData.time
         if timePassed > 0 then
-            local rawVel = (currentPos - lastData.pos) / timePassed
-            if rawVel.Magnitude < 1500 then
+            local rawVel = (basePos - lastData.pos) / timePassed
+            if rawVel.Magnitude < 1200 then
                 frameVelocity = rawVel
             else
                 frameVelocity = lastData.vel or Vector3.zero
             end
         end
     end
-    previousTargetPositions[targetKey] = { pos = currentPos, time = tick(), vel = frameVelocity }
+    previousTargetPositions[targetKey] = { pos = basePos, time = tick(), vel = frameVelocity }
     
-    local vel = hrp.AssemblyLinearVelocity or hrp.Velocity or Vector3.zero
-    local blendedVel = (vel * 0.3) + (frameVelocity * 0.7)
+    local realVel = hrp and (hrp.AssemblyLinearVelocity or hrp.Velocity) or Vector3.zero
+    if realVel.Magnitude > 200 then realVel = Vector3.new(0, 0, 0) end -- ตัดความเร็วลวงตาของสคริปต์ส่ายหลบ
     
-    if blendedVel.Magnitude > 250 then
-        blendedVel = Vector3.new(0, 0, 0) -- ป้องกันเป้าหมายดีดหนีด้วยความเร็วเกินจริงจนกระสุนหลุดโฟกัส
-    end
-    
-    local adjustedVel = Vector3.new(blendedVel.X, 0, blendedVel.Z)
-    local predicted = currentPos + (adjustedVel * ping * math.clamp(SilentAim.Prediction, 0.5, 2.0))
-    return predicted
+    local blendedVel = (realVel * 0.2) + (frameVelocity * 0.8)
+    local finalPredicted = basePos + (Vector3.new(blendedVel.X, 0, blendedVel.Z) * ping * math.clamp(SilentAim.Prediction, 0.5, 2.0))
+    return finalPredicted
 end
 
 local function isShotgun(tool)
@@ -498,7 +509,7 @@ local function isShotgun(tool)
     return false
 end
 
--- Silent Aim Hook (อัปเดตระบบเจาะเกราะ Anti-Lock และเส้นเลเซอร์สีรุ้ง)
+-- 🎯 Silent Aim Hook ตัวโหด: บังคับยิงทะลุฮิตบ็อกซ์ที่ถูกบิดเบือนด้วย Anti-Lock
 local oldFireServer
 if SendRemote and SendRemote.FireServer then
     pcall(function()
@@ -510,8 +521,9 @@ if SendRemote and SendRemote.FireServer then
             local args = {...}
 
             if SilentAim.Enabled and args[2] == "shoot_gun" and SilentAim.Target and SilentAim.Target.Character then
-                local targetPart = getSmartAimPart(SilentAim.Target.Character)
-                local hum = SilentAim.Target.Character:FindFirstChildOfClass("Humanoid")
+                local targetChar = SilentAim.Target.Character
+                local targetPart = getSmartAimPart(targetChar)
+                local hum = targetChar:FindFirstChildOfClass("Humanoid")
 
                 if targetPart and hum and hum.Health > 0 then
                     local predicted = predictPosition(targetPart)
@@ -522,16 +534,11 @@ if SendRemote and SendRemote.FireServer then
                         args[4] = CFrame.new(origin, predicted)
                         local spread = {}
                         for i = 1, 6 do
-                            local offset = Vector3.new(
-                                math.random(-1, 1) * 0.01,
-                                math.random(-1, 1) * 0.01,
-                                math.random(-1, 1) * 0.01
-                            )
                             table.insert(spread, {
                                 [1] = {
                                     Instance = targetPart,
                                     Normal = Vector3.new(0, 1, 0),
-                                    Position = predicted + offset
+                                    Position = predicted + Vector3.new(math.random(-1,1)*0.005, math.random(-1,1)*0.005, math.random(-1,1)*0.005)
                                 }
                             })
                         end
@@ -556,7 +563,7 @@ if SendRemote and SendRemote.FireServer then
                     line.CFrame = CFrame.new(origin, predicted) * CFrame.new(0, 0, -line.Size.Z / 2)
                     line.Material = Enum.Material.Neon
                     line.Transparency = 0.35
-                    line.Color = Color3.fromHSV((tick() * 0.5) % 1, 1, 1) -- สีรุ้งสำหรับเส้นกระสุน
+                    line.Color = Color3.fromHSV((tick() * 0.5) % 1, 1, 1)
                     line.Parent = Workspace
                     Debris:AddItem(line, 1.5)
                 end
@@ -567,7 +574,7 @@ if SendRemote and SendRemote.FireServer then
     end)
 end
 
--- Auto Shoot Logic (อัปเดตเช็คกำแพง + เช็คคนนั่งบนรถ)
+-- Auto Shoot Logic
 local function getEquippedGun()
     local char = LocalPlayer.Character
     if not char then return nil end
@@ -603,10 +610,8 @@ local function fireShotAtTarget(target)
     local originPos = myHead and myHead.Position or Camera.CFrame.Position
     local aimPos = predictPosition(targetPart)
 
-    -- เช็คกำแพง (Wall Check) ก่อนยิง
     if isWallBetween(originPos, aimPos) then return end
 
-    -- เช็คสถานะคนนั่งบนรถ ถ้านั่งอยู่ต้องเช็คว่ามีคนนั่งอยู่จริงและใช้งานได้
     if isCharacterOnVehicle(targetChar) then
         local driver = targetChar:FindFirstChildOfClass("Humanoid")
         if not driver or driver.Health <= 0 then return end
@@ -622,9 +627,9 @@ local function fireShotAtTarget(target)
         rayResult = {}
         for i = 1, 6 do
             local spread = Vector3.new(
-                (math.random() - 0.5) * 0.05,
-                (math.random() - 0.5) * 0.05,
-                (math.random() - 0.5) * 0.05
+                (math.random() - 0.5) * 0.02,
+                (math.random() - 0.5) * 0.02,
+                (math.random() - 0.5) * 0.02
             )
             table.insert(rayResult, {
                 [1] = {
@@ -727,7 +732,7 @@ local function startDamageBurst()
 end
 startDamageBurst()
 
--- Combat Render Stepped (อัปเดตเส้น FOV เป็นสีรุ้ง)
+-- Combat Render Stepped
 local GetCirclePoint = function(center, radius, angle)
     return Vector2.new(center.X + radius * math.cos(angle), center.Y + radius * math.sin(angle))
 end
@@ -774,7 +779,7 @@ RunService.RenderStepped:Connect(function()
                     Tracer.Visible = true
                     Tracer.From = center
                     Tracer.To = Vector2.new(targetScreenPos.X, targetScreenPos.Y)
-                    Tracer.Color = Color3.fromHSV((tick() * 0.5) % 1, 1, 1) -- เส้น Line Lock เป็นสีรุ้ง
+                    Tracer.Color = Color3.fromHSV((tick() * 0.5) % 1, 1, 1)
                     TargetHeadCircle.Visible = true
                     TargetHeadCircle.Position = Vector2.new(targetScreenPos.X, targetScreenPos.Y)
                 else
@@ -786,7 +791,7 @@ RunService.RenderStepped:Connect(function()
                         TracerFrame.Size = UDim2.new(0, length, 0, 2.5)
                         TracerFrame.Position = UDim2.new(0, center.X, 0, center.Y)
                         TracerFrame.Rotation = angle
-                        TracerFrame.BackgroundColor3 = Color3.fromHSV((tick() * 0.5) % 1, 1, 1) -- เส้น Line Lock มือถือเป็นสีรุ้ง
+                        TracerFrame.BackgroundColor3 = Color3.fromHSV((tick() * 0.5) % 1, 1, 1)
                         TracerFrame.Visible = true
                     end
                     if TargetCircleFrame then
@@ -831,7 +836,7 @@ end)
 CombatTab:Toggle({
     Title = 'Silent Aim',
     Flag = 'silent_aim',
-    Desc = 'Auto aim lock on target (+Alpha Bay Anti-Antilock Bypass)',
+    Desc = 'Auto aim lock on target (+Alpha Bay Anti-Antilock Ultra Master Bypass)',
     Icon = 'crosshair',
     Type = 'Checkbox',
     Default = false,
@@ -853,7 +858,7 @@ CombatTab:Slider({
     Flag = 'auto_shoot_delay',
     Step = 0.01,
     Value = {Min = 0.01, Max = 0.5, Default = AutoShoot.Delay},
-    Callback = function(value) AutoShoot.Delay = tonumber(value) or 0.08 end,
+    Callback = function(value) AutoShoot.Delay = tonumber(value) or 0.05 end,
 })
 
 CombatTab:Toggle({
@@ -882,7 +887,7 @@ CombatTab:Slider({
     Flag = 'auto_damage_delay',
     Step = 0.01,
     Value = {Min = 0.01, Max = 0.5, Default = AutoShootOnDamage.Delay},
-    Callback = function(value) AutoShootOnDamage.Delay = tonumber(value) or 0.05 end,
+    Callback = function(value) AutoShootOnDamage.Delay = tonumber(value) or 0.04 end,
 })
 
 CombatTab:Toggle({
@@ -921,7 +926,7 @@ CombatTab:Slider({
     Step = 1,
     Value = {Min = 20, Max = 1000, Default = SilentAim.FOV},
     Callback = function(value)
-        SilentAim.FOV = tonumber(value) or 150
+        SilentAim.FOV = tonumber(value) or 180
         if IsMobile and FOVCircleFrame then
             FOVCircleFrame.Size = UDim2.new(0, SilentAim.FOV * 2, 0, SilentAim.FOV * 2)
         end
@@ -933,7 +938,7 @@ CombatTab:Slider({
     Flag = 'pred_multiplier',
     Step = 0.05,
     Value = {Min = 0.5, Max = 3.0, Default = SilentAim.Prediction},
-    Callback = function(value) SilentAim.Prediction = tonumber(value) or 1.25 end,
+    Callback = function(value) SilentAim.Prediction = tonumber(value) or 1.15 end,
 })
 
 CombatTab:Toggle({
@@ -2999,7 +3004,7 @@ MiscTab:Toggle({
                             if obj:GetAttribute("OriginalTransparency") == nil then
                                 obj:SetAttribute("OriginalTransparency", obj.Transparency)
                             end
-                            obj.Transparency = obj:GetAttribute("OriginalTransparency") or 0
+                            obj.Transparency = obj:GetAttribute("OriginalTransparency"] or 0
                         else
                             if obj:GetAttribute("OriginalTransparency") == nil then
                                 obj:SetAttribute("OriginalTransparency", obj.Transparency)
@@ -3123,5 +3128,4 @@ pcall(function()
     end)
 end)
 
-print("[NYVEX HUB] Loaded Successfully with AlphaBay Anti-Antilock Bypass!")
-)
+print("[NYVEX HUB] Loaded Successfully with Ultra Master Bypass for Anti-Lock & Alpha Bay!")
