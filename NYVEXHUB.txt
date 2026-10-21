@@ -1,6 +1,6 @@
---// ==========================================
---// NYVEX HUB | ULTIMATE EDITION (UPDATED)
---// ==========================================
+-- ==========================================
+-- NYVEX HUB | ULTIMATE EDITION (UPDATED)
+-- ==========================================
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
@@ -110,7 +110,7 @@ local function netGet(...)
 end
 
 -- ==========================================
--- DAMAGE INDICATOR SYSTEM (ปรับตำแหน่งตรงกลางด้านบน + ตัวเลขใหญ่ขึ้น)
+-- FIXED DAMAGE INDICATOR SYSTEM (ดึงดาเมจจากปืนจริง + ฟอนต์คมชัดไม่รกจอ)
 -- ==========================================
 local DamageIndicatorGui = Instance.new("ScreenGui")
 DamageIndicatorGui.Name = "NYVEX_DamageIndicator"
@@ -122,42 +122,69 @@ DamageIndicatorGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 local DamageContainer = Instance.new("Frame")
 DamageContainer.Name = "DamageContainer"
 DamageContainer.AnchorPoint = Vector2.new(0.5, 0)
-DamageContainer.Size = UDim2.new(0, 300, 0, 400)
-DamageContainer.Position = UDim2.new(0.5, 0, 0, 100)
+DamageContainer.Size = UDim2.new(0, 300, 0, 200)
+DamageContainer.Position = UDim2.new(0.5, 0, 0, 70)
 DamageContainer.BackgroundTransparency = 1
+DamageContainer.ClipsDescendants = true
 DamageContainer.Parent = DamageIndicatorGui
 
 local UIListLayout = Instance.new("UIListLayout")
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 UIListLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-UIListLayout.Padding = UDim.new(0, 4)
+UIListLayout.Padding = UDim.new(0, 2)
 UIListLayout.Parent = DamageContainer
 
-local function ShowDamageIndicator(damageNum)
+local function getWeaponDamage()
+    local char = LocalPlayer.Character
+    if not char then return 20 end
+    for _, tool in ipairs(char:GetChildren()) do
+        if tool:IsA("Tool") then
+            local dmg = tool:GetAttribute("Damage") or tool:GetAttribute("damage") or tool:GetAttribute("BaseDamage") or tool:GetAttribute("Dmg") or tool:GetAttribute("damage_amount")
+            if dmg and tonumber(dmg) then
+                return tonumber(dmg)
+            end
+        end
+    end
+    return 20
+end
+
+local lastIndicatorTick = 0
+local function ShowDamageIndicator(customDamage)
+    local now = tick()
+    if now - lastIndicatorTick < 0.1 then return end -- ป้องกันตัวเลขสแปมซ้อนกันรัวเกินไป
+    lastIndicatorTick = now
+
     task.spawn(function()
         local textLabel = Instance.new("TextLabel")
-        textLabel.Size = UDim2.new(0, 250, 0, 32)
+        textLabel.Size = UDim2.new(0, 200, 0, 26)
         textLabel.BackgroundTransparency = 1
-        textLabel.Font = Enum.Font.GothamBold
-        textLabel.TextSize = 24
-        textLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
-        textLabel.TextStrokeTransparency = 0.3
+        textLabel.Font = Enum.Font.GothamBlack
+        textLabel.TextSize = 20
+        textLabel.TextColor3 = Color3.fromRGB(255, 60, 60)
+        textLabel.TextStrokeTransparency = 0.2
         textLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
         textLabel.TextXAlignment = Enum.TextXAlignment.Center
-        textLabel.Text = "-" .. tostring(math.floor(damageNum))
+        textLabel.Text = "-" .. tostring(math.floor(customDamage or getWeaponDamage()))
         textLabel.Parent = DamageContainer
 
+        -- จำกัดไม่ให้ Label ค้างสะสมบนจอบานปลาย
+        if #DamageContainer:GetChildren() > 5 then
+            local oldest = DamageContainer:FindFirstChildOfClass("TextLabel")
+            if oldest then oldest:Destroy() end
+        end
+
         local tweenService = game:GetService("TweenService")
-        local info = TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        local info = TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
         
         local tween = tweenService:Create(textLabel, info, {
             TextTransparency = 1,
-            TextStrokeTransparency = 1
+            TextStrokeTransparency = 1,
+            Position = textLabel.Position - UDim2.new(0, 0, 0, 15)
         })
         tween:Play()
 
-        task.wait(0.8)
+        task.wait(0.6)
         textLabel:Destroy()
     end)
 end
@@ -596,8 +623,8 @@ if SendRemote and SendRemote.FireServer then
                         }
                     end
 
-                    -- Trigger Damage Indicator Simulation
-                    ShowDamageIndicator(math.random(15, 45))
+                    -- Trigger Damage Indicator with actual weapon damage
+                    ShowDamageIndicator(getWeaponDamage())
 
                     local line = Instance.new("Part")
                     line.Anchored = true
@@ -705,8 +732,8 @@ local function fireShotAtTarget(target)
         local ctr = (Counter and Counter.event) or sendEventCounter
         SendRemote:FireServer(ctr, "shoot_gun", tool, lookCF, rayResult)
         
-        -- Trigger Damage Indicator Simulation
-        ShowDamageIndicator(math.random(15, 45))
+        -- Trigger Damage Indicator with actual weapon damage
+        ShowDamageIndicator(getWeaponDamage())
     end)
 end
 
@@ -3296,4 +3323,4 @@ pcall(function()
     end)
 end)
 
-print("[NYVEX HUB] Updated & Loaded Successfully with Center-Top Damage Indicator!")
+print("[NYVEX HUB] Updated & Loaded Successfully with Fixed Damage Indicator!")
