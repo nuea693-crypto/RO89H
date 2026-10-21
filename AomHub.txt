@@ -1,6 +1,6 @@
 --[[
     ============================================
-    AomHub | Blockspin
+    AOM HUB | Blockspin
     ============================================
     Features:
     - Silent Aim System
@@ -169,14 +169,14 @@ local aq = 0
 local ar = 0
 local as = false
 
--- ===== BLACK & BLUE RARITY PALETTE =====
+-- ===== PURPLE RARITY PALETTE =====
 local at = {
-    Common = Color3.fromRGB(160, 160, 160),
-    Uncommon = Color3.fromRGB(120, 200, 255),
-    Rare = Color3.fromRGB(51, 170, 255),
-    Epic = Color3.fromRGB(0, 110, 255),
-    Legendary = Color3.fromRGB(0, 60, 200),
-    Omega = Color3.fromRGB(0, 255, 255)
+    Common = Color3.fromRGB(180, 160, 210),
+    Uncommon = Color3.fromRGB(190, 120, 255),
+    Rare = Color3.fromRGB(160, 51, 255),
+    Epic = Color3.fromRGB(130, 0, 255),
+    Legendary = Color3.fromRGB(90, 0, 200),
+    Omega = Color3.fromRGB(220, 0, 255)
 }
 
 local itemDatabase = {}
@@ -194,16 +194,6 @@ pcall(function()
     end
 end)
 
-local function formatImageId(id)
-    if not id then return nil end
-    if type(id) == "number" or (type(id) == "string" and tonumber(id)) then
-        return "rbxassetid://" .. tostring(id)
-    elseif type(id) == "string" and (id:find("rbxassetid://") or id:find("http")) then
-        return id
-    end
-    return nil
-end
-
 local function registerAllItems()
     if not ItemsFolder then return end
     for _, folder in ipairs(ItemsFolder:GetChildren()) do
@@ -211,23 +201,7 @@ local function registerAllItems()
             if item:IsA("Tool") or item:IsA("Model") or item:IsA("Configuration") or item:IsA("Folder") then
                 local dispName = item:GetAttribute("DisplayName") or item.Name
                 local rarity = item:GetAttribute("RarityName") or item:GetAttribute("Rarity") or "Common"
-                local rawImg = item:GetAttribute("ImageId") or item:GetAttribute("Icon") or item:GetAttribute("Texture")
-                local img = formatImageId(rawImg)
-                if not img then
-                    local handle = item:FindFirstChild("Handle")
-                    if handle then
-                        if handle:IsA("MeshPart") and handle.TextureID ~= "" then
-                            img = formatImageId(handle.TextureID)
-                        else
-                            local mesh = handle:FindFirstChildOfClass("SpecialMesh")
-                            if mesh and mesh.TextureId ~= "" then
-                                img = formatImageId(mesh.TextureId)
-                            end
-                        end
-                    end
-                end
-                img = img or "rbxassetid://7072725737"
-                local info = {Name = dispName, Rarity = rarity, ImageId = img, ToolName = item.Name}
+                local info = {Name = dispName, Rarity = rarity, ToolName = item.Name}
                 itemDatabase[item.Name:lower()] = info
                 local itemId = item:GetAttribute("ItemId") or item:GetAttribute("Id")
                 if itemId then
@@ -245,23 +219,7 @@ local function getWeaponInfo(tool)
     if itemDatabase[lowerName] then return itemDatabase[lowerName] end
     local dispName = tool:GetAttribute("DisplayName") or tool:GetAttribute("Name") or tool.Name
     local rarity = tool:GetAttribute("RarityName") or tool:GetAttribute("Rarity") or "Common"
-    local rawImg = tool:GetAttribute("ImageId") or tool:GetAttribute("Icon") or tool:GetAttribute("Texture")
-    local img = formatImageId(rawImg)
-    if not img then
-        local handle = tool:FindFirstChild("Handle")
-        if handle then
-            if handle:IsA("MeshPart") and handle.TextureID ~= "" then
-                img = formatImageId(handle.TextureID)
-            else
-                local mesh = handle:FindFirstChildOfClass("SpecialMesh")
-                if mesh and mesh.TextureId ~= "" then
-                    img = formatImageId(mesh.TextureId)
-                end
-            end
-        end
-    end
-    img = img or "rbxassetid://7072725737"
-    local info = {Name = dispName, Rarity = rarity, ImageId = img, ToolName = tool.Name}
+    local info = {Name = dispName, Rarity = rarity, ToolName = tool.Name}
     itemDatabase[lowerName] = info
     return info
 end
@@ -298,7 +256,6 @@ end
 
 local function getAimTargetPart(char)
     if not char then return nil end
-    -- Lock Part is now always Random
     local parts = {}
     if char:FindFirstChild("Head") then table.insert(parts, char.Head) end
     if char:FindFirstChild("HumanoidRootPart") then table.insert(parts, char.HumanoidRootPart) end
@@ -420,7 +377,7 @@ if SendRemote and SendRemote.FireServer then
                                 tracer.Size = Vector3.new(0.02, 0.02, (targetPos + spread - originPos).Magnitude)
                                 tracer.CFrame = CFrame.new(originPos, targetPos + spread) * CFrame.new(0,0,-tracer.Size.Z/2)
                                 tracer.Material = Enum.Material.Neon; tracer.Transparency = 0.3
-                                tracer.Color = Color3.fromRGB(0,170,255); tracer.Parent = Workspace
+                                tracer.Color = Color3.fromRGB(170,0,255); tracer.Parent = Workspace
                                 table.insert(createdTracers, tracer)
                                 Debris:AddItem(tracer, 1.2)
                             end
@@ -432,7 +389,7 @@ if SendRemote and SendRemote.FireServer then
                             tracer.Size = Vector3.new(0.03, 0.03, (targetPos - originPos).Magnitude)
                             tracer.CFrame = CFrame.new(originPos, targetPos) * CFrame.new(0,0,-tracer.Size.Z/2)
                             tracer.Material = Enum.Material.Neon; tracer.Transparency = 0.35
-                            tracer.Color = Color3.fromRGB(0,170,255); tracer.Parent = Workspace
+                            tracer.Color = Color3.fromRGB(170,0,255); tracer.Parent = Workspace
                             table.insert(createdTracers, tracer)
                             Debris:AddItem(tracer, 1.5)
                         end
@@ -444,7 +401,7 @@ if SendRemote and SendRemote.FireServer then
                                     if targetHum and (targetHum.Health < initialHealth or targetHum.Health <= 0) then
                                         for _, tr in ipairs(createdTracers) do
                                             if tr and tr.Parent then
-                                                tr.Color = Color3.fromRGB(0,255,255)
+                                                tr.Color = Color3.fromRGB(220,0,255)
                                             end
                                         end
                                         break
@@ -484,13 +441,13 @@ local TracerESP = nil
 pcall(function()
     K = Drawing.new("Line")
     K.Thickness = 0.8
-    K.Color = Color3.fromRGB(0,170,255)
+    K.Color = Color3.fromRGB(0,100,255)
     K.Transparency = 1
     K.Visible = false
     TracerESP = {}
     for i = 1, 4 do
         TracerESP[i] = Drawing.new("Line")
-        TracerESP[i].Color = Color3.fromRGB(0,170,255)
+        TracerESP[i].Color = Color3.fromRGB(0,100,255)
         TracerESP[i].Thickness = 1.0
         TracerESP[i].Visible = false
     end
@@ -747,12 +704,12 @@ local inventoryEnabled = true
 local inventoryBillboards = {}
 
 local rarityColors = {
-    Common = Color3.fromRGB(160, 160, 160),
-    Uncommon = Color3.fromRGB(120, 200, 255),
-    Rare = Color3.fromRGB(51, 170, 255),
-    Epic = Color3.fromRGB(0, 110, 255),
-    Legendary = Color3.fromRGB(0, 60, 200),
-    Omega = Color3.fromRGB(0, 255, 255)
+    Common = Color3.fromRGB(180, 160, 210),
+    Uncommon = Color3.fromRGB(190, 120, 255),
+    Rare = Color3.fromRGB(160, 51, 255),
+    Epic = Color3.fromRGB(130, 0, 255),
+    Legendary = Color3.fromRGB(90, 0, 200),
+    Omega = Color3.fromRGB(220, 0, 255)
 }
 
 local itemCache = {}
@@ -791,7 +748,6 @@ function registerInventoryItems()
                         itemCache[key] = {
                             Name = tool:GetAttribute("DisplayName") or tool.Name,
                             Rarity = tool:GetAttribute("RarityName") or "Common",
-                            ImageId = tool:GetAttribute("ImageId") or "rbxassetid://7072725737",
                             ToolName = tool.Name
                         }
                     end
@@ -844,13 +800,12 @@ function createBillboardForPlayer(player)
     for _, tool in ipairs(tools) do
         local info = getInventoryWeaponInfo(tool)
         if info then
-            local img = Instance.new("ImageLabel", billboard)
-            img.Size = UDim2.new(0, 16, 0, 16)
-            img.BackgroundTransparency = 0.2
-            img.Image = info.ImageId
-            img.BackgroundColor3 = Color3.fromRGB(10,10,15)
-            Instance.new("UICorner", img).CornerRadius = UDim.new(0, 4)
-            local stroke = Instance.new("UIStroke", img)
+            local badge = Instance.new("Frame", billboard)
+            badge.Size = UDim2.new(0, 16, 0, 16)
+            badge.BackgroundColor3 = Color3.fromRGB(20,10,30)
+            badge.BackgroundTransparency = 0.2
+            Instance.new("UICorner", badge).CornerRadius = UDim.new(0, 4)
+            local stroke = Instance.new("UIStroke", badge)
             stroke.Color = rarityColors[info.Rarity] or Color3.new(1,1,1)
             stroke.Thickness = 1.5
         end
@@ -975,12 +930,12 @@ end
 
 local function getESPColor(player)
     if isPlayerExcluded(player.Name) then
-        return Color3.fromRGB(0,255,255)
+        return Color3.fromRGB(255,100,255)
     end
     if F and I and I == player then
-        return Color3.fromRGB(0,170,255)
+        return Color3.fromRGB(170,0,255)
     end
-    return Color3.fromRGB(255,255,255)
+    return Color3.fromRGB(230,180,255)
 end
 
 local function createESP(player)
@@ -989,10 +944,10 @@ local function createESP(player)
     pcall(function()
         nameText = Drawing.new("Text")
         nameText.Size = 10; nameText.Center = true; nameText.Outline = true
-        nameText.Color = Color3.fromRGB(255,255,255); nameText.Font = 2
+        nameText.Color = Color3.fromRGB(230,180,255); nameText.Font = 2
         distText = Drawing.new("Text")
         distText.Size = 9; distText.Center = true; distText.Outline = true
-        distText.Color = Color3.fromRGB(200,200,200); distText.Font = 2
+        distText.Color = Color3.fromRGB(200,150,220); distText.Font = 2
         healthBg = Drawing.new("Square")
         healthBg.Filled = false; healthBg.Thickness = 1
         healthBg.Color = Color3.fromRGB(0,0,0); healthBg.Transparency = 0.8; healthBg.Visible = false
@@ -1001,7 +956,7 @@ local function createESP(player)
         boxLines = {}
         for i = 1, 4 do
             local line = Drawing.new("Line")
-            line.Thickness = 1.2; line.Color = Color3.fromRGB(0,170,255)
+            line.Thickness = 1.2; line.Color = Color3.fromRGB(170,0,255)
             line.Transparency = 1; line.Visible = false
             boxLines[i] = line
         end
@@ -1043,7 +998,7 @@ local function createESP(player)
             if healthFg then
                 healthFg.Position = Vector2.new(x, y)
                 healthFg.Size = Vector2.new(w * perc, h)
-                healthFg.Color = Color3.fromRGB(0, math.floor(70 + 185 * perc), 255)
+                healthFg.Color = Color3.fromRGB(math.floor(130 + 125 * perc), 0, 255)
                 healthFg.Visible = true
             end
             cy = cy - h - 4
@@ -1134,8 +1089,9 @@ local function loadESP()
 end
 
 local FOV_Lines = {}
+local FOV_Segment_Count = 48
 pcall(function()
-    for i = 1, 8 do
+    for i = 1, FOV_Segment_Count do
         FOV_Lines[i] = Drawing.new("Line")
         FOV_Lines[i].Visible = false
         FOV_Lines[i].Thickness = 1.5
@@ -1144,19 +1100,26 @@ end)
 
 local function updateFOVLines(visible)
     if not visible then
-        for i = 1, 8 do
+        for i = 1, FOV_Segment_Count do
             if FOV_Lines[i] then FOV_Lines[i].Visible = false end
         end
         return
     end
     local center = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-    for i = 1, 8 do
-        local a1 = math.rad((i - 1) * 45)
-        local a2 = math.rad(i * 45)
+    local step = (math.pi * 2) / FOV_Segment_Count
+    for i = 1, FOV_Segment_Count do
+        local a1 = (i - 1) * step
+        local a2 = i * step
         if FOV_Lines[i] then
             FOV_Lines[i].From = center + Vector2.new(math.cos(a1) * H, math.sin(a1) * H)
             FOV_Lines[i].To = center + Vector2.new(math.cos(a2) * H, math.sin(a2) * H)
-            FOV_Lines[i].Color = Color3.fromRGB(0, 100 + (i * 15), 255)
+            
+            local ratio = i / FOV_Segment_Count
+            local r = math.floor(255 * ratio + 180 * (1 - ratio))
+            local g = math.floor(100 * ratio + 0 * (1 - ratio))
+            local b = math.floor(180 * ratio + 255 * (1 - ratio))
+            
+            FOV_Lines[i].Color = Color3.fromRGB(r, g, b)
             FOV_Lines[i].Visible = true
         end
     end
@@ -1224,7 +1187,7 @@ RunService.RenderStepped:Connect(function()
                         K.Visible = true
                         K.From = center
                         K.To = Vector2.new(screenPos.X, screenPos.Y)
-                        K.Color = Color3.fromRGB(0,170,255)
+                        K.Color = Color3.fromRGB(0,100,255)
                         K.Thickness = 0.8
                     end
                     if TracerESP then
@@ -1364,8 +1327,8 @@ local highlightUpdate = function(player)
         local hl = Instance.new("Highlight")
         hl.Name = "PlayerHighlight"
         hl.Adornee = player.Character
-        hl.FillColor = Color3.fromRGB(0,170,255)
-        hl.OutlineColor = Color3.fromRGB(0,170,255)
+        hl.FillColor = Color3.fromRGB(170,0,255)
+        hl.OutlineColor = Color3.fromRGB(170,0,255)
         hl.Parent = Workspace
         aB[player] = hl
     end
@@ -1381,7 +1344,7 @@ end
 
 loadESP()
 
--- ===== WINDUI LOAD + BLACK GHOST THEME + BIGGER WINDOW =====
+-- ===== WINDUI LOAD + PURPLE SLAY THEME =====
 local WindUI = nil
 local Window = nil
 
@@ -1392,28 +1355,27 @@ end)
 if WindUI then
     pcall(function()
         WindUI:AddTheme({
-            Name = "Black Ghost",
-            Accent = Color3.fromRGB(0, 170, 255),
-            Background = Color3.fromRGB(0, 0, 0),
-            Outline = Color3.fromRGB(0, 60, 120),
-            Text = Color3.fromRGB(235, 245, 255),
+            Name = "Purple Slay",
+            Accent = Color3.fromRGB(170, 0, 255),
+            Background = Color3.fromRGB(15, 10, 25),
+            Outline = Color3.fromRGB(100, 0, 180),
+            Text = Color3.fromRGB(245, 230, 255),
         })
-        WindUI:SetTheme("Black Ghost")
+        WindUI:SetTheme("Purple Slay")
     end)
     pcall(function()
         Window = WindUI:CreateWindow({
             Title = "AomHub🔫",
-            Icon = "rbxassetid://89831316146298",
             Author = "BLOCKSPIN",
             Folder = "Aom",
             Size = UDim2.fromOffset(780, 560),
-            Theme = "Black Ghost",
+            Theme = "Purple Slay",
             Transparent = true,
             Resizable = true,
             KeyCode = Enum.KeyCode.F3
         })
         if Window then
-            Window:Tag{Title = "The Black Ghost", Color = Color3.fromHex("#00aaff"), Radius = 10}
+            Window:Tag{Title = "AOM HUB", Color = Color3.fromHex("#aa00ff"), Radius = 10}
         end
     end)
 end
@@ -1465,7 +1427,7 @@ combatTab:Input{
         end
         for _, player in ipairs(Players:GetPlayers()) do
             if L[player] and L[player].drawings and L[player].drawings[1] then
-                L[player].drawings[1].Color = isPlayerExcluded(player.Name) and Color3.fromRGB(0,255,255) or Color3.fromRGB(255,255,255)
+                L[player].drawings[1].Color = isPlayerExcluded(player.Name) and Color3.fromRGB(255,100,255) or Color3.fromRGB(230,180,255)
             end
         end
     end
@@ -1665,7 +1627,7 @@ local espTab = createTab("ESP", "eye")
 espTab:Section{Title = "VISUALS"}
 local itemESPToggle = espTab:Toggle{
     Title = "Dropped Items ESP",
-    Desc = "See items on the ground with icons",
+    Desc = "See items on the ground",
     Default = true,
     Callback = function(state)
         itemESPEnabled = state
@@ -1762,7 +1724,7 @@ local function createSkeleton(player)
             end
             local line = lines[i]
             if line then
-                line.Color = isTarget and Color3.fromRGB(0,170,255) or Color3.fromRGB(255,255,255)
+                line.Color = isTarget and Color3.fromRGB(170,0,255) or Color3.fromRGB(230,180,255)
                 if p1 and p2 then
                     local pos1, on1 = Camera:WorldToViewportPoint(p1.Position)
                     local pos2, on2 = Camera:WorldToViewportPoint(p2.Position)
@@ -2413,7 +2375,7 @@ end
 configSection:Button({
     Title = "Save Settings",
     Desc = "Save current settings",
-    Color = Color3.fromHex("#00aaff"),
+    Color = Color3.fromHex("#aa00ff"),
     Callback = function()
         saveConfig()
         saveUIState()
@@ -2426,7 +2388,7 @@ configSection:Button({
 configSection:Button({
     Title = "Load Settings",
     Desc = "Load saved settings",
-    Color = Color3.fromHex("#0077ff"),
+    Color = Color3.fromHex("#7700ff"),
     Callback = function()
         local success1 = loadConfig()
         local success2 = loadUIState()
@@ -2445,7 +2407,7 @@ configSection:Button({
 configSection:Button({
     Title = "Delete Settings",
     Desc = "Delete all config files",
-    Color = Color3.fromHex("#00e5ff"),
+    Color = Color3.fromHex("#e500ff"),
     Callback = function()
         if WindUI then
             WindUI:Popup({
@@ -2566,8 +2528,7 @@ local function createDroppedItemBillboard(itemModel)
     local target = itemModel:FindFirstChild("PickUpZone") or itemModel:FindFirstChildWhichIsA("BasePart") or itemModel.PrimaryPart
     if not target then return nil end
     local info = getWeaponInfo(itemModel)
-    local rarityColor = info and at[info.Rarity] or Color3.fromRGB(160,160,160)
-    local imageId = info and info.ImageId or "rbxassetid://7072725737"
+    local rarityColor = info and at[info.Rarity] or Color3.fromRGB(180,160,210)
     local displayName = info and info.Name or itemModel.Name
     local amount = itemModel:GetAttribute("Amount") or 1
     local billboard = Instance.new("BillboardGui")
@@ -2588,21 +2549,16 @@ local function createDroppedItemBillboard(itemModel)
     layout.Padding = UDim.new(0,3)
     local iconFrame = Instance.new("Frame", main)
     iconFrame.Size = UDim2.new(0,18,0,18)
-    iconFrame.BackgroundColor3 = Color3.fromRGB(5,5,10)
+    iconFrame.BackgroundColor3 = Color3.fromRGB(15,10,25)
     iconFrame.BackgroundTransparency = 0.15
     iconFrame.LayoutOrder = 1
     Instance.new("UICorner", iconFrame).CornerRadius = UDim.new(1,0)
     local stroke = Instance.new("UIStroke", iconFrame)
     stroke.Color = rarityColor; stroke.Thickness = 1.5
-    local img = Instance.new("ImageLabel", iconFrame)
-    img.Size = UDim2.new(1,-4,1,-4)
-    img.Position = UDim2.new(0,2,0,2)
-    img.BackgroundTransparency = 1
-    img.Image = imageId
     local badge = Instance.new("Frame", main)
     badge.AutomaticSize = Enum.AutomaticSize.X
     badge.Size = UDim2.new(0,0,0,16)
-    badge.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    badge.BackgroundColor3 = Color3.fromRGB(10,5,15)
     badge.BackgroundTransparency = 0.25
     badge.LayoutOrder = 2
     Instance.new("UICorner", badge).CornerRadius = UDim.new(0.5,0)
@@ -2614,7 +2570,7 @@ local function createDroppedItemBillboard(itemModel)
     label.BackgroundTransparency = 1
     label.Font = Enum.Font.SourceSansBold
     label.TextSize = 10
-    label.TextColor3 = Color3.fromRGB(255,255,255)
+    label.TextColor3 = Color3.fromRGB(245,230,255)
     label.Text = (amount > 1) and (displayName .. " x" .. tostring(amount)) or displayName
     return billboard
 end
@@ -2623,6 +2579,67 @@ local function cleanupDroppedItemESP()
     for model, gui in pairs(droppedESP_UI) do
         if not model or not model.Parent then
             if gui and gui.Parent then
+                gui:Destroy()
+            end
+            droppedESP_UI[model] = nil
+        end
+    end
+end
+
+RunService.RenderStepped:Connect(function()
+    cleanupDroppedItemESP()
+    if not itemESPEnabled then
+        for _, gui in pairs(droppedESP_UI) do
+            if gui then gui.Enabled = false end
+        end
+        return
+    end
+    local dropped = Workspace:FindFirstChild("DroppedItems")
+    if not dropped then return end
+    local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    for _, model in ipairs(dropped:GetChildren()) do
+        if model:IsA("Model") and model.Name ~= "Money" and not model:GetAttribute("Locked") then
+            local target = model:FindFirstChild("PickUpZone") or model:FindFirstChildWhichIsA("BasePart") or model.PrimaryPart
+            if target then
+                local dist = (target.Position - root.Position).Magnitude
+                if dist <= 800 then
+                    if not droppedESP_UI[model] or not droppedESP_UI[model].Parent then
+                        droppedESP_UI[model] = createDroppedItemBillboard(model)
+                    else
+                        droppedESP_UI[model].Enabled = true
+                    end
+                else
+                    if droppedESP_UI[model] then
+                        droppedESP_UI[model].Enabled = false
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- ===== EXTRA TAB =====
+local extraTab = createTab("EXTRA", "star")
+
+extraTab:Section{Title = "EXTRA FEATURES"}
+
+extraTab:Button{
+    Title = "Extra Button",
+    Desc = "You can edit this button as you like",
+    Callback = function()
+        if WindUI then
+            WindUI:Notify{
+                Title = "Extra Button",
+                Content = "Extra button pressed!",
+                Duration = 2
+            }
+        end
+    end
+}
+
+print("[AomHub | Blockspin] Loaded Successfully!")
+          if gui and gui.Parent then
                 gui:Destroy()
             end
             droppedESP_UI[model] = nil
