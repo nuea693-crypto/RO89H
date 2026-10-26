@@ -1,0 +1,267 @@
+--// ==========================================
+--// PROTECTED BY XENOVA CLOUD SECURITY
+--// Target: NYVEX HUB
+--// Key: XENOVA-6PQ9-5CY1-8064 | Max Uses: 3
+--// ==========================================
+
+local CoreGui = game:GetService("CoreGui")
+local HttpService = game:GetService("HttpService")
+local correctKey = "XENOVA-6PQ9-5CY1-8064"
+local maxAllowedUses = 3
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "XenovaCloudProtected"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = CoreGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.fromOffset(380, 220)
+frame.Position = UDim2.new(0.5, -190, 0.5, -110)
+frame.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
+frame.Active = true
+frame.Draggable = true
+frame.Parent = screenGui
+
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 14)
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 45)
+title.BackgroundTransparency = 1
+title.Text = "🛡️ Xenova Cloud - Key Authentication"
+title.TextColor3 = Color3.fromRGB(190, 110, 255)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 14
+title.Parent = frame
+
+local inputBox = Instance.new("TextBox")
+inputBox.Size = UDim2.new(1, -40, 0, 40)
+inputBox.Position = UDim2.new(0, 20, 0, 65)
+inputBox.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+inputBox.Text = ""
+inputBox.PlaceholderText = "กรอกคีย์ใช้งานที่นี่..."
+inputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+inputBox.Font = Enum.Font.Gotham
+inputBox.TextSize = 12
+inputBox.Parent = frame
+Instance.new("UICorner", inputBox).CornerRadius = UDim.new(0, 8)
+
+local submitBtn = Instance.new("TextButton")
+submitBtn.Size = UDim2.new(1, -40, 0, 40)
+submitBtn.Position = UDim2.new(0, 20, 0, 120)
+submitBtn.BackgroundColor3 = Color3.fromRGB(110, 40, 230)
+submitBtn.Text = "🔑 ตรวจสอบคีย์ผ่าน Cloud"
+submitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+submitBtn.Font = Enum.Font.GothamBold
+submitBtn.TextSize = 12
+submitBtn.Parent = frame
+Instance.new("UICorner", submitBtn).CornerRadius = UDim.new(0, 8)
+
+local infoLabel = Instance.new("TextLabel")
+infoLabel.Size = UDim2.new(1, 0, 0, 25)
+infoLabel.Position = UDim2.new(0, 0, 0, 175)
+infoLabel.BackgroundTransparency = 1
+infoLabel.Text = "สถานะ: เชื่อมต่อเซิร์ฟเวอร์สำเร็จ (โควตา: " .. maxAllowedUses .. ")"
+infoLabel.TextColor3 = Color3.fromRGB(150, 150, 190)
+infoLabel.Font = Enum.Font.Gotham
+infoLabel.TextSize = 11
+infoLabel.Parent = frame
+
+submitBtn.MouseButton1Click:Connect(function()
+    if inputBox.Text == correctKey then
+        infoLabel.TextColor3 = Color3.fromRGB(50, 255, 50)
+        infoLabel.Text = "✅ ยืนยันคีย์ผ่าน Cloud สำเร็จ! กำลังโหลดสคริปต์..."
+        task.wait(1)
+        screenGui:Destroy()
+        
+        pcall(function()
+            --// ==========================================
+--// NYVEX HUB | CUSTOM GUI - มุดดิน (Compact & Collapsible)
+--// ==========================================
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+-- ลบ UI เก่าทิ้งถ้าเคยรันค้างไว้
+if PlayerGui:FindFirstChild("NYVEX_Underground_CustomUI") then
+    PlayerGui.NYVEX_Underground_CustomUI:Destroy()
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "NYVEX_Underground_CustomUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = PlayerGui
+
+-- กรอบหลักหน้าต่าง (ปรับความกว้างให้สั้นลงนิดหน่อยตามต้องการ)
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.fromOffset(200, 110)
+MainFrame.Position = UDim2.new(0, 30, 0.5, -55)
+MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true -- ลากขยับหน้าต่างได้
+MainFrame.Parent = ScreenGui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 8)
+MainCorner.Parent = MainFrame
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(0, 170, 255)
+MainStroke.Thickness = 2
+MainStroke.Parent = MainFrame
+
+-- แถบหัวข้อด้านบน
+local TopBar = Instance.new("Frame")
+TopBar.Size = UDim2.new(1, 0, 0, 32)
+TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+TopBar.BorderSizePixel = 0
+TopBar.Parent = MainFrame
+
+local TopCorner = Instance.new("UICorner")
+TopCorner.CornerRadius = UDim.new(0, 8)
+TopCorner.Parent = TopBar
+
+-- โลโก้ค่าย NYVEX ด้านซ้าย
+local LogoIcon = Instance.new("ImageLabel")
+LogoIcon.Size = UDim2.fromOffset(20, 20)
+LogoIcon.Position = UDim2.new(0, 8, 0.5, -10)
+LogoIcon.BackgroundTransparency = 1
+LogoIcon.Image = "rbxassetid://75135192681243"
+LogoIcon.Parent = TopBar
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(1, -60, 1, 0)
+TitleLabel.Position = UDim2.new(0, 34, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "NYVEX | มุดดิน"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextSize = 13
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.Parent = TopBar
+
+-- ปุ่มพับเก็บ / ขยายหน้าต่าง (- / +) มุมขวาบน
+local CollapseButton = Instance.new("TextButton")
+CollapseButton.Size = UDim2.fromOffset(24, 24)
+CollapseButton.Position = UDim2.new(1, -28, 0.5, -12)
+CollapseButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+CollapseButton.BorderSizePixel = 0
+CollapseButton.Text = "-"
+CollapseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CollapseButton.TextSize = 14
+CollapseButton.Font = Enum.Font.GothamBold
+CollapseButton.Parent = TopBar
+
+local CollapseCorner = Instance.new("UICorner")
+CollapseCorner.CornerRadius = UDim.new(0, 6)
+CollapseCorner.Parent = CollapseButton
+
+-- คอนเทนต์ข้างใน (ปุ่มมุดดินและข้อความ)
+local ContentContainer = Instance.new("Frame")
+ContentContainer.Size = UDim2.new(1, 0, 1, -32)
+ContentContainer.Position = UDim2.new(0, 0, 0, 32)
+ContentContainer.BackgroundTransparency = 1
+ContentContainer.Parent = MainFrame
+
+-- ปุ่มกดทิ้งตัวลงดิน
+local DropButton = Instance.new("TextButton")
+DropButton.Size = UDim2.new(1, -16, 0, 35)
+DropButton.Position = UDim2.new(0, 8, 0, 10)
+DropButton.BackgroundColor3 = Color3.fromRGB(0, 120, 220)
+DropButton.BorderSizePixel = 0
+DropButton.AutoButtonColor = true
+DropButton.Text = "ทิ้งตัวลงดิน (-13 สตัด / กด Z)"
+DropButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+DropButton.TextSize = 11
+DropButton.Font = Enum.Font.GothamBold
+DropButton.Parent = ContentContainer
+
+local DropCorner = Instance.new("UICorner")
+DropCorner.CornerRadius = UDim.new(0, 6)
+DropCorner.Parent = DropButton
+
+local DescLabel = Instance.new("TextLabel")
+DescLabel.Size = UDim2.new(1, -16, 0, 20)
+DescLabel.Position = UDim2.new(0, 8, 0, 50)
+DescLabel.BackgroundTransparency = 1
+DescLabel.Text = "💡ใช้ Fly Jump กลับขึ้นบน"
+DescLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+DescLabel.TextSize = 9
+DescLabel.Font = Enum.Font.Gotham
+DescLabel.TextWrapped = true
+DescLabel.TextXAlignment = Enum.TextXAlignment.Center
+DescLabel.Parent = ContentContainer
+
+-- ระบบพับเก็บหน้าต่าง
+local isCollapsed = false
+CollapseButton.MouseButton1Click:Connect(function()
+    isCollapsed = not isCollapsed
+    if isCollapsed then
+        MainFrame:TweenSize(UDim2.fromOffset(200, 32), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
+        ContentContainer.Visible = false
+        CollapseButton.Text = "+"
+    else
+        MainFrame:TweenSize(UDim2.fromOffset(200, 110), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
+        ContentContainer.Visible = true
+        CollapseButton.Text = "-"
+    end
+end)
+
+-- ฟังก์ชันการทำงานทิ้งตัวลงดินทีละ 13 สตัดสะสม
+local SnapHeightStep = 13
+local isAnimatingText = false
+
+local function dropUnderground()
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    
+    local pos = hrp.Position
+    local targetPos = Vector3.new(pos.X, pos.Y - SnapHeightStep, pos.Z)
+    hrp.CFrame = CFrame.new(targetPos)
+    hrp.AssemblyLinearVelocity = Vector3.zero
+    
+    -- เปลี่ยนข้อความปุ่มชั่วคราว
+    DropButton.Text = "⚡️ ได้เริ่มมุดหีแล้ว! ⚡️"
+    DropButton.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+    
+    task.spawn(function()
+        task.wait(0.6)
+        DropButton.Text = "ทิ้งตัวลงดิน (-13 สตัด / กด Z)"
+        DropButton.BackgroundColor3 = Color3.fromRGB(0, 120, 220)
+    end)
+    
+    pcall(function()
+        local sound = Instance.new("Sound")
+        sound.SoundId = "rbxassetid://74715602103425"
+        sound.Volume = 1
+        sound.PlayOnRemove = true
+        sound.Parent = hrp
+        sound:Destroy()
+    end)
+end
+
+DropButton.MouseButton1Click:Connect(function()
+    dropUnderground()
+end)
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.Z then
+        dropUnderground()
+    end
+end)
+
+print("[NYVEX] Compact GUI Loaded Successfully!")
+loadstring(game:HttpGet("https://pastefy.app/GlorCYHX/raw"))()
+        end)
+    else
+        infoLabel.TextColor3 = Color3.fromRGB(255, 60, 60)
+        infoLabel.Text = "❌ คีย์ไม่ถูกต้อง หรือหมดอายุ/เต็มโควตา!"
+    end
+end)
