@@ -1,5 +1,5 @@
 --// ==========================================
---// NYVEX HUB | ULTIMATE EDITION (BARREL EXTENDER + ALL FEATURES)
+--// NYVEX HUB | ULTIMATE EDITION (BARREL EXTENDER + ALL FEATURES) - FIXED FOR MOBILE/PC
 --// ==========================================
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
@@ -162,35 +162,43 @@ local _damageBurstRunning = false
 local LiftUndergroundEnabled = false
 local UndergroundRange = 100
 
-local IsMobile = false
+-- ตรวจสอบการรองรับ Drawing Library (ถ้าไม่มีจะปรับเป็น Mobile Mode อัตโนมัติ ป้องกันเกมเด้ง)
+local IsMobile = not (typeof(Drawing) == "table" and type(Drawing.new) == "function")
 local FOVCircleSegments = {}
 local FOVCircleGui, FOVCircleFrame
 local Tracer, TargetHeadCircle
 local TracerGui, TracerFrame, TargetCircleGui, TargetCircleFrame
 
 if not IsMobile then
-    for i = 1, 6 do
-        local line = Drawing.new('Line')
-        line.Thickness = 2
-        line.Visible = false
-        table.insert(FOVCircleSegments, line)
+    pcall(function()
+        for i = 1, 6 do
+            local line = Drawing.new('Line')
+            line.Thickness = 2
+            line.Visible = false
+            table.insert(FOVCircleSegments, line)
+        end
+
+        Tracer = Drawing.new('Line')
+        Tracer.Thickness = 1.5
+        Tracer.Color = Color3.fromRGB(255, 50, 50)
+        Tracer.Transparency = 1
+        Tracer.Visible = false
+
+        TargetHeadCircle = Drawing.new('Circle')
+        TargetHeadCircle.Color = Color3.fromRGB(255, 255, 255)
+        TargetHeadCircle.Thickness = 2
+        TargetHeadCircle.NumSides = 32
+        TargetHeadCircle.Filled = false
+        TargetHeadCircle.Transparency = 1
+        TargetHeadCircle.Radius = 15
+        TargetHeadCircle.Visible = false
+    end)
+    if #FOVCircleSegments == 0 then
+        IsMobile = true
     end
+end
 
-    Tracer = Drawing.new('Line')
-    Tracer.Thickness = 1.5
-    Tracer.Color = Color3.fromRGB(255, 50, 50)
-    Tracer.Transparency = 1
-    Tracer.Visible = false
-
-    TargetHeadCircle = Drawing.new('Circle')
-    TargetHeadCircle.Color = Color3.fromRGB(255, 255, 255)
-    TargetHeadCircle.Thickness = 2
-    TargetHeadCircle.NumSides = 32
-    TargetHeadCircle.Filled = false
-    TargetHeadCircle.Transparency = 1
-    TargetHeadCircle.Radius = 15
-    TargetHeadCircle.Visible = false
-else
+if IsMobile then
     FOVCircleGui = Instance.new('ScreenGui')
     FOVCircleGui.Name = 'SilentAimFOV'
     FOVCircleGui.IgnoreGuiInset = true
@@ -414,7 +422,6 @@ RunService.Heartbeat:Connect(function()
                 end
 
                 local origSize = BarrelExtender.OriginalSizes[handle]
-                -- คำนวณจุดปลายกระบอกให้ไปจ่อห่างจากหัวเป้าหมาย 3 หน่วยพอดี
                 local offsetDir = (handle.Position - targetPart.Position).Unit
                 local adjustedTargetPos = targetPart.Position + (offsetDir * 3)
                 local distance = (handle.Position - adjustedTargetPos).Magnitude
@@ -1824,16 +1831,18 @@ local function RandomRange(min, max)
 end
 
 local oldIndex
-oldIndex = hookmetamethod(game, '__index', newcclosure(function(self, key)
-    if AntiLockEnabled and not checkcaller() then
-        if self:IsA('BasePart') and key == 'CFrame' then
-            if LocalPlayer.Character and self == LocalPlayer.Character:FindFirstChild('HumanoidRootPart') then
-                return RealCFrame
+pcall(function()
+    oldIndex = hookmetamethod(game, '__index', newcclosure(function(self, key)
+        if AntiLockEnabled and not checkcaller() then
+            if self:IsA('BasePart') and key == 'CFrame' then
+                if LocalPlayer.Character and self == LocalPlayer.Character:FindFirstChild('HumanoidRootPart') then
+                    return RealCFrame
+                end
             end
         end
-    end
-    return oldIndex(self, key)
-end))
+        return oldIndex(self, key)
+    end))
+end)
 
 getgenv().AntiLockV2Enabled = false
 
@@ -2476,7 +2485,6 @@ local function startFlying()
     if isFlying then return end
     local vehicle = findFlyVehicle()
     if not vehicle or not vehicle.chassis then
-        warn("[NYVEX HUB] ไม่พบรถ — กรุณานั่งบน VehicleSeat")
         return
     end
 
@@ -3073,16 +3081,18 @@ local function createESP(player)
     ESPDrawings[player] = {Highlight = highlight, Name = name, Info = info}
 end
 
-for _, p in pairs(Players:GetPlayers()) do createESP(p) end
-Players.PlayerAdded:Connect(createESP)
-Players.PlayerRemoving:Connect(function(player)
-    local data = ESPDrawings[player]
-    if data then
-        if data.Highlight then data.Highlight:Destroy() end
-        if data.Name      then data.Name:Remove()      end
-        if data.Info      then data.Info:Remove()      end
-        ESPDrawings[player] = nil
-    end
+pcall(function()
+    for _, p in pairs(Players:GetPlayers()) do createESP(p) end
+    Players.PlayerAdded:Connect(createESP)
+    Players.PlayerRemoving:Connect(function(player)
+        local data = ESPDrawings[player]
+        if data then
+            if data.Highlight then data.Highlight:Destroy() end
+            if data.Name      then data.Name:Remove()      end
+            if data.Info      then data.Info:Remove()      end
+            ESPDrawings[player] = nil
+        end
+    end)
 end)
 
 RunService.RenderStepped:Connect(function()
