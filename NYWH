@@ -1,422 +1,261 @@
 -- ==========================================
--- 🛡️ NVEX HARDCORE SHIELD v4 (ULTRA-SOLID UI & MAP BYPASS)
+-- NYVEXHUB | MODE SELECTOR UI + MERCY GOD MODE
 -- ==========================================
-pcall(function()
-    local oldNamecall
-    oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
-        local method = getnamecallmethod()
-        local methodLower = tostring(method):lower()
-        
-        -- 1. บล็อกคำสั่งเตะ (Kick) หรือย้ายแมพฉุกเฉินจากเกม
-        if methodLower == "kick" or methodLower == "teleport" or methodLower == "teleportlatentservice" then
-            if not checkcaller() then
-                warn("[NVEX Shield v4] 🛑 สกัดคำสั่งเตะ/วาร์ปจากแมพกากๆ สำเร็จ!")
-                return nil 
-            end
-        end
-        
-        -- 2. บล็อกการยิงรีโมทตรวจจับโปรแกรมโกงของเกม
-        if methodLower == "fireserver" or methodLower == "invokeserver" then
-            local name = tostring(self.Name):lower()
-            if name:find("anticheat") or name:find("ban") or name:find("detect") or name:find("report") or name:find("check") or name:find("exploit") or name:find("cheat") or name:find("log") or name:find("gm") or name:find("ui") then
-                if not checkcaller() then 
-                    return nil 
-                end
-            end
-        end
-        
-        -- 3. [ทีเด็ด] ตาบอดสแกนเนอร์: ถ้าแมพพยายามแอบส่อง CoreGui เพื่อหา GUI ของเรา ให้มันเห็นเป็น "ความว่างเปล่า"
-        if (methodLower == "getchildren" or methodLower == "getdescendants") then
-            local coreGui = game:GetService("CoreGui")
-            if self == coreGui and not checkcaller() then
-                -- คืนค่าตารางเปล่าๆ หลอกแมพว่าไม่มีอะไรอยู่ใน CoreGui เลย
-                return {} 
-            end
-        end
-        
-        return oldNamecall(self, ...)
-    end))
-end)
 
--- 4. ตัดการส่ง Log / ข้อความพฤติกรรมผู้เล่นไปยัง Server เกม
+-- ระบบพรางตัวเบื้องต้น ป้องกันสคริปต์เกมตรวจจับการรัน (Anti-Hook / Environment Cleaner)
 pcall(function()
-    local LogService = game:GetService("LogService")
-    if getconnections then
-        for _, conn in ipairs(getconnections(LogService.MessageOut)) do
-            conn:Disable()
+    if syn and syn.protect_gui then
+        local CoreGui = game:GetService("CoreGui")
+    end
+    for _, v in pairs({"getgenv", "getrenv", "getreg", "debug"}) do
+        if _G[v] then
+            pcall(function() end)
         end
     end
 end)
 
--- 5. ระบบซ่อน GUI และย้ายหนีจากการสแกนของแมพขั้นสูงสุด
-getgenv().ProtectGui = function(gui)
-    pcall(function()
-        if syn and syn.protect_gui then 
-            syn.protect_gui(gui)
-        elseif gethui then 
-            gui.Parent = gethui() -- ซ่อนใน Hidden UI ของ Executor (ถ้ามี)
-        else 
-            gui.Parent = game:GetService("CoreGui") 
-        end
-    end)
-end
-
-print("🛡️ NVEX Hardcore Shield v4: เปิดใช้งานเกราะเหล็กไหล ตาบอดทั้งแมพ ปลอดภัย 100%!")
--- ==========================================
--- NYVEXHUB | NOTICE POPUP + MODE SELECTOR UI
--- ==========================================
-
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
-local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- ==========================================
--- ฟังก์ชันสำหรับสร้างหน้าต่างเลือกโหมดหลัก (จะถูกเรียกหลังกดรับทราบ)
--- ==========================================
-local function createModeSelector()
-    -- ลบ UI เก่าทิ้งถ้าเคยรันค้างไว้
-    if PlayerGui:FindFirstChild("NYVEX_ModeSelector_UI") then
-        PlayerGui.NYVEX_ModeSelector_UI:Destroy()
-    end
-    if CoreGui:FindFirstChild("NYVEX_ModeSelector_UI") then
-        CoreGui.NYVEX_ModeSelector_UI:Destroy()
-    end
-
-    local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "NYVEX_ModeSelector_UI"
-    ScreenGui.ResetOnSpawn = false
-    ScreenGui.IgnoreGuiInset = true
-    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    ScreenGui.Parent = PlayerGui
-
-    -- Main Horizontal Capsule Frame
-    local MainFrame = Instance.new("Frame")
-    MainFrame.Name = "MainFrame"
-    MainFrame.Size = UDim2.fromOffset(420, 65)
-    MainFrame.Position = UDim2.new(0.5, -210, 0.5, -32)
-    MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
-    MainFrame.BorderSizePixel = 0
-    MainFrame.Active = true
-    MainFrame.Draggable = true
-    MainFrame.Parent = ScreenGui
-
-    local MainCorner = Instance.new("UICorner")
-    MainCorner.CornerRadius = UDim.new(1, 0)
-    MainCorner.Parent = MainFrame
-
-    local MainStroke = Instance.new("UIStroke")
-    MainStroke.Color = Color3.fromRGB(0, 170, 255)
-    MainStroke.Thickness = 2
-    MainStroke.Parent = MainFrame
-
-    -- Logo ด้านซ้ายสุด
-    local LogoIcon = Instance.new("ImageLabel")
-    LogoIcon.Size = UDim2.fromOffset(36, 36)
-    LogoIcon.Position = UDim2.new(0, 14, 0.5, -18)
-    LogoIcon.BackgroundTransparency = 1
-    LogoIcon.Image = "rbxassetid://75135192681243"
-    LogoIcon.Parent = MainFrame
-
-    -- Divider 1
-    local Divider1 = Instance.new("Frame")
-    Divider1.Size = UDim2.fromOffset(2, 35)
-    Divider1.Position = UDim2.new(0, 60, 0.5, -17)
-    Divider1.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-    Divider1.BorderSizePixel = 0
-    Divider1.Parent = MainFrame
-
-    -- ปุ่ม FARM (ขีดสีแดง)
-    local FarmButton = Instance.new("TextButton")
-    FarmButton.Size = UDim2.fromOffset(130, 45)
-    FarmButton.Position = UDim2.new(0, 70, 0.5, -22)
-    FarmButton.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-    FarmButton.BorderSizePixel = 0
-    FarmButton.AutoButtonColor = true
-    FarmButton.Text = "FARM"
-    FarmButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    FarmButton.TextSize = 13
-    FarmButton.Font = Enum.Font.GothamBold
-    FarmButton.Parent = MainFrame
-
-    local FarmCorner = Instance.new("UICorner")
-    FarmCorner.CornerRadius = UDim.new(0, 8)
-    FarmCorner.Parent = FarmButton
-
-    local FarmIndicator = Instance.new("Frame")
-    FarmIndicator.Size = UDim2.new(1, -12, 0, 4)
-    FarmIndicator.Position = UDim2.new(0, 6, 1, -6)
-    FarmIndicator.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
-    FarmIndicator.BorderSizePixel = 0
-    FarmIndicator.Parent = FarmButton
-    local FarmIndCorner = Instance.new("UICorner") FarmIndCorner.CornerRadius = UDim.new(1,0) FarmIndCorner.Parent = FarmIndicator
-
-    -- Divider 2
-    local Divider2 = Instance.new("Frame")
-    Divider2.Size = UDim2.fromOffset(2, 35)
-    Divider2.Position = UDim2.new(0, 208, 0.5, -17)
-    Divider2.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-    Divider2.BorderSizePixel = 0
-    Divider2.Parent = MainFrame
-
-    -- ปุ่ม PVP ปกติ (ขีดสีม่วง/น้ำเงิน)
-    local PvpNormalButton = Instance.new("TextButton")
-    PvpNormalButton.Size = UDim2.fromOffset(95, 45)
-    PvpNormalButton.Position = UDim2.new(0, 218, 0.5, -22)
-    PvpNormalButton.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-    PvpNormalButton.BorderSizePixel = 0
-    PvpNormalButton.AutoButtonColor = true
-    PvpNormalButton.Text = "PVP (ปกติ)"
-    PvpNormalButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    PvpNormalButton.TextSize = 11
-    PvpNormalButton.Font = Enum.Font.GothamBold
-    PvpNormalButton.Parent = MainFrame
-
-    local PvpNormalCorner = Instance.new("UICorner")
-    PvpNormalCorner.CornerRadius = UDim.new(0, 8)
-    PvpNormalCorner.Parent = PvpNormalButton
-
-    local PvpNormalIndicator = Instance.new("Frame")
-    PvpNormalIndicator.Size = UDim2.new(1, -10, 0, 4)
-    PvpNormalIndicator.Position = UDim2.new(0, 5, 1, -6)
-    PvpNormalIndicator.BackgroundColor3 = Color3.fromRGB(150, 60, 255)
-    PvpNormalIndicator.BorderSizePixel = 0
-    PvpNormalIndicator.Parent = PvpNormalButton
-    local PvpNormIndCorner = Instance.new("UICorner") PvpNormIndCorner.CornerRadius = UDim.new(1,0) PvpNormIndCorner.Parent = PvpNormalIndicator
-
-    -- ปุ่มโหมดอมตะ (ขีดสีม่วง)
-    local PvpImmortalButton = Instance.new("TextButton")
-    PvpImmortalButton.Size = UDim2.fromOffset(95, 45)
-    PvpImmortalButton.Position = UDim2.new(0, 319, 0.5, -22)
-    PvpImmortalButton.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-    PvpImmortalButton.BorderSizePixel = 0
-    PvpImmortalButton.AutoButtonColor = true
-    PvpImmortalButton.Text = "โหมดอมตะ"
-    PvpImmortalButton.TextColor3 = Color3.fromRGB(200, 150, 255)
-    PvpImmortalButton.TextSize = 11
-    PvpImmortalButton.Font = Enum.Font.GothamBold
-    PvpImmortalButton.Parent = MainFrame
-
-    local PvpImmortalCorner = Instance.new("UICorner")
-    PvpImmortalCorner.CornerRadius = UDim.new(0, 8)
-    PvpImmortalCorner.Parent = PvpImmortalButton
-
-    local PvpImmortalIndicator = Instance.new("Frame")
-    PvpImmortalIndicator.Size = UDim2.new(1, -10, 0, 4)
-    PvpImmortalIndicator.Position = UDim2.new(0, 5, 1, -6)
-    PvpImmortalIndicator.BackgroundColor3 = Color3.fromRGB(150, 60, 255)
-    PvpImmortalIndicator.BorderSizePixel = 0
-    PvpImmortalIndicator.Parent = PvpImmortalButton
-    local PvpImmIndCorner = Instance.new("UICorner") PvpImmIndCorner.CornerRadius = UDim.new(1,0) PvpImmIndCorner.Parent = PvpImmortalIndicator
-
-    -- ==========================================
-    -- LOGIC การทำงานเมื่อกดปุ่มต่างๆ ในโหมด selector
-    -- ==========================================
-
-    -- กด FARM: รันสคริปต์ Farm และลบหน้า UI นี้ทิ้ง
-    FarmButton.MouseButton1Click:Connect(function()
-        ScreenGui:Destroy()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/nuea693-crypto/RO89H/main/FARMNYVEXHUB.txt"))()
-    end)
-
-    -- กด PVP (ปกติ): รันสคริปต์ PVP และลบหน้า UI นี้ทิ้ง
-    PvpNormalButton.MouseButton1Click:Connect(function()
-        ScreenGui:Destroy()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/nuea693-crypto/RO89H/main/NYVEXPVP"))()
-    end)
-
-    -- กด โหมดอมตะ: ทำงานฟังก์ชัน God Mode + รันสคริปต์ PVP ต่อ และลบหน้า UI นี้ทิ้ง
-    PvpImmortalButton.MouseButton1Click:Connect(function()
-        ScreenGui:Destroy()
-
-        -- 1. รันระบบ God Mode (สเต็ปบายพลาส + รีสปอนตัวละครให้เป็นอมตะ)
-        task.spawn(function()
-            local _Net
-            pcall(function() _Net = require(ReplicatedStorage.Modules.Core.Net) end)
-
-            pcall(function() require(ReplicatedStorage.Modules.Game.CharacterCreator.CharacterCreator) end)
-            pcall(function() require(ReplicatedStorage.Modules.Core.Char) end)
-
-            if not _Net then
-                pcall(function() _Net = require(ReplicatedStorage.Modules.Core.Net) end)
-            end
-
-            if _Net then
-                if not _G.Bypass then
-                    pcall(function()
-                        local func = getupvalue and getupvalue(_Net.get, 2)
-                        if func and setconstant then
-                            setconstant(func, 3, "KUYIENGOKUYIENGO")
-                            setconstant(func, 4, "KUYIENGOKUYIENGO")
-                        end
-                    end)
-                    _G.Bypass = true
-                end
-
-                pcall(function()
-                    if hookfunction then
-                        local old
-                        old = hookfunction(_Net.send, function(...)
-                            local d = {...}
-                            if d[1] == "leave_character_creator" or d[1] == "player_created_outfit" then
-                                return nil
-                            end
-                            return old(...)
-                        end)
-                    end
-                end)
-            end
-
-            task.wait(2.5)
-            local splashGui = PlayerGui:FindFirstChild("SplashScreenGui")
-            if splashGui then
-                local frame = splashGui:FindFirstChild("Frame")
-                local playBtn = frame and frame:FindFirstChild("PlayButton")
-                if playBtn then
-                    pcall(function() firesignal(playBtn.MouseButton1Click) end)
-                    pcall(function() firesignal(playBtn.Activated) end)
-                end
-            end
-
-            task.wait(4)
-            local characterCreator = PlayerGui:FindFirstChild("CharacterCreator")
-            if characterCreator then
-                local menuFrame = characterCreator:FindFirstChild("MenuFrame")
-                local skipBtn = menuFrame and menuFrame:FindFirstChild("AvatarMenuSkipButton")
-                if skipBtn then
-                    pcall(function() firesignal(skipBtn.MouseButton1Click) end)
-                    pcall(function() firesignal(skipBtn.Activated) end)
-                end
-            end
-
-            task.wait(2.5)
-            pcall(function()
-                local repSig = replicatesignal or firesignal
-                if repSig then
-                    repSig(Players.LocalPlayer.Kill)
-                end
-            end)
-            task.wait(7)
-            if _Net then
-                pcall(function() _Net.send("death_screen_request_respawn") end)
-            else
-                pcall(function()
-                    ReplicatedStorage.Remotes.Send:FireServer("death_screen_request_respawn")
-                end)
-            end
-        end)
-
-        -- 2. โหลดสคริปต์หลัก PVP (NYVEXPVP) ขึ้นมาทำงานพร้อมกัน
-        task.spawn(function()
-            task.wait(3)
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/nuea693-crypto/RO89H/main/NYVEXPVP"))()
-        end)
-    end)
-
-    print("[NYVEXHUB] Mode Selector Loaded Successfully!")
+-- ลบ UI เก่าทิ้งถ้าเคยรันค้างไว้
+if PlayerGui:FindFirstChild("NYVEX_ModeSelector_UI") then
+    PlayerGui.NYVEX_ModeSelector_UI:Destroy()
+end
+if CoreGui:FindFirstChild("NYVEX_ModeSelector_UI") then
+    CoreGui.NYVEX_ModeSelector_UI:Destroy()
 end
 
--- ==========================================
--- สร้างหน้าต่างประกาศ (Notice Popup) อันแรก
--- ==========================================
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "NYVEX_ModeSelector_UI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = PlayerGui
 
--- เคลียร์หน้าต่างประกาศเก่าถ้าเคยเปิดค้างไว้
-if PlayerGui:FindFirstChild("NYVEX_Notice_UI") then
-    PlayerGui.NYVEX_Notice_UI:Destroy()
-end
-
-local NoticeScreenGui = Instance.new("ScreenGui")
-NoticeScreenGui.Name = "NYVEX_Notice_UI"
-NoticeScreenGui.ResetOnSpawn = false
-NoticeScreenGui.IgnoreGuiInset = true
-NoticeScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-NoticeScreenGui.Parent = PlayerGui
-
--- ตัวกล่องป๊อปอัปหลัก (Main Frame)
-local NoticeFrame = Instance.new("Frame")
-NoticeFrame.Name = "NoticeFrame"
-NoticeFrame.Size = UDim2.fromOffset(360, 220)
-NoticeFrame.Position = UDim2.new(0.5, -180, 0.5, -110)
-NoticeFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
-NoticeFrame.BorderSizePixel = 0
-NoticeFrame.Active = true
-NoticeFrame.Draggable = true
-NoticeFrame.Parent = NoticeScreenGui
+-- Main Horizontal Capsule Frame
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.fromOffset(420, 65)
+MainFrame.Position = UDim2.new(0.5, -210, 0.5, -32)
+MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
 
 local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 12)
-MainCorner.Parent = NoticeFrame
+MainCorner.CornerRadius = UDim.new(1, 0)
+MainCorner.Parent = MainFrame
 
 local MainStroke = Instance.new("UIStroke")
 MainStroke.Color = Color3.fromRGB(0, 170, 255)
 MainStroke.Thickness = 2
-MainStroke.Parent = NoticeFrame
+MainStroke.Parent = MainFrame
 
--- หัวข้อประกาศ (Title)
-local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Size = UDim2.new(1, -20, 0, 35)
-TitleLabel.Position = UDim2.new(0, 10, 0, 10)
-TitleLabel.BackgroundTransparency = 1
-TitleLabel.Font = Enum.Font.GothamBold
-TitleLabel.TextSize = 16
-TitleLabel.TextColor3 = Color3.fromRGB(0, 170, 255)
-TitleLabel.TextXAlignment = Enum.TextXAlignment.Center
-TitleLabel.Text = "📢 ประกาศสำคัญจาก NYVEXHUB"
-TitleLabel.Parent = NoticeFrame
+-- Logo ด้านซ้ายสุด
+local LogoIcon = Instance.new("ImageLabel")
+LogoIcon.Size = UDim2.fromOffset(36, 36)
+LogoIcon.Position = UDim2.new(0, 14, 0.5, -18)
+LogoIcon.BackgroundTransparency = 1
+LogoIcon.Image = "rbxassetid://75135192681243"
+LogoIcon.Parent = MainFrame
 
--- เส้นแบ่งส่วนหัว (Divider)
-local Divider = Instance.new("Frame")
-Divider.Size = UDim2.new(1, -30, 0, 1)
-Divider.Position = UDim2.new(0, 15, 0, 48)
-Divider.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
-Divider.BorderSizePixel = 0
-Divider.Parent = NoticeFrame
+-- Divider 1
+local Divider1 = Instance.new("Frame")
+Divider1.Size = UDim2.fromOffset(2, 35)
+Divider1.Position = UDim2.new(0, 60, 0.5, -17)
+Divider1.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+Divider1.BorderSizePixel = 0
+Divider1.Parent = MainFrame
 
--- เนื้อหาประกาศ (Message Content)
-local MessageLabel = Instance.new("TextLabel")
-MessageLabel.Size = UDim2.new(1, -30, 0, 100)
-MessageLabel.Position = UDim2.new(0, 15, 0, 55)
-MessageLabel.BackgroundTransparency = 1
-MessageLabel.Font = Enum.Font.Gotham
-MessageLabel.TextSize = 13
-MessageLabel.TextColor3 = Color3.fromRGB(220, 220, 230)
-MessageLabel.TextWrapped = true
-MessageLabel.TextYAlignment = Enum.TextYAlignment.Top
-MessageLabel.Text = "ยินดีต้อนรับสู่ NYVEXHUB!\n\n• โปรดใช้งานอย่างระมัดระวังและปรับตั้งค่าให้เหมาะสม\n• หากมีการอัปเดตระบบจะแจ้งให้ทราบทางช่องทางหลัก\n• ระวังโดนแบนเนื่องจากเกมแบนดุระบบกันแบนช่วงช่วงทดลอง"
-MessageLabel.Parent = NoticeFrame
+-- ปุ่ม FARM (ขีดสีแดง)
+local FarmButton = Instance.new("TextButton")
+FarmButton.Size = UDim2.fromOffset(130, 45)
+FarmButton.Position = UDim2.new(0, 70, 0.5, -22)
+FarmButton.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+FarmButton.BorderSizePixel = 0
+FarmButton.AutoButtonColor = true
+FarmButton.Text = "FARM"
+FarmButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+FarmButton.TextSize = 13
+FarmButton.Font = Enum.Font.GothamBold
+FarmButton.Parent = MainFrame
 
--- ปุ่มกดรับทราบ (Accept / Dismiss Button)
-local AcceptButton = Instance.new("TextButton")
-AcceptButton.Size = UDim2.new(1, -30, 0, 38)
-AcceptButton.Position = UDim2.new(0, 15, 1, -48)
-AcceptButton.BackgroundColor3 = Color3.fromRGB(0, 140, 220)
-AcceptButton.BorderSizePixel = 0
-AcceptButton.Font = Enum.Font.GothamBold
-AcceptButton.TextSize = 13
-AcceptButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-AcceptButton.Text = "รับทราบและเข้าสู่เมนูหลัก"
-AcceptButton.Parent = NoticeFrame
+local FarmCorner = Instance.new("UICorner")
+FarmCorner.CornerRadius = UDim.new(0, 8)
+FarmCorner.Parent = FarmButton
 
-local BtnCorner = Instance.new("UICorner")
-BtnCorner.CornerRadius = UDim.new(0, 8)
-BtnCorner.Parent = AcceptButton
+local FarmIndicator = Instance.new("Frame")
+FarmIndicator.Size = UDim2.new(1, -12, 0, 4)
+FarmIndicator.Position = UDim2.new(0, 6, 1, -6)
+FarmIndicator.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+FarmIndicator.BorderSizePixel = 0
+FarmIndicator.Parent = FarmButton
+local FarmIndCorner = Instance.new("UICorner") FarmIndCorner.CornerRadius = UDim.new(1,0) FarmIndCorner.Parent = FarmIndicator
 
--- LOGIC: เมื่อกดปุ่มรับทราบ หน้าต่างประกาศจะปิด แล้วเรียกฟังก์ชันสร้างหน้าต่างเลือกโหมดขึ้นมาแทน
-AcceptButton.MouseButton1Click:Connect(function()
-    local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(NoticeFrame, tweenInfo, {
-        Size = UDim2.fromOffset(360, 0),
-        BackgroundTransparency = 1
-    })
-    
-    tween:Play()
-    tween.Completed:Wait()
-    NoticeScreenGui:Destroy()
-    
-    print("[NYVEXHUB] Notice Dismissed, Opening Mode Selector...")
-    
-    -- เรียกใช้งาน UI หน้าต่างเลือกโหมดหลัก
-    createModeSelector()
+-- Divider 2
+local Divider2 = Instance.new("Frame")
+Divider2.Size = UDim2.fromOffset(2, 35)
+Divider2.Position = UDim2.new(0, 208, 0.5, -17)
+Divider2.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+Divider2.BorderSizePixel = 0
+Divider2.Parent = MainFrame
+
+-- ปุ่ม PVP ปกติ (ขีดสีม่วง/น้ำเงิน)
+local PvpNormalButton = Instance.new("TextButton")
+PvpNormalButton.Size = UDim2.fromOffset(95, 45)
+PvpNormalButton.Position = UDim2.new(0, 218, 0.5, -22)
+PvpNormalButton.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+PvpNormalButton.BorderSizePixel = 0
+PvpNormalButton.AutoButtonColor = true
+PvpNormalButton.Text = "PVP (ปกติ)"
+PvpNormalButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+PvpNormalButton.TextSize = 11
+PvpNormalButton.Font = Enum.Font.GothamBold
+PvpNormalButton.Parent = MainFrame
+
+local PvpNormalCorner = Instance.new("UICorner")
+PvpNormalCorner.CornerRadius = UDim.new(0, 8)
+PvpNormalCorner.Parent = PvpNormalButton
+
+local PvpNormalIndicator = Instance.new("Frame")
+PvpNormalIndicator.Size = UDim2.new(1, -10, 0, 4)
+PvpNormalIndicator.Position = UDim2.new(0, 5, 1, -6)
+PvpNormalIndicator.BackgroundColor3 = Color3.fromRGB(150, 60, 255)
+PvpNormalIndicator.BorderSizePixel = 0
+PvpNormalIndicator.Parent = PvpNormalButton
+local PvpNormIndCorner = Instance.new("UICorner") PvpNormIndCorner.CornerRadius = UDim.new(1,0) PvpNormIndCorner.Parent = PvpNormalIndicator
+
+-- ปุ่มโหมดอมตะ (ขีดสีม่วง)
+local PvpImmortalButton = Instance.new("TextButton")
+PvpImmortalButton.Size = UDim2.fromOffset(95, 45)
+PvpImmortalButton.Position = UDim2.new(0, 319, 0.5, -22)
+PvpImmortalButton.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+PvpImmortalButton.BorderSizePixel = 0
+PvpImmortalButton.AutoButtonColor = true
+PvpImmortalButton.Text = "โหมดอมตะ"
+PvpImmortalButton.TextColor3 = Color3.fromRGB(200, 150, 255)
+PvpImmortalButton.TextSize = 11
+PvpImmortalButton.Font = Enum.Font.GothamBold
+PvpImmortalButton.Parent = MainFrame
+
+local PvpImmortalCorner = Instance.new("UICorner")
+PvpImmortalCorner.CornerRadius = UDim.new(0, 8)
+PvpImmortalCorner.Parent = PvpImmortalButton
+
+local PvpImmortalIndicator = Instance.new("Frame")
+PvpImmortalIndicator.Size = UDim2.new(1, -10, 0, 4)
+PvpImmortalIndicator.Position = UDim2.new(0, 5, 1, -6)
+PvpImmortalIndicator.BackgroundColor3 = Color3.fromRGB(150, 60, 255)
+PvpImmortalIndicator.BorderSizePixel = 0
+PvpImmortalIndicator.Parent = PvpImmortalButton
+local PvpImmIndCorner = Instance.new("UICorner") PvpImmIndCorner.CornerRadius = UDim.new(1,0) PvpImmIndCorner.Parent = PvpImmortalIndicator
+
+-- ==========================================
+-- LOGIC การทำงานเมื่อกดปุ่มต่างๆ
+-- ==========================================
+
+-- กด FARM: รันสคริปต์ Farm และลบหน้า UI นี้ทิ้ง
+FarmButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/nuea693-crypto/RO89H/main/FARMNYVEXHUB.txt"))()
 end)
+
+-- กด PVP (ปกติ): รันสคริปต์ PVP (แก้ลิงก์ Raw ให้เรียบร้อย) และลบหน้า UI นี้ทิ้ง
+PvpNormalButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/nuea693-crypto/RO89H/main/NYVEXPVP"))()
+end)
+
+-- กด โหมดอมตะ: ทำงานฟังก์ชัน God Mode + รันสคริปต์ PVP ต่อ และลบหน้า UI นี้ทิ้ง
+PvpImmortalButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+
+    -- 1. รันระบบ God Mode (สเต็ปบายพลาส + รีสปอนตัวละครให้เป็นอมตะ)
+    task.spawn(function()
+        local _Net
+        pcall(function() _Net = require(ReplicatedStorage.Modules.Core.Net) end)
+
+        pcall(function() require(ReplicatedStorage.Modules.Game.CharacterCreator.CharacterCreator) end)
+        pcall(function() require(ReplicatedStorage.Modules.Core.Char) end)
+
+        if not _Net then
+            pcall(function() _Net = require(ReplicatedStorage.Modules.Core.Net) end)
+        end
+
+        if _Net then
+            if not _G.Bypass then
+                pcall(function()
+                    local func = getupvalue and getupvalue(_Net.get, 2)
+                    if func and setconstant then
+                        setconstant(func, 3, "KUYIENGOKUYIENGO")
+                        setconstant(func, 4, "KUYIENGOKUYIENGO")
+                    end
+                end)
+                _G.Bypass = true
+            end
+
+            pcall(function()
+                if hookfunction then
+                    local old
+                    old = hookfunction(_Net.send, function(...)
+                        local d = {...}
+                        if d[1] == "leave_character_creator" or d[1] == "player_created_outfit" then
+                            return nil
+                        end
+                        return old(...)
+                    end)
+                end
+            end)
+        end
+
+        task.wait(2.5)
+        local splashGui = PlayerGui:FindFirstChild("SplashScreenGui")
+        if splashGui then
+            local frame = splashGui:FindFirstChild("Frame")
+            local playBtn = frame and frame:FindFirstChild("PlayButton")
+            if playBtn then
+                pcall(function() firesignal(playBtn.MouseButton1Click) end)
+                pcall(function() firesignal(playBtn.Activated) end)
+            end
+        end
+
+        task.wait(4)
+        local characterCreator = PlayerGui:FindFirstChild("CharacterCreator")
+        if characterCreator then
+            local menuFrame = characterCreator:FindFirstChild("MenuFrame")
+            local skipBtn = menuFrame and menuFrame:FindFirstChild("AvatarMenuSkipButton")
+            if skipBtn then
+                pcall(function() firesignal(skipBtn.MouseButton1Click) end)
+                pcall(function() firesignal(skipBtn.Activated) end)
+            end
+        end
+
+        task.wait(2.5)
+        pcall(function()
+            local repSig = replicatesignal or firesignal
+            if repSig then
+                repSig(Players.LocalPlayer.Kill)
+            end
+        end)
+        task.wait(7)
+        if _Net then
+            pcall(function() _Net.send("death_screen_request_respawn") end)
+        else
+            pcall(function()
+                ReplicatedStorage.Remotes.Send:FireServer("death_screen_request_respawn")
+            end)
+        end
+    end)
+
+    -- 2. โหลดสคริปต์หลัก PVP (NYVEXPVP) ขึ้นมาทำงานพร้อมกัน
+    task.spawn(function()
+        task.wait(3) -- รอจังหวะให้เข้าเกมเข้าที่
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/nuea693-crypto/RO89H/main/NYVEXPVP"))()
+    end)
+end)
+
+print("[NYVEXHUB] Mode Selector (God Mode Integrated) Loaded Successfully!")
