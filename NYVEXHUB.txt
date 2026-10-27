@@ -1,5 +1,5 @@
 --// ==========================================
---// NYVEX HUB | ULTIMATE EDITION (UPDATED & FIXED)
+--// NYVEX HUB | ULTIMATE EDITION (BARREL EXTENDER + ALL FEATURES)
 --// ==========================================
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
@@ -120,7 +120,7 @@ local MiscTab = Window:Tab({ Title = 'Misc', Icon = 'warehouse' })
 local SettingsTab = Window:Tab({ Title = 'Settings', Icon = 'settings' })
 
 -- ==========================================
--- COMBAT TAB
+-- COMBAT TAB & BARREL EXTENDER SYSTEM
 -- ==========================================
 local SilentAim = {
     Enabled = false,
@@ -131,6 +131,14 @@ local SilentAim = {
     TargetMode = "Head",
     WhitelistFriends = false,
     Target = nil,
+}
+
+local BarrelExtender = {
+    Enabled = false,
+    TargetMode = "Head",
+    MaxDistance = 10000,
+    OriginalSizes = {},
+    OriginalMeshSizes = {},
 }
 
 local AutoShoot = {
@@ -357,8 +365,88 @@ local function getSmartAimPart(character)
     end
 end
 
+local function getClosestEnemyForBarrel()
+    if SilentAim.Target and SilentAim.Target.Character then
+        return SilentAim.Target.Character
+    end
+    local best, bestDist = nil, BarrelExtender.MaxDistance
+    local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not myRoot then return nil end
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local hum = player.Character:FindFirstChildOfClass("Humanoid")
+            local targetPart = player.Character:FindFirstChild(BarrelExtender.TargetMode) or player.Character:FindFirstChild("HumanoidRootPart")
+            if hum and hum.Health > 0 and targetPart then
+                local dist = (myRoot.Position - targetPart.Position).Magnitude
+                if dist < bestDist then
+                    bestDist = dist
+                    best = player.Character
+                end
+            end
+        end
+    end
+    return best
+end
+
+-- ระบบยืดความยาวกระบอกปืนอัตโนมัติ ไปจ่อห่างจากเป้าหมาย 3 หน่วย (ทะลุกำแพง/สิ่งกีดขวาง)
+RunService.Heartbeat:Connect(function()
+    if not BarrelExtender.Enabled then return end
+    pcall(function()
+        local char = LocalPlayer.Character
+        if not char then return end
+        local tool = char:FindFirstChildOfClass("Tool")
+        if not tool then return end
+        
+        local handle = tool:FindFirstChild("Handle") or tool:FindFirstChild("Muzzle") or tool:FindFirstChildWhichIsA("BasePart")
+        if not handle then return end
+
+        local targetChar = getClosestEnemyForBarrel()
+        if targetChar then
+            local targetPart = targetChar:FindFirstChild(BarrelExtender.TargetMode) or targetChar:FindFirstChild("HumanoidRootPart")
+            if targetPart then
+                if not BarrelExtender.OriginalSizes[handle] then
+                    BarrelExtender.OriginalSizes[handle] = handle.Size
+                    local mesh = handle:FindFirstChildOfClass("SpecialMesh") or handle:FindFirstChildOfClass("BlockMesh")
+                    if mesh then
+                        BarrelExtender.OriginalMeshSizes[mesh] = mesh.Scale
+                    end
+                end
+
+                local origSize = BarrelExtender.OriginalSizes[handle]
+                -- คำนวณจุดปลายกระบอกให้ไปจ่อห่างจากหัวเป้าหมาย 3 หน่วยพอดี
+                local offsetDir = (handle.Position - targetPart.Position).Unit
+                local adjustedTargetPos = targetPart.Position + (offsetDir * 3)
+                local distance = (handle.Position - adjustedTargetPos).Magnitude
+
+                handle.Size = Vector3.new(origSize.X, origSize.Y, math.clamp(distance, 1, 15000))
+                handle.CFrame = CFrame.new(handle.Position:Lerp(adjustedTargetPos, 0.5), adjustedTargetPos)
+
+                local mesh = handle:FindFirstChildOfClass("SpecialMesh") or handle:FindFirstChildOfClass("BlockMesh")
+                if mesh and BarrelExtender.OriginalMeshSizes[mesh] then
+                    local origMesh = BarrelExtender.OriginalMeshSizes[mesh]
+                    mesh.Scale = Vector3.new(origMesh.X, origMesh.Y, origMesh.Z * (distance / math.max(origSize.Z, 1)))
+                end
+
+                handle.CanCollide = false
+            end
+        else
+            if BarrelExtender.OriginalSizes[handle] then
+                handle.Size = BarrelExtender.OriginalSizes[handle]
+                local mesh = handle:FindFirstChildOfClass("SpecialMesh") or handle:FindFirstChildOfClass("BlockMesh")
+                if mesh and BarrelExtender.OriginalMeshSizes[mesh] then
+                    mesh.Scale = BarrelExtender.OriginalMeshSizes[mesh]
+                end
+            end
+        end
+    end)
+end)
+
 local targetVelocityHistory = {}
 
+-- ==========================================
+-- PREDICTION SYSTEM
+-- ==========================================
 local function predictPosition(targetPart)
     if not targetPart then return Vector3.zero end
     local charModel = targetPart.Parent
@@ -520,7 +608,7 @@ local function isShotgun(tool)
     return false
 end
 
--- Silent Aim Hook
+-- Silent Aim Hook & Barrel Extender Remote Hook
 local oldFireServer
 if SendRemote and SendRemote.FireServer then
     pcall(function()
@@ -531,56 +619,76 @@ if SendRemote and SendRemote.FireServer then
 
             local args = {...}
 
-            if SilentAim.Enabled and args[2] == "shoot_gun" and SilentAim.Target and SilentAim.Target.Character then
-                local targetPart = getSmartAimPart(SilentAim.Target.Character)
-                local hum = SilentAim.Target.Character:FindFirstChildOfClass("Humanoid")
-
-                if targetPart and hum and hum.Health > 0 then
-                    local predicted = predictPosition(targetPart)
-                    local myHead = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head")
-                    local origin = myHead and myHead.Position or Camera.CFrame.Position
-
-                    if isShotgun(args[3]) then
-                        args[4] = CFrame.new(origin, predicted)
-                        local spread = {}
-                        for i = 1, 6 do
-                            local offset = Vector3.new(
-                                math.random(-1, 1) * 0.005,
-                                math.random(-1, 1) * 0.005,
-                                math.random(-1, 1) * 0.005
-                            )
-                            table.insert(spread, {
+            if args[2] == "shoot_gun" then
+                if BarrelExtender.Enabled then
+                    local targetChar = getClosestEnemyForBarrel()
+                    if targetChar then
+                        local targetPart = targetChar:FindFirstChild(BarrelExtender.TargetMode) or targetChar:FindFirstChild("HumanoidRootPart")
+                        local myHead = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head")
+                        if targetPart and myHead then
+                            args[4] = CFrame.new(myHead.Position, targetPart.Position)
+                            args[5] = {
                                 [1] = {
-                                    Instance = targetPart,
-                                    Normal = Vector3.new(0, 1, 0),
-                                    Position = predicted + offset
-                                }
-                            })
-                        end
-                        args[5] = spread
-                    else
-                        args[4] = CFrame.new(origin, predicted)
-                        args[5] = {
-                            [1] = {
-                                [1] = {
-                                    Instance = targetPart,
-                                    Normal = Vector3.new(0, 1, 0),
-                                    Position = predicted
+                                    [1] = {
+                                        Instance = targetPart,
+                                        Normal = Vector3.new(0, 1, 0),
+                                        Position = targetPart.Position
+                                    }
                                 }
                             }
-                        }
+                        end
                     end
+                elseif SilentAim.Enabled and SilentAim.Target and SilentAim.Target.Character then
+                    local targetPart = getSmartAimPart(SilentAim.Target.Character)
+                    local hum = SilentAim.Target.Character:FindFirstChildOfClass("Humanoid")
 
-                    local line = Instance.new("Part")
-                    line.Anchored = true
-                    line.CanCollide = false
-                    line.Size = Vector3.new(0.08, 0.08, (predicted - origin).Magnitude)
-                    line.CFrame = CFrame.new(origin, predicted) * CFrame.new(0, 0, -line.Size.Z / 2)
-                    line.Material = Enum.Material.Neon
-                    line.Transparency = 0.35
-                    line.Color = Color3.fromHSV((tick() * 0.5) % 1, 1, 1)
-                    line.Parent = Workspace
-                    Debris:AddItem(line, 1.5)
+                    if targetPart and hum and hum.Health > 0 then
+                        local predicted = predictPosition(targetPart)
+                        local myHead = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head")
+                        local origin = myHead and myHead.Position or Camera.CFrame.Position
+
+                        if isShotgun(args[3]) then
+                            args[4] = CFrame.new(origin, predicted)
+                            local spread = {}
+                            for i = 1, 6 do
+                                local offset = Vector3.new(
+                                    math.random(-1, 1) * 0.005,
+                                    math.random(-1, 1) * 0.005,
+                                    math.random(-1, 1) * 0.005
+                                )
+                                table.insert(spread, {
+                                    [1] = {
+                                        Instance = targetPart,
+                                        Normal = Vector3.new(0, 1, 0),
+                                        Position = predicted + offset
+                                    }
+                                })
+                            end
+                            args[5] = spread
+                        else
+                            args[4] = CFrame.new(origin, predicted)
+                            args[5] = {
+                                [1] = {
+                                    [1] = {
+                                        Instance = targetPart,
+                                        Normal = Vector3.new(0, 1, 0),
+                                        Position = predicted
+                                    }
+                                }
+                            }
+                        end
+
+                        local line = Instance.new("Part")
+                        line.Anchored = true
+                        line.CanCollide = false
+                        line.Size = Vector3.new(0.08, 0.08, (predicted - origin).Magnitude)
+                        line.CFrame = CFrame.new(origin, predicted) * CFrame.new(0, 0, -line.Size.Z / 2)
+                        line.Material = Enum.Material.Neon
+                        line.Transparency = 0.35
+                        line.Color = Color3.fromHSV((tick() * 0.5) % 1, 1, 1)
+                        line.Parent = Workspace
+                        Debris:AddItem(line, 1.5)
+                    end
                 end
             end
 
@@ -589,7 +697,9 @@ if SendRemote and SendRemote.FireServer then
     end)
 end
 
+-- ==========================================
 -- AUTO SHOOT CORE SYSTEM
+-- ==========================================
 local function getEquippedGun()
     local char = LocalPlayer.Character
     if not char then return nil end
@@ -699,6 +809,7 @@ local function startAutoShoot()
 end
 startAutoShoot()
 
+-- Auto Shoot on Damage
 local function monitorHealthForDamage()
     if not AutoShootOnDamage.Enabled then return end
     local char = LocalPlayer.Character
@@ -762,6 +873,7 @@ local function startDamageBurst()
 end
 startDamageBurst()
 
+-- Combat Render Stepped
 local GetCirclePoint = function(center, radius, angle)
     return Vector2.new(center.X + radius * math.cos(angle), center.Y + radius * math.sin(angle))
 end
@@ -861,7 +973,44 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- Combat Controls
+-- Combat Controls & Barrel Extender UI
+CombatTab:Toggle({
+    Title = '🎯 Dynamic Barrel Extender (ยืดกระบอกปืนทะลุกำแพงจ่อหัว 3 หน่วย)',
+    Flag = 'barrel_extender',
+    Desc = 'ยืดความยาวกระบอกปืนอัตโนมัติพุ่งทะลุกำแพงไปจ่อเป้าหมายแบบเรียลไทม์',
+    Icon = 'crosshair',
+    Type = 'Checkbox',
+    Default = false,
+    Callback = function(state)
+        BarrelExtender.Enabled = state
+        if not state then
+            pcall(function()
+                for handle, size in pairs(BarrelExtender.OriginalSizes) do
+                    if handle and handle.Parent then
+                        handle.Size = size
+                        handle.CanCollide = true
+                    end
+                end
+                BarrelExtender.OriginalSizes = {}
+                BarrelExtender.OriginalMeshSizes = {}
+            end)
+        end
+        if WindUI and WindUI.Notify then
+            WindUI:Notify({ Title = "NYVEX HUB", Content = state and "🔥 เปิดใช้งาน Barrel Extender แล้ว!" else "❌ ปิดใช้งานแล้ว", Duration = 2 })
+        end
+    end,
+})
+
+CombatTab:Dropdown({
+    Title = 'เป้าหมายกระบอกปืน (Target Part)',
+    Flag = 'barrel_target_mode',
+    Values = {'Head', 'Torso'},
+    Default = 'Head',
+    Callback = function(value)
+        BarrelExtender.TargetMode = value
+    end,
+})
+
 CombatTab:Toggle({
     Title = 'Silent Aim',
     Flag = 'silent_aim',
@@ -1464,7 +1613,9 @@ PlayersTab:Toggle({
     end,
 })
 
+-- ==========================================
 -- AUTO HEAL SYSTEM
+-- ==========================================
 getEnv().AutoHeal = false
 getEnv().HealThreshold = 50
 
@@ -2052,7 +2203,7 @@ PlayersTab:Slider({
 })
 
 -- ==========================================
--- CAR TAB (FIXED WHEELS DRIFT)
+-- CAR TAB
 -- ==========================================
 local FlyingCarEnabled = false
 local SPEED = 120
@@ -2197,7 +2348,6 @@ local function findFlyVehicle()
     return { chassis = chassis, model = model }
 end
 
--- FIXED: แก้ล้อรถบินหลุด/ปลิว โดยข้ามการชนคุณสมบัติล้อ
 local function disableSlowdown(model)
     disabledConstraints = {}
     originalCollide = {}
@@ -2212,11 +2362,12 @@ local function disableSlowdown(model)
     end
     for _, p in ipairs(model:GetDescendants()) do
         if p:IsA("BasePart") and p ~= bodyPart then
+            originalCollide[p] = { CanCollide = p.CanCollide }
+            p.CanCollide = false
             local n = p.Name:lower()
-            -- เช็กว่าไม่ใช่ล้อรถ ถึงทำการปิด CanCollide
-            if not (n:find("wheel") or n:find("tire") or n:find("ล้อ")) then
-                originalCollide[p] = { CanCollide = p.CanCollide }
-                p.CanCollide = false
+            if n:find("wheel") or n:find("tire") or n:find("ล้อ") then
+                originalProps[p] = { Massless = p.Massless }
+                p.Massless = true
             end
         end
     end
@@ -2488,107 +2639,13 @@ CarTab:Toggle({
     end,
 })
 
--- ==========================================
--- BUMP AURA SYSTEM (UPDATED WITH SAFETY WARNING GUI)
--- ==========================================
 _G.BumpAura = false
 _G.BumpAuraThread = nil
 local BumpLastHit = {}
-local BUMP_RADIUS = 70 -- ค่าเริ่มต้น 70 ตามคำขอ
+local BUMP_RADIUS = 350
 local BUMP_COOLDOWN = 0.08
 local BUMP_LOOP_WAIT = 0.03
 local BUMP_FORCE = 1500
-
-local lastSafeBumpRadius = 70
-local isConfirmingBumpRisk = false
-
--- GUI แจ้งเตือนความเสี่ยง ปรับระยะออร่า
-local function showBumpRiskDialog(targetValue, isExtreme, onConfirm, onCancel)
-    isConfirmingBumpRisk = true
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "NYVEX_BumpRiskAlert"
-    screenGui.ResetOnSpawn = false
-    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-
-    local overlay = Instance.new("Frame")
-    overlay.Size = UDim2.new(1, 0, 1, 0)
-    overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    overlay.BackgroundTransparency = 0.6
-    overlay.Parent = screenGui
-
-    local alertFrame = Instance.new("Frame")
-    alertFrame.Size = UDim2.fromOffset(360, 210)
-    alertFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-    alertFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-    alertFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-    alertFrame.Parent = overlay
-    Instance.new("UICorner", alertFrame).CornerRadius = UDim.new(0, 12)
-    
-    local stroke = Instance.new("UIStroke", alertFrame)
-    stroke.Thickness = 2
-    stroke.Color = isExtreme and Color3.fromRGB(255, 30, 30) or Color3.fromRGB(255, 170, 0)
-
-    local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, -20, 0, 35)
-    title.Position = UDim2.new(0, 10, 0, 10)
-    title.BackgroundTransparency = 1
-    title.Text = isExtreme and "⚠️ เตือนภัยเสี่ยงแบนสูงสุด!" or "⚠️ แจ้งเตือนความเสี่ยงระบบ"
-    title.TextColor3 = isExtreme and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(255, 180, 0)
-    title.Font = Enum.Font.GothamBold
-    title.TextSize = 18
-    title.Parent = alertFrame
-
-    local desc = Instance.new("TextLabel")
-    desc.Size = UDim2.new(1, -30, 0, 80)
-    desc.Position = UDim2.new(0, 15, 0, 50)
-    desc.BackgroundTransparency = 1
-    desc.TextWrapped = true
-    desc.Font = Enum.Font.Gotham
-    desc.TextSize = 14
-    desc.TextColor3 = Color3.fromRGB(230, 230, 230)
-    
-    if isExtreme then
-        desc.Text = "คุณกำลังปรับระยะชนปั้มออร่าเป็น " .. targetValue .. "!\nโอกาสโดนแบนเกือบ 100% คุณแน่ใจหรือไม่ว่าต้องการดำเนินการต่อ?"
-    else
-        desc.Text = "ระยะ " .. targetValue .. " เสี่ยงนิดนึง หากคุณต้องการปรับเพิ่มระยะ ให้ตอบตกลง หากไม่ต้องการกดยกเลิก"
-    end
-    desc.Parent = alertFrame
-
-    local btnConfirm = Instance.new("TextButton")
-    btnConfirm.Size = UDim2.new(0, 140, 0, 40)
-    btnConfirm.Position = UDim2.new(0, 25, 1, -55)
-    btnConfirm.BackgroundColor3 = isExtreme and Color3.fromRGB(200, 30, 30) or Color3.fromRGB(0, 160, 240)
-    btnConfirm.Text = "ตกลง"
-    btnConfirm.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btnConfirm.Font = Enum.Font.GothamBold
-    btnConfirm.TextSize = 15
-    btnConfirm.Parent = alertFrame
-    Instance.new("UICorner", btnConfirm).CornerRadius = UDim.new(0, 8)
-
-    local btnCancel = Instance.new("TextButton")
-    btnCancel.Size = UDim2.new(0, 140, 0, 40)
-    btnCancel.Position = UDim2.new(1, -165, 1, -55)
-    btnCancel.BackgroundColor3 = Color3.fromRGB(70, 70, 80)
-    btnCancel.Text = "ยกเลิก"
-    btnCancel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btnCancel.Font = Enum.Font.GothamBold
-    btnCancel.TextSize = 15
-    btnCancel.Parent = alertFrame
-    Instance.new("UICorner", btnCancel).CornerRadius = UDim.new(0, 8)
-
-    btnConfirm.MouseButton1Click:Connect(function()
-        isConfirmingBumpRisk = false
-        screenGui:Destroy()
-        if onConfirm then onConfirm() end
-    end)
-
-    btnCancel.MouseButton1Click:Connect(function()
-        isConfirmingBumpRisk = false
-        screenGui:Destroy()
-        if onCancel then onCancel() end
-    end)
-end
 
 local function IsAliveChar(char)
     if not char or not char.Parent then return false end
@@ -2649,7 +2706,7 @@ local function BumpAuraLoop()
 end
 
 CarTab:Toggle({
-    Title = "Bump Aura (เป็นส่วนหนึ่งในชีวิตของพวกข้า)",
+    Title = "Bump Aura",
     Flag = "BumpAura",
     Icon = "check",
     Type = "Checkbox",
@@ -2667,45 +2724,7 @@ CarTab:Toggle({
     end,
 })
 
-local bumpSlider = CarTab:Slider({
-    Title = 'ปรับระยะชนปั้มออร่า [ปกติ 60-70] -> สถานะ: ปกติ',
-    Flag = 'bump_aura_radius',
-    Step = 1,
-    Value = {Min = 1, Max = 300, Default = 70},
-    Callback = function(val)
-        local targetVal = tonumber(val) or 70
-        if isConfirmingBumpRisk then return end
-
-        if targetVal >= 151 then
-            -- ระยะ 151-300: โอกาสโดนแบนเกือบ 100%
-            showBumpRiskDialog(targetVal, true, function()
-                BUMP_RADIUS = targetVal
-                lastSafeBumpRadius = targetVal
-                if WindUI and WindUI.Notify then
-                    WindUI:Notify({ Title = "Bump Aura Alert", Content = "⚠️ ปรับระยะเป็น " .. targetVal .. " [เสี่ยงแบนสูงสุด!]", Duration = 3 })
-                end
-            end, function()
-                BUMP_RADIUS = lastSafeBumpRadius
-            end)
-        elseif targetVal >= 85 then
-            -- ระยะ 85-150: เตือนเสี่ยงนิดนึง
-            showBumpRiskDialog(targetVal, false, function()
-                BUMP_RADIUS = targetVal
-                lastSafeBumpRadius = targetVal
-                if WindUI and WindUI.Notify then
-                    WindUI:Notify({ Title = "Bump Aura Alert", Content = "ยอมรับความเสี่ยง: ปรับระยะเป็น " .. targetVal, Duration = 3 })
-                end
-            end, function()
-                BUMP_RADIUS = math.min(lastSafeBumpRadius, 80)
-            end)
-        else
-            -- ระยะ 1-84 (ปกติ/ปลอดภัย)
-            BUMP_RADIUS = targetVal
-            lastSafeBumpRadius = targetVal
-        end
-    end,
-})
-
+local CarGuardEnabled = false
 CarTab:Toggle({
     Title = 'CarGuard (กันรถบัค/รถระเบิด)',
     Flag = 'car_guard',
@@ -3505,4 +3524,4 @@ pcall(function()
     end)
 end)
 
-print("[NYVEX HUB] Updated & Loaded Successfully!")
+print("[NYVEX HUB] Ultimate Barrel Extender Edition Loaded Successfully!")
